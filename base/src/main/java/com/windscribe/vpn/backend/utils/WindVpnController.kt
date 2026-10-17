@@ -45,6 +45,7 @@ import com.windscribe.vpn.repository.CallResult
 import com.windscribe.vpn.repository.EmergencyConnectRepository
 import com.windscribe.vpn.repository.LocationRepository
 import com.windscribe.vpn.repository.WgConfigRepository
+import com.windscribe.vpn.repository.multihop.FirstHopProfileStore
 import com.windscribe.vpn.serverlist.entity.Server
 import com.windscribe.vpn.services.canAccessNetworkName
 import com.windscribe.vpn.services.startAutoConnectService
@@ -78,6 +79,7 @@ open class WindVpnController
         private val localDbInterface: LocalDbInterface,
         private val deviceStateManager: DeviceStateManager,
         private val excludedIpHolder: ExcludedIpHolder,
+        private val firstHopProfileStore: FirstHopProfileStore,
     ) {
         private val logger = LoggerFactory.getLogger("vpn")
 
@@ -350,6 +352,24 @@ open class WindVpnController
             attempt: Int = 0,
             hostname: String? = null,
         ) {
+            val requestedProtocol = protocolInformation?.protocol ?: preferencesHelper.selectedProtocol
+            if (firstHopProfileStore.isEnabled() && requestedProtocol != PROTO_WIRE_GUARD) {
+                val message = "Double-hop is enabled. Select WireGuard as the Windscribe second-hop protocol before connecting."
+                logger.warn(message)
+                preferencesHelper.isReconnecting = false
+                vpnConnectionStateManager.setState(
+                    VPNState(
+                        VPNState.Status.Disconnected,
+                        VPNState.Error(
+                            error = VPNState.ErrorType.GenericError,
+                            message = message,
+                            showError = true,
+                        ),
+                    ),
+                    force = true,
+                )
+                return
+            }
             when {
                 // Disconnect from VPN and connect to next selected location.
                 vpnBackendHolder.activeBackend?.active == true -> {
