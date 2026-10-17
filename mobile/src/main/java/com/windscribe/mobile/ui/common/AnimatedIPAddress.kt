@@ -69,7 +69,7 @@ fun AnimatedIPAddressContent(
         color = color,
         maxLines = 1,
         softWrap = false,
-        overflow = TextOverflow.Clip,
+        overflow = TextOverflow.Ellipsis,
         modifier = modifier,
     )
 }

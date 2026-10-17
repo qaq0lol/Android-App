@@ -27,6 +27,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -65,7 +66,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -76,6 +77,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -103,7 +105,7 @@ import com.windscribe.mobile.ui.connection.ToastMessage
 import com.windscribe.mobile.ui.helper.ForceStatusBarIcons
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
-import com.windscribe.mobile.ui.helper.getHeaderHeight
+import com.windscribe.mobile.ui.helper.getStatusBarHeight
 import com.windscribe.mobile.ui.helper.hapticClickable
 import com.windscribe.mobile.ui.model.AccountStatusDialogData
 import com.windscribe.mobile.ui.nav.LocalNavController
@@ -114,7 +116,6 @@ import com.windscribe.mobile.ui.serverlist.SearchServerList
 import com.windscribe.mobile.ui.serverlist.ServerListScreen
 import com.windscribe.mobile.ui.serverlist.ServerViewModel
 import com.windscribe.mobile.ui.serverlist.ServerViewModelImpl
-import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font12
 import com.windscribe.mobile.ui.theme.font16
 import com.windscribe.mobile.ui.theme.font26
@@ -122,6 +123,7 @@ import com.windscribe.mobile.ui.theme.font9
 import com.windscribe.vpn.autoconnection.ProtocolConnectionStatus
 import com.windscribe.vpn.autoconnection.ProtocolInformation
 import com.windscribe.vpn.backend.Util
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 @Composable
@@ -345,8 +347,8 @@ private fun CompactUI(
         Box(modifier = Modifier.fillMaxSize()) {
             ConnectedBackground(connectionViewmodel)
             Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-                Box(modifier = Modifier.fillMaxWidth().height(276.dp)) {
-                    LocationImage(connectionViewmodel, homeViewmodel, bridgeApiViewModel)
+                Box(modifier = Modifier.fillMaxWidth().height(276.dp).clipToBounds()) {
+                    LocationImage(connectionViewmodel)
                     Box(
                         modifier = Modifier.fillMaxSize().background(
                             Brush.verticalGradient(
@@ -368,15 +370,18 @@ private fun CompactUI(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Surface(
-                                modifier = Modifier.weight(1f).padding(end = 12.dp),
+                                modifier = Modifier.weight(1f).height(95.dp).padding(end = 12.dp),
                                 shape = RoundedCornerShape(20.dp),
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
                                 tonalElevation = 1.dp,
                             ) {
-                                Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                                    LocationName(connectionViewmodel)
-                                }
+                                Box(
+                                        modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp),
+                                        contentAlignment = Alignment.CenterStart,
+                                    ) {
+                                        LocationName(connectionViewmodel)
+                                    }
                             }
                             AppConnectButton(connectionViewmodel)
                         }
@@ -427,7 +432,7 @@ private fun ConnectionStatusSheetContent(
     isPreferredProtocolEnabled: Boolean,
     onProtocolChangeClick: () -> Unit,
 ) {
-    val containerColor = if (state is ConnectionUIState.Connected) AppColors.mintGreen else MaterialTheme.colorScheme.onSurface
+    val containerColor = if (state is ConnectionUIState.Connected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface
     val showDecoyTraffic = state is ConnectionUIState.Connected && isDecoyTrafficEnabled
     Surface(
         modifier = Modifier.padding(start = 18.dp, top = 4.dp),
@@ -453,7 +458,7 @@ private fun ConnectionStatusSheetContent(
                 Spacer(modifier = Modifier.width(4.dp))
             }
             if (showDecoyTraffic) {
-                Text(stringResource(com.windscribe.vpn.R.string.decoy), style = font12, color = AppColors.neonGreen)
+                Text(stringResource(com.windscribe.vpn.R.string.decoy), style = font12, color = MaterialTheme.colorScheme.secondary)
                 Spacer(modifier = Modifier.width(4.dp))
             }
             Text(
@@ -603,7 +608,12 @@ internal fun NetworkInfoSheet(
                     AnimatedIPAddress(
                         connectionViewmodel = connectionViewmodel,
                         bridgeApiViewModel = bridgeApiViewModel,
-                        style = font16.copy(fontFeatureSettings = "tnum"),
+                        style = font16.copy(
+                            fontSize = 14.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontFeatureSettings = "tnum",
+                            textAlign = TextAlign.End,
+                        ),
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier =
                             Modifier.width(132.dp).graphicsLayer {
@@ -639,7 +649,7 @@ internal fun NetworkInfoSheet(
                             .alpha(if (isBridgeApiReady) 1.0f else 0.3f)
                             .size(24.dp)
                             .onGloballyPositioned { layoutCoordinates ->
-                                bridgeApiViewModel.onIpContextMenuPosition(layoutCoordinates.boundsInWindow().topLeft)
+                                bridgeApiViewModel.onIpContextMenuPosition(layoutCoordinates.positionInRoot())
                             }.hapticClickable {
                                 if (isBridgeApiReady) {
                                     bridgeApiViewModel.setContextMenuState(true)
@@ -654,7 +664,7 @@ internal fun NetworkInfoSheet(
 @Composable
 private fun ConnectionStatus(connectionUIState: ConnectionUIState) {
     val containerColor =
-        if (connectionUIState is ConnectionUIState.Connected) AppColors.mintGreen else MaterialTheme.colorScheme.onSurface
+        if (connectionUIState is ConnectionUIState.Connected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface
     val stateTag =
         when (connectionUIState) {
             is ConnectionUIState.Connected -> "connection_status_connected"
@@ -715,7 +725,7 @@ private fun ConnectedBackgroundContent(connectionUIState: ConnectionUIState) {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height((273 + 36).dp)
+                    .height(getStatusBarHeight() + 276.dp)
                     .background(
                         brush =
                             Brush.verticalGradient(
@@ -854,54 +864,61 @@ private fun IPContextMenuContent(
     onCloseClick: () -> Unit,
 ) {
     val density = LocalDensity.current
-    val menuWidth = 80.dp
+    val menuWidth = 112.dp
+    val menuHeight = 40.dp
 
-    Box(
-        modifier =
-            Modifier
-                .offset {
-                    // Guard against NaN values which can occur if layout hasn't been measured yet
-                    val x = ipContextMenuState.second.x
-                    val y = ipContextMenuState.second.y
-                    if (x.isNaN() || y.isNaN() || x.isInfinite() || y.isInfinite()) {
-                        IntOffset.Zero
-                    } else {
-                        IntOffset(
-                            (x - with(density) { menuWidth.toPx() }).toInt(),
-                            y.toInt(),
-                        )
-                    }
-                },
-    ) {
-        AnimatedVisibility(
-            visible = ipContextMenuState.first,
-            enter =
-                slideInHorizontally(
-                    initialOffsetX = { fullWidth -> fullWidth },
-                    animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
-                ) + fadeIn(animationSpec = tween(durationMillis = 300)),
-            exit =
-                slideOutHorizontally(
-                    targetOffsetX = { fullWidth -> fullWidth },
-                    animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
-                ) + fadeOut(animationSpec = tween(durationMillis = 400)),
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val menuWidthPx = with(density) { menuWidth.toPx() }
+        val menuHeightPx = with(density) { menuHeight.toPx() }
+        val contentWidthPx = with(density) { maxWidth.toPx() }
+        val contentHeightPx = with(density) { maxHeight.toPx() }
+
+        Box(
+            modifier = Modifier.offset {
+                val x = ipContextMenuState.second.x
+                val y = ipContextMenuState.second.y
+                if (!x.isFinite() || !y.isFinite()) {
+                    IntOffset.Zero
+                } else {
+                    val maxX = (contentWidthPx - menuWidthPx).coerceAtLeast(0f)
+                    val maxY = (contentHeightPx - menuHeightPx).coerceAtLeast(0f)
+                    IntOffset(
+                        (x - menuWidthPx).coerceIn(0f, maxX).roundToInt(),
+                        y.coerceIn(0f, maxY).roundToInt(),
+                    )
+                }
+            },
         ) {
-            Row {
-                IPMenuItem(
-                    icon = if (hasPinnedIp) R.drawable.ic_fav_selected else R.drawable.ic_fav,
-                    contentDescription = if (hasPinnedIp) "Marked as Favourite" else "Mark as Favourite",
-                    onClick = onPinIPClick,
-                )
-                IPMenuItem(
-                    icon = R.drawable.refresh,
-                    contentDescription = "Refresh IP",
-                    onClick = onRotateIpClick,
-                )
-                IPMenuItem(
-                    icon = R.drawable.ic_search_location_close,
-                    contentDescription = "Close Menu",
-                    onClick = onCloseClick,
-                )
+            AnimatedVisibility(
+                visible = ipContextMenuState.first,
+                enter =
+                    slideInHorizontally(
+                        initialOffsetX = { fullWidth -> fullWidth },
+                        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+                    ) + fadeIn(animationSpec = tween(durationMillis = 300)),
+                exit =
+                    slideOutHorizontally(
+                        targetOffsetX = { fullWidth -> fullWidth },
+                        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+                    ) + fadeOut(animationSpec = tween(durationMillis = 400)),
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IPMenuItem(
+                        icon = if (hasPinnedIp) R.drawable.ic_fav_selected else R.drawable.ic_fav,
+                        contentDescription = if (hasPinnedIp) "Marked as Favourite" else "Mark as Favourite",
+                        onClick = onPinIPClick,
+                    )
+                    IPMenuItem(
+                        icon = R.drawable.refresh,
+                        contentDescription = "Refresh IP",
+                        onClick = onRotateIpClick,
+                    )
+                    IPMenuItem(
+                        icon = R.drawable.ic_search_location_close,
+                        contentDescription = "Close Menu",
+                        onClick = onCloseClick,
+                    )
+                }
             }
         }
     }
@@ -915,20 +932,24 @@ private fun IPMenuItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
-    Image(
-        painter = painterResource(id = icon),
-        contentDescription = contentDescription,
-        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+    Box(
         modifier =
             Modifier
-                .size(24.dp)
+                .size(32.dp)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = ripple(bounded = false, color = MaterialTheme.colorScheme.onSurface),
                     onClick = onClick,
                 ),
-    )
-    Spacer(modifier = Modifier.width(16.dp))
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = contentDescription,
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+            modifier = Modifier.size(24.dp),
+        )
+    }
 }
 
 @Composable

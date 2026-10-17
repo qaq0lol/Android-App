@@ -46,7 +46,6 @@ import com.windscribe.mobile.ui.connection.LocationInfo
 import com.windscribe.mobile.ui.connection.LocationInfoState
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
-import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.vpn.autoconnection.ProtocolConnectionStatus
 import com.windscribe.vpn.autoconnection.ProtocolInformation
 
@@ -138,13 +137,13 @@ fun AppConnectButtonContent(
         contentAlignment = Alignment.Center,
     ) {
         // Keep the power button palette consistent in light and dark mode.
-        val actionColor = if (isConnected) AppColors.actionGreen else AppColors.mediumBlue
-        val powerIconColor = AppColors.white
-        val splitRoutingColor = AppColors.cyberBlue
+        val actionColor = if (isConnected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+        val powerIconColor = if (isConnected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onPrimary
+        val splitRoutingColor = MaterialTheme.colorScheme.tertiary
         val ringColor =
             when {
-                isConnected -> AppColors.mintGreen
-                isConnecting -> AppColors.mediumBlue
+                isConnected -> MaterialTheme.colorScheme.secondary
+                isConnecting -> MaterialTheme.colorScheme.primary
                 else -> MaterialTheme.colorScheme.outlineVariant
             }
         Canvas(

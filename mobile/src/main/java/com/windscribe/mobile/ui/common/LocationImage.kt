@@ -44,32 +44,26 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
 import com.windscribe.mobile.R
-import com.windscribe.mobile.ui.connection.BridgeApiViewModel
 import com.windscribe.mobile.ui.connection.ConnectionUIState
 import com.windscribe.mobile.ui.connection.ConnectionViewmodel
 import com.windscribe.mobile.ui.connection.LocationBackground
 import com.windscribe.mobile.ui.connection.LocationInfoState
 import com.windscribe.mobile.ui.helper.calculateImageDimensions
-import com.windscribe.mobile.ui.home.HomeViewmodel
-import com.windscribe.mobile.ui.home.NetworkInfoSheet
 import com.windscribe.mobile.ui.theme.AppColors
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun LocationImage(
-    connectionViewmodel: ConnectionViewmodel,
-    homeViewmodel: HomeViewmodel,
-    bridgeApiViewModel: BridgeApiViewModel,
-) {
+fun LocationImage(connectionViewmodel: ConnectionViewmodel) {
     val connectionState by connectionViewmodel.connectionUIState.collectAsState()
     val locationBackground =
         (connectionState.locationInfo as? LocationInfoState.Success)?.locationInfo?.locationBackground
     val resource = locationBackground?.resource ?: com.windscribe.vpn.R.drawable.dummy_flag
     val isSingleLineLocationName by connectionViewmodel.isSingleLineLocationName.collectAsState()
     val imageDimen = calculateImageDimensions(isSingleLineLocationName)
-    Box {
+    Box(modifier = Modifier.fillMaxSize()) {
         AnimatedContent(
             targetState = resource,
+            modifier = Modifier.fillMaxSize(),
             transitionSpec = {
                 slideInVertically(animationSpec = tween(durationMillis = 800)) { it } +
                     fadeIn(
@@ -225,7 +219,6 @@ fun LocationImage(
                 )
             }
         }
-        NetworkInfoSheet(connectionViewmodel, homeViewmodel, bridgeApiViewModel)
     }
 }
 
