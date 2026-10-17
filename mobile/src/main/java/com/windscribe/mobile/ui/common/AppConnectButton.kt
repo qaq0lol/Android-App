@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -145,7 +146,7 @@ fun AppConnectButtonContent(
                             .graphicsLayer { rotationZ = rotation },
                     // Rotate continuously
                     contentScale = ContentScale.FillHeight,
-                    colorFilter = ColorFilter.tint(color = AppColors.white.copy(alpha = 0.40f)),
+                    colorFilter = ColorFilter.tint(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)),
                 )
             }
 
