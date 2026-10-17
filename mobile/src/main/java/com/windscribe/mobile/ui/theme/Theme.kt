@@ -16,12 +16,16 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
+
+private val LocalMaterialYouDarkTheme = staticCompositionLocalOf { false }
 
 val DarkColorScheme =
     darkColorScheme(
@@ -71,12 +75,14 @@ fun AndroidTheme(
             else -> LightColorScheme
         }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography(),
-        shapes = MaterialYouShapes,
-        content = content,
-    )
+    CompositionLocalProvider(LocalMaterialYouDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography(),
+            shapes = MaterialYouShapes,
+            content = content,
+        )
+    }
 }
 
 val ColorScheme.backgroundColor: Color
@@ -107,13 +113,13 @@ val ColorScheme.expandedServerItemTextColor: Color
     @Composable get() = onSurfaceVariant
 
 val ColorScheme.isDark: Boolean
-    @Composable get() = isSystemInDarkTheme()
+    @Composable get() = LocalMaterialYouDarkTheme.current
 
 @Composable
 fun ColorScheme.colorForTheme(
     dark: Color,
     light: Color,
-): Color = if (isSystemInDarkTheme()) dark else light
+): Color = if (LocalMaterialYouDarkTheme.current) dark else light
 
 @Composable
 @MultiDevicePreview
