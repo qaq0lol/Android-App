@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.common
 
+import androidx.compose.material3.MaterialTheme
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
@@ -91,13 +92,13 @@ fun PuzzleCaptchaDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = AppColors.charcoalBlue,
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
             modifier =
                 Modifier
                     .padding(16.dp)
                     .semantics { paneTitle = title },
-            border = BorderStroke(1.dp, AppColors.white.copy(alpha = 0.05f)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)),
             tonalElevation = 8.dp,
         ) {
             PuzzleCaptchaView(captchaRequest, error, onSolutionSubmit, onCancel)
@@ -226,7 +227,7 @@ fun PuzzleCaptchaView(
         return true
     }
 
-    val shape = RoundedCornerShape(8.dp)
+    val shape = MaterialTheme.shapes.small
     val puzzleDescription = stringResource(com.windscribe.vpn.R.string.captcha_puzzle_background)
     val pieceDescription = stringResource(com.windscribe.vpn.R.string.captcha_puzzle_piece)
     val moveLeftLabel = stringResource(com.windscribe.vpn.R.string.captcha_move_piece_left)
@@ -247,7 +248,7 @@ fun PuzzleCaptchaView(
             stringResource(com.windscribe.vpn.R.string.slide_puzzle_piece_into_place),
             style = font12.copy(fontWeight = FontWeight.Normal),
             textAlign = TextAlign.Center,
-            color = AppColors.white.copy(alpha = 0.50f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
             modifier = Modifier.width(150.dp),
         )
         if (error != null) {
@@ -267,7 +268,7 @@ fun PuzzleCaptchaView(
                     Modifier
                         .border(
                             width = 1.dp,
-                            color = AppColors.white.copy(alpha = 0.05f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
                             shape = shape,
                         ).clip(shape)
                         .background(Color.Transparent)
