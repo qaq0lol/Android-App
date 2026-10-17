@@ -4,7 +4,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
 import com.windscribe.mobile.ui.theme.font14
@@ -50,9 +49,9 @@ fun SwitchItemView(
         modifier =
             Modifier
                 .background(
-                    MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                     shape = shape,
-                ).padding(14.dp)
+                ).padding(16.dp)
                 .fillMaxWidth(),
     ) {
         Row(
@@ -77,25 +76,11 @@ fun SwitchItemView(
                 modifier = Modifier.weight(1f),
             )
             Spacer(modifier = Modifier.width(8.dp))
-            if (enabled) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_toggle_button_on),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .testTag("toggle_on")
-                            .clickable { onSelect(!enabled) },
-                )
-            } else {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_toggle_button_off),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .testTag("toggle_off")
-                            .clickable { onSelect(!enabled) },
-                )
-            }
+            Switch(
+                checked = enabled,
+                onCheckedChange = onSelect,
+                modifier = Modifier.testTag(if (enabled) "toggle_on" else "toggle_off"),
+            )
         }
         Spacer(modifier = Modifier.height(13.5.dp))
         if (explainer != null) {
