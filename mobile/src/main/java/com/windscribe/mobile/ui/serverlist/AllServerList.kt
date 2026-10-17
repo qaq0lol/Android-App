@@ -180,14 +180,14 @@ fun UpgradeBar(viewModel: HomeViewmodel) {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .background(color = AppColors.midnightNavy, shape = RoundedCornerShape(8.dp))
+                        .background(color = MaterialTheme.colorScheme.background, shape = MaterialTheme.shapes.small)
                         .clickable {
                             if (hapticFeedbackEnabled) haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                             navController.navigate(Screen.Upgrade.route)
                         }.border(
                             width = 1.dp,
-                            color = AppColors.white.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                            shape = MaterialTheme.shapes.small,
                         ).padding(12.dp),
             ) {
                 Row {
@@ -214,7 +214,7 @@ fun UpgradeBar(viewModel: HomeViewmodel) {
                             )
 
                             drawArc(
-                                color = AppColors.white.copy(alpha = 0.20f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f),
                                 startAngle = 160f + angle,
                                 sweepAngle = 360f - angle,
                                 useCenter = false,
@@ -237,13 +237,13 @@ fun UpgradeBar(viewModel: HomeViewmodel) {
                         Text(
                             stringResource(com.windscribe.vpn.R.string.unblock_full_access),
                             style = font16.copy(fontSize = 15.sp),
-                            color = AppColors.white,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
                             stringResource(com.windscribe.vpn.R.string.go_pro_for_unlimited_everything),
                             style = font12,
-                            color = AppColors.cyberBlue.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f),
                         )
                     }
                     Spacer(modifier = Modifier.weight(1.0f))
@@ -611,7 +611,7 @@ private fun ProgressIndicator() {
                 Modifier
                     .size(24.dp)
                     .align(Alignment.Center),
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
