@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.connection
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,7 +69,7 @@ fun DebugLogSentContent(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(color = AppColors.deepBlue)
+                .background(color = MaterialTheme.colorScheme.background)
                 .clickable(enabled = false) {},
     ) {
         Column(
@@ -96,7 +97,7 @@ fun DebugLogSentContent(
                             .your_debug_log_has_been_received_please_contact_support_if_you_want_assistance_with_this_issue,
                     ),
                 style = font16,
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 24.dp),
             )
@@ -108,7 +109,7 @@ fun DebugLogSentContent(
                 Text(
                     stringResource(com.windscribe.vpn.R.string.cancel),
                     style = font16,
-                    color = AppColors.white,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
