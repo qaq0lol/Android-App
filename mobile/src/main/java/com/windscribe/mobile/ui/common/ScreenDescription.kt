@@ -25,7 +25,7 @@ fun ScreenDescription(text: String) {
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ).padding(top = 14.dp, bottom = 14.dp, start = 16.dp, end = 16.dp),
     ) {
         Text(text, style = font12, textAlign = TextAlign.Start, color = MaterialTheme.colorScheme.preferencesSubtitleColor)
