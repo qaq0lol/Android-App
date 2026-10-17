@@ -311,14 +311,14 @@ private fun SignupCompactLayout(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back_arrow),
                             contentDescription = stringResource(com.windscribe.vpn.R.string.back),
-                            tint = AppColors.white,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(16.dp),
                         )
                     }
                     Text(
                         text = stringResource(com.windscribe.vpn.R.string.text_sign_up),
                         style = font16.copy(fontWeight = FontWeight.SemiBold),
-                        color = AppColors.white,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -401,13 +401,13 @@ private fun SignupCompactLayout(
                             fontWeight = FontWeight.Medium,
                             lineHeight = font16.fontSize * 1.5f,
                         ),
-                    color = AppColors.grayText,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.size(2.dp))
                 Icon(
                     painter = painterResource(id = R.drawable.ic_chevron_right_small),
                     contentDescription = null,
-                    tint = AppColors.grayText,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -465,14 +465,14 @@ private fun SignupErrorText(errorType: AuthError) {
 private fun EmailInfoDialog(onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.preferencesBackgroundColor,
             tonalElevation = 0.dp,
             modifier =
                 Modifier.border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ),
         ) {
             Column(
