@@ -123,7 +123,7 @@ fun OverlayDialogContent(
                 Image(
                     painter = painterResource(dialogIcon),
                     contentDescription = "Attention",
-                    colorFilter = ColorFilter.tint(theme(R.attr.wdPrimaryColor)),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primaryTextColor),
                     contentScale = ContentScale.Fit,
                     modifier =
                         Modifier
@@ -153,7 +153,7 @@ fun OverlayDialogContent(
                 Text(
                     text = dialogData?.description ?: "",
                     style = font14,
-                    color = theme(R.attr.wdPrimaryColor),
+                    color = MaterialTheme.colorScheme.primaryTextColor,
                     textAlign = if (isIconAtBottom) TextAlign.Start else TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -166,7 +166,7 @@ fun OverlayDialogContent(
                 Image(
                     painter = painterResource(dialogIcon),
                     contentDescription = "Attention",
-                    colorFilter = ColorFilter.tint(theme(R.attr.wdPrimaryColor)),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primaryTextColor),
                     contentScale = ContentScale.Fit,
                     modifier =
                         Modifier
@@ -191,7 +191,7 @@ fun OverlayDialogContent(
                 Text(
                     text = stringResource(com.windscribe.vpn.R.string.cancel),
                     style = font16,
-                    color = theme(R.attr.wdPrimaryColor),
+                    color = MaterialTheme.colorScheme.primaryTextColor,
                 )
             }
 
