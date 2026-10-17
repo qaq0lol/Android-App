@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.connection
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -82,7 +83,7 @@ fun ManualModeFailedContent(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(color = AppColors.deepBlue)
+                .background(color = MaterialTheme.colorScheme.background)
                 .clickable(enabled = false) {},
     ) {
         Column(
@@ -102,18 +103,18 @@ fun ManualModeFailedContent(
                     Modifier
                         .size(100.dp)
                         .padding(top = 8.dp),
-                colorFilter = ColorFilter.tint(AppColors.white),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
             )
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.manual_connection_mode_failed_title),
                 style = font24,
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.manual_connection_mode_failed_description),
                 style = font16,
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
@@ -132,7 +133,7 @@ fun ManualModeFailedContent(
                 Text(
                     stringResource(com.windscribe.vpn.R.string.cancel),
                     style = font16,
-                    color = AppColors.white,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
