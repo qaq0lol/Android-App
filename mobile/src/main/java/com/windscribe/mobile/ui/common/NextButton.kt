@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.common
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,13 +33,13 @@ fun NextButton(
                 .height(48.dp),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = if (enabled) AppColors.neonGreen else AppColors.white,
-                contentColor = if (enabled) AppColors.deepBlue else AppColors.green,
-                disabledContainerColor = AppColors.white,
-                disabledContentColor = AppColors.green,
+                containerColor = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
         Text(
             text = text,
