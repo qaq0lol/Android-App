@@ -111,13 +111,13 @@ fun AuthTextField(
                 },
                 colors =
                     TextFieldDefaults.colors(
-                        focusedTextColor = if (isError) AppColors.red else AppColors.white,
-                        unfocusedTextColor = if (isError) AppColors.red else AppColors.white,
-                        disabledTextColor = if (isError) AppColors.red else AppColors.white,
+                        focusedTextColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                        disabledTextColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                        focusedContainerColor = AppColors.white.copy(0.05f),
-                        disabledContainerColor = AppColors.white.copy(0.05f),
-                        errorContainerColor = AppColors.white.copy(0.05f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                        errorContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         errorIndicatorColor = Color.Transparent,
@@ -174,7 +174,7 @@ fun AuthTextField(
                                 Modifier
                             },
                         ),
-                textStyle = font16.copy(color = if (isError) AppColors.red else AppColors.white, textAlign = TextAlign.Start),
+                textStyle = font16.copy(color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Start),
             )
         }
     }
