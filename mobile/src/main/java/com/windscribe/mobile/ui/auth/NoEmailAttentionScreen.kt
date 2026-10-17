@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.auth
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -58,7 +59,7 @@ fun NoEmailAttentionScreen(
                         },
                     ),
                 style = font16,
-                color = AppColors.white.copy(alpha = 0.50f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
                 modifier = Modifier.padding(bottom = 24.dp),
             )
             Spacer(modifier = Modifier.weight(1f))
