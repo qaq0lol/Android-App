@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -34,7 +35,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font16
 
 /**
@@ -70,22 +70,22 @@ fun StyledTextField(
     // Define colors based on state
     val borderColor =
         when {
-            isError -> Color(0xFFFF7F7F)
+            isError -> MaterialTheme.colorScheme.error
 
             // Red border for error state
-            isFocused -> AppColors.white
+            isFocused -> MaterialTheme.colorScheme.primary
 
             // White border for active/focused state
-            else -> AppColors.white.copy(alpha = 0.1f) // Gray border for default state
+            else -> MaterialTheme.colorScheme.outlineVariant // Gray border for default state
         }
 
-    val textColor = if (isError) Color(0xFFFF7F7F) else AppColors.white
-    val placeholderColor = if (isError) Color(0xFFFF7F7F) else Color(0xFF898F9D)
+    val textColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    val placeholderColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
 
     val customTextSelectionColors =
         TextSelectionColors(
-            handleColor = AppColors.white,
-            backgroundColor = AppColors.white.copy(alpha = 0.3f),
+            handleColor = MaterialTheme.colorScheme.primary,
+            backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
         )
 
     CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
@@ -106,14 +106,14 @@ fun StyledTextField(
                     imeAction = imeAction,
                     keyboardType = keyboardType,
                 ),
-            cursorBrush = SolidColor(AppColors.white),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             interactionSource = interactionSource,
             modifier =
                 modifier
                     .fillMaxWidth()
                     .background(
-                        color = AppColors.white.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(9.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                        shape = MaterialTheme.shapes.medium,
                     ).border(
                         width = 1.dp,
                         color = borderColor,
@@ -150,14 +150,14 @@ fun StyledTextFieldPreview() {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(AppColors.deepBlue)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp),
     ) {
         // Default state
         Text(
             text = "Default State",
             style = font16,
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(vertical = 8.dp),
         )
         StyledTextField(
