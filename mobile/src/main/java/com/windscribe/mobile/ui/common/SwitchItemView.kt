@@ -15,11 +15,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -43,7 +45,7 @@ fun SwitchItemView(
     @StringRes description: Int,
     enabled: Boolean,
     explainer: String? = null,
-    shape: RoundedCornerShape = RoundedCornerShape(12.dp),
+    shape: Shape = MaterialTheme.shapes.large,
     onSelect: (Boolean) -> Unit,
 ) {
     Column(
@@ -81,6 +83,15 @@ fun SwitchItemView(
                 checked = enabled,
                 onCheckedChange = onSelect,
                 modifier = Modifier.testTag(if (enabled) "toggle_on" else "toggle_off"),
+                colors =
+                    SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                        checkedBorderColor = MaterialTheme.colorScheme.primary,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
             )
         }
         Spacer(modifier = Modifier.height(13.5.dp))
