@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -323,7 +324,12 @@ fun HandleToast(connectionViewmodel: ConnectionViewmodel) {
 
 @Composable
 private fun Background(content: @Composable () -> Unit) {
-    AppWallpaperBackground(modifier = Modifier.fillMaxSize().navigationBarsPadding()) { content() }
+    AppWallpaperBackground(modifier = Modifier.fillMaxSize()) {
+        // Draw the wallpaper edge-to-edge; only the interactive content observes the nav inset.
+        Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
+            content()
+        }
+    }
 }
 
 @Composable
@@ -339,7 +345,7 @@ private fun CompactUI(
     Background {
         Box(modifier = Modifier.fillMaxSize()) {
             ConnectedBackground(connectionViewmodel)
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
                 Box(modifier = Modifier.fillMaxWidth().height(276.dp)) {
                     LocationImage(connectionViewmodel, homeViewmodel, bridgeApiViewModel)
                     Box(
