@@ -363,6 +363,7 @@ private fun CompactUI(
                         Header(connectionViewmodel, homeViewmodel)
                         ConnectionStatusSheet(connectionViewmodel)
                         Spacer(modifier = Modifier.weight(1f))
+                        NetworkInfoSheet(connectionViewmodel, homeViewmodel, bridgeApiViewModel)
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 18.dp, bottom = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -540,7 +541,7 @@ private fun LocationNameContent(
 
 @SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
-internal fun BoxScope.NetworkInfoSheet(
+internal fun NetworkInfoSheet(
     connectionViewmodel: ConnectionViewmodel,
     homeViewmodel: HomeViewmodel,
     bridgeApiViewModel: BridgeApiViewModel,
@@ -568,9 +569,8 @@ internal fun BoxScope.NetworkInfoSheet(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
             Modifier
-                .align(Alignment.BottomCenter)
-                .offset(y = (-66).dp)
-                .padding(end = 8.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
     ) {
         NetworkNameSheet(connectionViewmodel, homeViewmodel)
         Row(
@@ -640,7 +640,7 @@ internal fun BoxScope.NetworkInfoSheet(
                             .alpha(if (isBridgeApiReady) 1.0f else 0.3f)
                             .size(24.dp)
                             .onGloballyPositioned { layoutCoordinates ->
-                                bridgeApiViewModel.onIpContextMenuPosition(layoutCoordinates.boundsInRoot().topLeft)
+                                bridgeApiViewModel.onIpContextMenuPosition(layoutCoordinates.boundsInWindow().topLeft)
                             }.hapticClickable {
                                 if (isBridgeApiReady) {
                                     bridgeApiViewModel.setContextMenuState(true)
