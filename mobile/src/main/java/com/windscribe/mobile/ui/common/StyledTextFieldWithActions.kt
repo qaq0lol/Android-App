@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.common
 
+import androidx.compose.material3.MaterialTheme
 import android.R.attr.end
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -94,13 +95,13 @@ fun StyledTextFieldWithActions(
             isError -> Color(0xFFFF7F7F)
 
             // Red border for error state
-            isFocused -> AppColors.white
+            isFocused -> MaterialTheme.colorScheme.onSurface
 
             // White border for active/focused state
-            else -> AppColors.white.copy(alpha = 0.1f) // Gray border for default state
+            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f) // Gray border for default state
         }
 
-    val textColor = if (isError) Color(0xFFFF7F7F) else AppColors.white
+    val textColor = if (isError) Color(0xFFFF7F7F) else MaterialTheme.colorScheme.onSurface
     val placeholderColor = if (isError) Color(0xFFFF7F7F) else Color(0xFF898F9D)
 
     // Calculate number of buttons to determine end padding
@@ -120,7 +121,7 @@ fun StyledTextFieldWithActions(
                 )
             },
             singleLine = true,
-            shape = RoundedCornerShape(9.dp),
+            shape = MaterialTheme.shapes.medium,
             keyboardOptions =
                 KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
@@ -156,7 +157,7 @@ fun StyledTextFieldWithActions(
                                             },
                                     ),
                                 contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                tint = AppColors.white.copy(alpha = 0.7f),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 modifier = Modifier.size(24.dp),
                             )
                         }
@@ -174,7 +175,7 @@ fun StyledTextFieldWithActions(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_refresh),
                                 contentDescription = "Refresh",
-                                tint = AppColors.white.copy(alpha = 0.7f),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 modifier = Modifier.size(24.dp),
                             )
                         }
@@ -192,7 +193,7 @@ fun StyledTextFieldWithActions(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_info_circle),
                                 contentDescription = "Information",
-                                tint = AppColors.white.copy(alpha = 0.7f),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 modifier = Modifier.size(24.dp),
                             )
                         }
@@ -205,31 +206,31 @@ fun StyledTextFieldWithActions(
                     unfocusedTextColor = textColor,
                     disabledTextColor = textColor,
                     errorTextColor = textColor,
-                    unfocusedContainerColor = AppColors.white.copy(alpha = 0.05f),
-                    focusedContainerColor = AppColors.white.copy(alpha = 0.05f),
-                    disabledContainerColor = AppColors.white.copy(alpha = 0.05f),
-                    errorContainerColor = AppColors.white.copy(alpha = 0.05f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                    focusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                    disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                    errorContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     errorIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,
-                    cursorColor = AppColors.white,
+                    cursorColor = MaterialTheme.colorScheme.onSurface,
                     selectionColors =
                         androidx.compose.foundation.text.selection.TextSelectionColors(
-                            handleColor = AppColors.white,
-                            backgroundColor = AppColors.white.copy(alpha = 0.3f),
+                            handleColor = MaterialTheme.colorScheme.onSurface,
+                            backgroundColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                         ),
                 ),
             modifier =
                 modifier
                     .fillMaxWidth()
                     .background(
-                        color = AppColors.white.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(9.dp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                        shape = MaterialTheme.shapes.medium,
                     ).border(
                         width = 1.dp,
                         color = borderColor,
-                        shape = RoundedCornerShape(9.dp),
+                        shape = MaterialTheme.shapes.medium,
                     ),
             textStyle =
                 font16.copy(
@@ -257,14 +258,14 @@ fun StyledTextFieldWithActionsPreview() {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(AppColors.deepBlue)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp),
     ) {
         // Email field with info button (like Figma design)
         Text(
             text = "Email with info button",
             style = font16,
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(vertical = 8.dp),
         )
         StyledTextFieldWithActions(
@@ -285,7 +286,7 @@ fun StyledTextFieldWithActionsPreview() {
         Text(
             text = "Password with visibility toggle",
             style = font16,
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(vertical = 8.dp),
         )
         StyledTextFieldWithActions(
@@ -304,7 +305,7 @@ fun StyledTextFieldWithActionsPreview() {
         Text(
             text = "Password with visibility + refresh",
             style = font16,
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(vertical = 8.dp),
         )
         StyledTextFieldWithActions(
@@ -328,7 +329,7 @@ fun StyledTextFieldWithActionsPreview() {
         Text(
             text = "Error state with actions",
             style = font16,
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(vertical = 8.dp),
         )
         StyledTextFieldWithActions(
