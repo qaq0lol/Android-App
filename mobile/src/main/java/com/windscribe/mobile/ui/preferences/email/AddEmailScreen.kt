@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.preferences.email
 
+import androidx.compose.material3.MaterialTheme
 import PreferencesNavBar
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -28,7 +29,6 @@ import com.windscribe.mobile.ui.connection.ToastMessage
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
 import com.windscribe.mobile.ui.nav.LocalNavController
-import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font12
 
 @Composable
@@ -97,7 +97,7 @@ fun AddEmailContent(
                             .fillMaxWidth()
                             .padding(start = 16.dp),
                     style = font12.copy(textAlign = TextAlign.Start),
-                    color = AppColors.red,
+                    color = MaterialTheme.colorScheme.error,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )

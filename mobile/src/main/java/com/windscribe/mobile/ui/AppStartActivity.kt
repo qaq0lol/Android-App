@@ -73,9 +73,9 @@ class AppStartActivity : AppCompatActivity() {
         }
         val navigationBarStyle =
             if (isDark) {
-                SystemBarStyle.dark("#0B0F16".toColorInt())
+                SystemBarStyle.dark("#141218".toColorInt())
             } else {
-                SystemBarStyle.light("#FFFFFF".toColorInt(), "#0B0F16".toColorInt())
+                SystemBarStyle.light("#F7F2FA".toColorInt(), "#141218".toColorInt())
             }
         enableEdgeToEdge(navigationBarStyle = navigationBarStyle)
 

@@ -1,5 +1,8 @@
 package com.windscribe.mobile.ui.home
 
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.Icons
 import NetworkNameSheet
 import android.annotation.SuppressLint
 import android.os.Build
@@ -783,7 +786,7 @@ private fun HeaderContent(
                 contentAlignment = Alignment.Center,
             ) {
                 androidx.compose.material3.Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Filled.Menu,
+                    imageVector = Icons.Filled.Menu,
                     contentDescription = stringResource(com.windscribe.vpn.R.string.preferences),
                     tint = headerContentColor,
                     modifier = Modifier.size(24.dp),
@@ -833,7 +836,7 @@ private fun HeaderContent(
                     modifier = Modifier.testTag("newsfeed_open"),
                 ) {
                     androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Filled.Notifications,
+                        imageVector = Icons.Filled.Notifications,
                         contentDescription = stringResource(com.windscribe.vpn.R.string.news_feed),
                         tint = headerContentColor,
                     )
