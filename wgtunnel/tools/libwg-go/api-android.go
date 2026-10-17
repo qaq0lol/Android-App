@@ -288,7 +288,7 @@ func wgStartDoubleHop(handleID int32, innerSettings string) int32 {
 	}
 
 	tunnelHandlesMutex.Lock()
-	current, stillExists := tunnelHandles[handleID]
+	current, stillExists = tunnelHandles[handleID]
 	if !stillExists || !current.doubleHop || current.outerDevice != handle.outerDevice {
 		tunnelHandlesMutex.Unlock()
 		innerDevice.Close()
