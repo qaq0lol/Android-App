@@ -51,6 +51,8 @@ sealed class Screen(
 
     object Connection : Screen("connection")
 
+    object DoubleHop : Screen("double_hop")
+
     object AntiCensorship : Screen("anti_censorship")
 
     object Robert : Screen("robert")
