@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.common
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Text
@@ -21,7 +22,7 @@ fun TextButton(
         colors =
             ButtonColors(
                 containerColor = Color.Transparent,
-                contentColor = AppColors.white.copy(alpha = 0.50f),
+                contentColor = MaterialTheme.colorScheme.primary,
                 disabledContainerColor = Color.Transparent,
                 disabledContentColor = Color.Transparent,
             ),
