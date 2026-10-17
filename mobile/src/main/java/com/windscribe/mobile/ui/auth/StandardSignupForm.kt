@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.auth
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -180,7 +181,7 @@ fun StandardSignupForm(
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.add_email),
                 style = font16.copy(fontWeight = FontWeight.Medium),
-                color = if (isEmailError) AppColors.red else AppColors.white,
+                color = if (isEmailError) AppColors.red else MaterialTheme.colorScheme.onSurface,
             )
             OptionalBadge()
         }
@@ -283,7 +284,7 @@ fun StandardSignupForm(
                             lineHeight = font12.fontSize * 1.4f,
                         ),
                     textAlign = TextAlign.Start,
-                    color = AppColors.grayText,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -318,7 +319,7 @@ private fun ReferralBenefitItem(text: String) {
                     lineHeight = font12.fontSize * 1.4f,
                 ),
             textAlign = TextAlign.Start,
-            color = AppColors.grayText,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
     }
@@ -332,7 +333,7 @@ private fun FieldLabel(
     Text(
         text = text,
         style = font16.copy(fontWeight = FontWeight.Medium),
-        color = if (isError) AppColors.red else AppColors.white,
+        color = if (isError) AppColors.red else MaterialTheme.colorScheme.onSurface,
         modifier = Modifier,
     )
 }
@@ -343,14 +344,14 @@ private fun OptionalBadge() {
         modifier =
             Modifier
                 .background(
-                    color = AppColors.white.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(100.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ).padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
         Text(
             text = stringResource(com.windscribe.vpn.R.string.optional),
             style = font12.copy(fontWeight = FontWeight.Medium),
-            color = AppColors.white.copy(alpha = 0.6f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         )
     }
 }
@@ -372,11 +373,11 @@ private fun ConfirmPasswordField(
     val borderColor =
         when {
             isError -> Color(0xFFFF7F7F)
-            isFocused -> AppColors.white
-            else -> AppColors.white.copy(alpha = 0.1f)
+            isFocused -> MaterialTheme.colorScheme.onSurface
+            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
         }
 
-    val textColor = if (isError) Color(0xFFFF7F7F) else AppColors.white
+    val textColor = if (isError) Color(0xFFFF7F7F) else MaterialTheme.colorScheme.onSurface
     val placeholderColor = if (isError) Color(0xFFFF7F7F) else Color(0xFF898F9D)
 
     Box {
@@ -412,7 +413,7 @@ private fun ConfirmPasswordField(
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(9.dp),
+            shape = MaterialTheme.shapes.medium,
             keyboardOptions =
                 KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
@@ -432,31 +433,31 @@ private fun ConfirmPasswordField(
                     unfocusedTextColor = textColor,
                     disabledTextColor = textColor,
                     errorTextColor = textColor,
-                    unfocusedContainerColor = AppColors.white.copy(alpha = 0.05f),
-                    focusedContainerColor = AppColors.white.copy(alpha = 0.05f),
-                    disabledContainerColor = AppColors.white.copy(alpha = 0.05f),
-                    errorContainerColor = AppColors.white.copy(alpha = 0.05f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                    focusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                    disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                    errorContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     errorIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,
-                    cursorColor = AppColors.white,
+                    cursorColor = MaterialTheme.colorScheme.onSurface,
                     selectionColors =
                         TextSelectionColors(
-                            handleColor = AppColors.white,
-                            backgroundColor = AppColors.white.copy(alpha = 0.3f),
+                            handleColor = MaterialTheme.colorScheme.onSurface,
+                            backgroundColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                         ),
                 ),
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .background(
-                        color = AppColors.white.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(9.dp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                        shape = MaterialTheme.shapes.medium,
                     ).border(
                         width = 1.dp,
                         color = borderColor,
-                        shape = RoundedCornerShape(9.dp),
+                        shape = MaterialTheme.shapes.medium,
                     ),
             textStyle =
                 font16.copy(
@@ -493,7 +494,7 @@ private fun ExpandableSection(
             Text(
                 text = text,
                 style = font16.copy(fontWeight = FontWeight.Medium),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -518,7 +519,7 @@ private fun ExpandableSection(
                             Modifier
                                 .size(24.dp)
                                 .rotate(rotation),
-                        colorFilter = ColorFilter.tint(AppColors.white.copy(alpha = 0.50f)),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f)),
                     )
                 }
             }
