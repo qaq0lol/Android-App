@@ -37,13 +37,13 @@ class DoubleHopViewModel
                     DoubleHopUiState(
                         endpoint = endpoint,
                         enabled = profileStore.isEnabled(),
-                        notice = "WireGuard first-hop profile imported and encrypted. Double-hop is enabled for the next connection.",
+                        notice = "第一跳配置已加密保存，双重中转已启用。",
                     )
             } catch (e: Exception) {
                 _state.value =
                     _state.value.copy(
                         notice = null,
-                        error = e.message ?: "Could not import this WireGuard profile.",
+                        error = e.message ?: "无法导入此 WireGuard 配置。",
                     )
             }
         }
@@ -53,13 +53,13 @@ class DoubleHopViewModel
                 profileStore.clear()
                 _state.value =
                     DoubleHopUiState(
-                        notice = "Saved first-hop profile removed.",
+                        notice = "已删除第一跳配置。",
                     )
             } catch (e: Exception) {
                 _state.value =
                     _state.value.copy(
                         notice = null,
-                        error = e.message ?: "Could not remove the saved profile.",
+                        error = e.message ?: "无法删除已保存的配置。",
                     )
             }
         }
@@ -69,7 +69,7 @@ class DoubleHopViewModel
                 profileStore.setEnabled(enabled)
                 _state.value = _state.value.copy(enabled = profileStore.isEnabled(), notice = null, error = null)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(notice = null, error = e.message ?: "Could not update double-hop.")
+                _state.value = _state.value.copy(notice = null, error = e.message ?: "无法更新双重中转设置。")
             }
         }
 
@@ -87,7 +87,7 @@ class DoubleHopViewModel
             } catch (e: Exception) {
                 _state.value =
                     DoubleHopUiState(
-                        error = e.message ?: "Encrypted storage is unavailable.",
+                        error = e.message ?: "加密存储不可用。",
                     )
             }
         }
