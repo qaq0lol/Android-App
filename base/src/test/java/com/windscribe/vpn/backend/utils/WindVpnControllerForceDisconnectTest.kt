@@ -16,6 +16,7 @@ import com.windscribe.vpn.localdatabase.LocalDbInterface
 import com.windscribe.vpn.repository.AdvanceParameterRepository
 import com.windscribe.vpn.repository.EmergencyConnectRepository
 import com.windscribe.vpn.repository.LocationRepository
+import com.windscribe.vpn.repository.multihop.FirstHopProfileStore
 import com.windscribe.vpn.repository.WgConfigRepository
 import com.windscribe.vpn.serverlist.entity.Datacenter
 import com.windscribe.vpn.serverlist.entity.DatacenterAndLocation
@@ -53,6 +54,7 @@ class WindVpnControllerForceDisconnectTest {
     private lateinit var localDb: LocalDbInterface
     private lateinit var deviceStateManager: DeviceStateManager
     private lateinit var excludedIpHolder: ExcludedIpHolder
+    private lateinit var firstHopProfileStore: FirstHopProfileStore
 
     @Before
     fun setUp() {
@@ -72,6 +74,7 @@ class WindVpnControllerForceDisconnectTest {
         localDb = mockk(relaxed = true)
         deviceStateManager = mockk(relaxed = true)
         excludedIpHolder = mockk(relaxed = true)
+        firstHopProfileStore = mockk(relaxed = true)
 
         Windscribe.appContext = mockk(relaxed = true)
         mockkObject(WindUtilities)
@@ -116,6 +119,7 @@ class WindVpnControllerForceDisconnectTest {
             localDb,
             deviceStateManager,
             excludedIpHolder,
+            firstHopProfileStore,
         ) {
             override suspend fun launchVPNService(
                 protocolInformation: ProtocolInformation,
