@@ -155,44 +155,45 @@ private fun MainMenuItem(
 ) {
     val navController = LocalNavController.current
     val hapticFeedback = LocalHapticFeedback.current
-    Row(
-        Modifier
-            .testTag("menu_item_$nextRoute")
-            .fillMaxWidth()
-            .height(44.dp)
-            .background(
-                color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                shape = RoundedCornerShape(size = 12.dp),
-            ).clickable {
-                if (hapticFeedbackEnabled) {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
-                }
-                navController.navigate(nextRoute)
-            }.padding(start = 14.dp, end = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    androidx.compose.material3.Surface(
+        modifier =
+            Modifier
+                .testTag("menu_item_$nextRoute")
+                .fillMaxWidth()
+                .height(48.dp)
+                .clickable {
+                    if (hapticFeedbackEnabled) {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    }
+                    navController.navigate(nextRoute)
+                },
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
-        Icon(
-            modifier =
-                Modifier
-                    .size(24.dp)
-                    .padding(4.dp),
-            painter = painterResource(icon),
-            contentDescription = "",
-            tint = MaterialTheme.colorScheme.primaryTextColor,
-        )
-        Text(
-            stringResource(title),
-            modifier = Modifier.padding(start = 16.dp),
-            style = font16,
-            color = MaterialTheme.colorScheme.primaryTextColor,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier.size(16.dp),
-            painter = painterResource(com.windscribe.mobile.R.drawable.arrow_right),
-            contentDescription = "",
-            tint = MaterialTheme.colorScheme.primaryTextColor,
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                modifier = Modifier.size(20.dp),
+                painter = painterResource(icon),
+                contentDescription = "",
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                stringResource(title),
+                modifier = Modifier.padding(start = 16.dp),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                modifier = Modifier.size(16.dp),
+                painter = painterResource(com.windscribe.mobile.R.drawable.arrow_right),
+                contentDescription = "",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -203,38 +204,41 @@ private fun LogoutItem(
     onLogout: () -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .testTag("logout_button")
-            .background(
-                color = AppColors.yellow.copy(0.05f),
-                shape = RoundedCornerShape(size = 12.dp),
-            ).clickable(enabled = !showProgress) {
-                if (hapticFeedbackEnabled) {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
-                }
-                onLogout()
-            }.padding(start = 14.dp, end = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+    val contentColor = MaterialTheme.colorScheme.error
+    androidx.compose.material3.Surface(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .testTag("logout_button")
+                .clickable(enabled = !showProgress) {
+                    if (hapticFeedbackEnabled) {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    }
+                    onLogout()
+                },
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
     ) {
-        val alpha = if (showProgress) 0.5f else 1f
-        Icon(
-            modifier =
-                Modifier
-                    .size(24.dp),
-            painter = painterResource(com.windscribe.mobile.R.drawable.ic_sign_out),
-            contentDescription = "",
-            tint = AppColors.yellow.copy(alpha = alpha),
-        )
-        Text(
-            stringResource(R.string.logout),
-            modifier = Modifier.padding(start = 16.dp),
-            style = font16.copy(fontWeight = FontWeight.Medium),
-            color = AppColors.yellow.copy(alpha = alpha),
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            val alpha = if (showProgress) 0.5f else 1f
+            Icon(
+                modifier = Modifier.size(20.dp),
+                painter = painterResource(com.windscribe.mobile.R.drawable.ic_sign_out),
+                contentDescription = "",
+                tint = contentColor.copy(alpha = alpha),
+            )
+            Text(
+                stringResource(R.string.logout),
+                modifier = Modifier.padding(start = 12.dp),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = contentColor.copy(alpha = alpha),
+            )
+        }
     }
 }
 
