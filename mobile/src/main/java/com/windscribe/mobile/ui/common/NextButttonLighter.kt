@@ -63,10 +63,10 @@ fun NextButtonLighterNoPadding(
                 .height(48.dp),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
-                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
             ),
         interactionSource = interactionSource,
         shape = MaterialTheme.shapes.large,
