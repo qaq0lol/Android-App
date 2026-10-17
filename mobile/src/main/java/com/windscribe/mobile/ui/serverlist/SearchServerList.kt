@@ -363,7 +363,7 @@ private fun SearchListNavigation(
             Text(
                 stringResource(com.windscribe.vpn.R.string.clear),
                 style = font16,
-                color = AppColors.cyberBlue.copy(0.7f),
+                color = MaterialTheme.colorScheme.tertiary.copy(0.7f),
                 modifier =
                     Modifier
                         .padding(8.dp)
