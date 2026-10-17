@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.upgrade
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -114,7 +115,7 @@ fun UpgradeContent(
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.subscriptions_info),
                 style = font12.copy(fontSize = 10.sp, textAlign = TextAlign.Start),
-                color = AppColors.white.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -172,7 +173,7 @@ private fun HeroSection(
                     Text(
                         text = stringResource(com.windscribe.vpn.R.string.restore),
                         style = font14.copy(fontWeight = FontWeight.SemiBold),
-                        color = AppColors.white.copy(alpha = 0.8f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                         modifier =
                             Modifier
                                 .hapticClickable { actions.onRestore() }
@@ -239,13 +240,13 @@ private fun FeatureRow(
             Text(
                 text = stringResource(titleRes),
                 style = font14.copy(textAlign = TextAlign.Start),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(subtitleRes),
                 style = font12.copy(textAlign = TextAlign.Start),
-                color = AppColors.white.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             )
         }
         Image(
@@ -324,7 +325,7 @@ private fun PlanTileView(
                 Text(
                     text = stringResource(titleRes),
                     style = font14.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
-                    color = AppColors.white,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 tile.discountLabel?.let { label ->
                     Text(
@@ -334,13 +335,13 @@ private fun PlanTileView(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.SemiBold,
                             ),
-                        color = AppColors.deepBlue,
+                        color = MaterialTheme.colorScheme.background,
                         modifier =
                             Modifier
                                 .padding(start = 8.dp)
                                 .background(
-                                    color = AppColors.white,
-                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    shape = MaterialTheme.shapes.extraSmall,
                                 ).padding(horizontal = 4.dp, vertical = 2.dp),
                     )
                 }
@@ -354,7 +355,7 @@ private fun PlanTileView(
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Start,
                     ),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
@@ -373,7 +374,7 @@ private fun PlanTileView(
                         fontWeight = FontWeight.Normal,
                         textAlign = TextAlign.Start,
                     ),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
             )
         }
@@ -392,7 +393,7 @@ private fun PlanTileView(
                                 .size(20.dp)
                                 .border(
                                     width = 2.dp,
-                                    color = AppColors.white.copy(alpha = 0.5f),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     shape = CircleShape,
                                 ),
                     )
@@ -414,7 +415,7 @@ private fun PlanTileView(
                         .padding(top = 8.dp, end = 8.dp)
                         .background(
                             color = Color(0xFFCADFF2),
-                            shape = RoundedCornerShape(4.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
                         ).padding(horizontal = 8.dp, vertical = 4.dp),
             )
         }
@@ -429,19 +430,19 @@ private fun TermsLine(actions: UpgradeActions) {
         TextLinkStyles(
             style =
                 SpanStyle(
-                    color = AppColors.white,
+                    color = MaterialTheme.colorScheme.onSurface,
                     textDecoration = TextDecoration.Underline,
                 ),
         )
     val annotated =
         buildAnnotatedString {
-            withStyle(SpanStyle(color = AppColors.white.copy(alpha = 0.8f))) {
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))) {
                 append(appName)
                 append(" ")
             }
             val separatorIndex = termsPolicy.indexOf('&')
             if (separatorIndex == -1) {
-                withStyle(SpanStyle(color = AppColors.white.copy(alpha = 0.8f))) {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))) {
                     append(termsPolicy)
                 }
             } else {
@@ -450,7 +451,7 @@ private fun TermsLine(actions: UpgradeActions) {
                 withLink(LinkAnnotation.Clickable("terms", linkStyles) { actions.onTermsClick() }) {
                     append(termsPart)
                 }
-                withStyle(SpanStyle(color = AppColors.white.copy(alpha = 0.8f))) {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))) {
                     append(" & ")
                 }
                 withLink(LinkAnnotation.Clickable("privacy", linkStyles) { actions.onPrivacyClick() }) {
@@ -477,7 +478,7 @@ private fun BoxScope.ErrorOverlay(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(AppColors.deepBlue.copy(alpha = 0.9f))
+                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.9f))
                 .hapticClickable { onDismiss() },
         contentAlignment = Alignment.Center,
     ) {
@@ -486,15 +487,15 @@ private fun BoxScope.ErrorOverlay(
                 Modifier
                     .padding(32.dp)
                     .background(
-                        color = AppColors.charcoalBlue,
-                        shape = RoundedCornerShape(9.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = MaterialTheme.shapes.medium,
                     ).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = message,
                 style = font14,
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(16.dp))
