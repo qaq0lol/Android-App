@@ -54,4 +54,4 @@ jobs:
           retention-days: 7
 
       - name: Run Google debug unit tests
-        run: ./gradlew --no-daemon :mobile:testGoogleDebugUnitTest
+        run: ./gradlew --no-daemon :base:testGoogleDebugUnitTest :mobile:testGoogleDebugUnitTest
