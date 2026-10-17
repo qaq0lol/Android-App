@@ -96,7 +96,7 @@ fun PrimaryButtonPreview() {
         Text(
             text = "Disabled State",
             style = font18,
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(vertical = 8.dp),
         )
         PrimaryButton(
