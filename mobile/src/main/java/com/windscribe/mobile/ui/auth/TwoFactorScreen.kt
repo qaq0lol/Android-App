@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.auth
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -127,14 +128,14 @@ fun TwoFactorContent(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back_arrow),
                             contentDescription = stringResource(com.windscribe.vpn.R.string.back),
-                            tint = AppColors.white,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(16.dp),
                         )
                     }
                     Text(
                         text = stringResource(com.windscribe.vpn.R.string.two_fa),
                         style = font16.copy(fontWeight = FontWeight.SemiBold),
-                        color = AppColors.white,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -157,7 +158,7 @@ fun TwoFactorContent(
                         lineHeight = font16.fontSize * 1.5f,
                         textAlign = TextAlign.Start,
                     ),
-                color = AppColors.grayText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -202,7 +203,7 @@ private fun TwoFactorCodeField(
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.two_fa),
                 style = font16.copy(fontWeight = FontWeight.Medium),
-                color = if (isError) AppColors.red else AppColors.white,
+                color = if (isError) AppColors.red else MaterialTheme.colorScheme.onSurface,
             )
             if (isError) {
                 Icon(
@@ -223,7 +224,7 @@ private fun TwoFactorCodeField(
                 },
                 isError = isError,
                 singleLine = true,
-                shape = RoundedCornerShape(9.dp),
+                shape = MaterialTheme.shapes.medium,
                 keyboardOptions =
                     KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
@@ -235,28 +236,28 @@ private fun TwoFactorCodeField(
                     Text(
                         text = stringResource(com.windscribe.vpn.R.string.enter_two_fa_code),
                         style = font16.copy(fontWeight = FontWeight.Normal),
-                        color = AppColors.grayText,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Start,
                     )
                 },
                 colors =
                     TextFieldDefaults.colors(
-                        focusedTextColor = if (isError) AppColors.red else AppColors.white,
-                        unfocusedTextColor = if (isError) AppColors.red else AppColors.white,
-                        disabledTextColor = if (isError) AppColors.red else AppColors.white,
-                        unfocusedContainerColor = AppColors.white.copy(0.05f),
-                        focusedContainerColor = AppColors.white.copy(0.05f),
-                        disabledContainerColor = AppColors.white.copy(0.05f),
-                        errorContainerColor = AppColors.white.copy(0.05f),
+                        focusedTextColor = if (isError) AppColors.red else MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = if (isError) AppColors.red else MaterialTheme.colorScheme.onSurface,
+                        disabledTextColor = if (isError) AppColors.red else MaterialTheme.colorScheme.onSurface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
+                        focusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
+                        disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
+                        errorContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         errorIndicatorColor = Color.Transparent,
-                        cursorColor = AppColors.white,
+                        cursorColor = MaterialTheme.colorScheme.onSurface,
                         disabledIndicatorColor = Color.Transparent,
                         selectionColors =
                             androidx.compose.foundation.text.selection.TextSelectionColors(
-                                handleColor = AppColors.white,
-                                backgroundColor = AppColors.white.copy(alpha = 0.3f),
+                                handleColor = MaterialTheme.colorScheme.onSurface,
+                                backgroundColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                             ),
                     ),
                 modifier =
@@ -268,7 +269,7 @@ private fun TwoFactorCodeField(
                                 Modifier.border(
                                     width = 1.dp,
                                     color = AppColors.red,
-                                    shape = RoundedCornerShape(9.dp),
+                                    shape = MaterialTheme.shapes.medium,
                                 )
                             } else {
                                 Modifier
@@ -276,7 +277,7 @@ private fun TwoFactorCodeField(
                         ),
                 textStyle =
                     font16.copy(
-                        color = if (isError) AppColors.red else AppColors.white,
+                        color = if (isError) AppColors.red else MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start,
                     ),
             )
