@@ -123,7 +123,7 @@ fun AdvanceContent(
                                         MaterialTheme.colorScheme.primaryTextColor.copy(
                                             alpha = 0.05f,
                                         ),
-                                    shape = RoundedCornerShape(12.dp),
+                                    shape = MaterialTheme.shapes.medium,
                                 ),
                         singleLine = false,
                         maxLines = Int.MAX_VALUE,
