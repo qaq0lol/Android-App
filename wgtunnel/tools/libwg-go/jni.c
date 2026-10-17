@@ -9,6 +9,8 @@
 
 struct go_string { const char *str; long n; };
 extern int wgTurnOn(struct go_string ifname, int tun_fd, struct go_string settings, jboolean customTun);
+extern int wgTurnOnDoubleHop(struct go_string ifname, int tun_fd, struct go_string outerSettings, struct go_string outerAddresses, jboolean customTun);
+extern int wgStartDoubleHop(int handle, struct go_string innerSettings);
 extern void wgTurnOff(int handle);
 extern int wgGetSocketV4(int handle);
 extern int wgGetSocketV6(int handle);
@@ -30,6 +32,34 @@ JNIEXPORT jint JNICALL Java_com_wireguard_android_backend_GoBackend_wgTurnOn(JNI
 	},customTun);
 	(*env)->ReleaseStringUTFChars(env, ifname, ifname_str);
 	(*env)->ReleaseStringUTFChars(env, settings, settings_str);
+	return ret;
+}
+
+JNIEXPORT jint JNICALL Java_com_wireguard_android_backend_GoBackend_wgTurnOnDoubleHop(JNIEnv *env, jclass c, jstring ifname, jint tun_fd, jstring outerSettings, jstring outerAddresses, jboolean customTun)
+{
+	const char *ifname_str = (*env)->GetStringUTFChars(env, ifname, 0);
+	size_t ifname_len = (*env)->GetStringUTFLength(env, ifname);
+	const char *settings_str = (*env)->GetStringUTFChars(env, outerSettings, 0);
+	size_t settings_len = (*env)->GetStringUTFLength(env, outerSettings);
+	const char *addresses_str = (*env)->GetStringUTFChars(env, outerAddresses, 0);
+	size_t addresses_len = (*env)->GetStringUTFLength(env, outerAddresses);
+	int ret = wgTurnOnDoubleHop((struct go_string){ .str = ifname_str, .n = ifname_len },
+		tun_fd,
+		(struct go_string){ .str = settings_str, .n = settings_len },
+		(struct go_string){ .str = addresses_str, .n = addresses_len },
+		customTun);
+	(*env)->ReleaseStringUTFChars(env, ifname, ifname_str);
+	(*env)->ReleaseStringUTFChars(env, outerSettings, settings_str);
+	(*env)->ReleaseStringUTFChars(env, outerAddresses, addresses_str);
+	return ret;
+}
+
+JNIEXPORT jint JNICALL Java_com_wireguard_android_backend_GoBackend_wgStartDoubleHop(JNIEnv *env, jclass c, jint handle, jstring innerSettings)
+{
+	const char *settings_str = (*env)->GetStringUTFChars(env, innerSettings, 0);
+	size_t settings_len = (*env)->GetStringUTFLength(env, innerSettings);
+	int ret = wgStartDoubleHop(handle, (struct go_string){ .str = settings_str, .n = settings_len });
+	(*env)->ReleaseStringUTFChars(env, innerSettings, settings_str);
 	return ret;
 }
 
