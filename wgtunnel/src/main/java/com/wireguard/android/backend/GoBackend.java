@@ -89,6 +89,10 @@ public final class GoBackend implements Backend {
 
     private static native int wgTurnOn(String ifName, int tunFd, String settings, boolean customTun);
 
+    private static native int wgTurnOnDoubleHop(String ifName, int tunFd, String outerSettings, String outerAddresses, boolean customTun);
+
+    private static native int wgStartDoubleHop(int handle, String innerSettings);
+
     private static native String wgVersion();
 
     /**
@@ -208,6 +212,32 @@ public final class GoBackend implements Backend {
      */
     @Override
     public State setState(final Tunnel tunnel, State state, @Nullable final Config config) throws Exception {
+        return setStateWithOptionalFirstHop(tunnel, state, config, null);
+    }
+
+    /**
+     * Establishes Windscribe's WireGuard tunnel as the inner hop, using the supplied WireGuard
+     * profile as its encrypted underlay. Only the inner tunnel owns Android's VpnService TUN.
+     */
+    public State setStateDoubleHop(
+            final Tunnel tunnel,
+            State state,
+            @Nullable final Config innerConfig,
+            final Config firstHopConfig) throws Exception {
+        if (state != State.UP) {
+            return setStateWithOptionalFirstHop(tunnel, state, innerConfig, null);
+        }
+        if (firstHopConfig == null) {
+            throw new IllegalArgumentException("A first-hop WireGuard profile is required");
+        }
+        return setStateWithOptionalFirstHop(tunnel, state, innerConfig, firstHopConfig);
+    }
+
+    private State setStateWithOptionalFirstHop(
+            final Tunnel tunnel,
+            State state,
+            @Nullable final Config config,
+            @Nullable final Config firstHopConfig) throws Exception {
         final State originalState = getState(tunnel);
 
         if (state == State.TOGGLE)
@@ -218,16 +248,16 @@ public final class GoBackend implements Backend {
             final Config originalConfig = currentConfig;
             final Tunnel originalTunnel = currentTunnel;
             if (currentTunnel != null)
-                setStateInternal(currentTunnel, null, State.DOWN);
+                setStateInternal(currentTunnel, null, State.DOWN, null);
             try {
-                setStateInternal(tunnel, config, state);
+                setStateInternal(tunnel, config, state, firstHopConfig);
             } catch (final Exception e) {
                 if (originalTunnel != null)
-                    setStateInternal(originalTunnel, originalConfig, State.UP);
+                    setStateInternal(originalTunnel, originalConfig, State.UP, null);
                 throw e;
             }
         } else if (state == State.DOWN && tunnel == currentTunnel) {
-            setStateInternal(tunnel, null, State.DOWN);
+            setStateInternal(tunnel, null, State.DOWN, null);
         }
         return getState(tunnel);
     }
