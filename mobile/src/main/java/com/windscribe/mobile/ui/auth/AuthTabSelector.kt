@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.auth
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,8 +38,8 @@ fun AuthTabSelector(
         modifier =
             modifier
                 .background(
-                    color = AppColors.white.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(100.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ).padding(6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -70,7 +71,7 @@ private fun TabItem(
                         Modifier
                             .shadow(
                                 elevation = 2.dp,
-                                shape = RoundedCornerShape(100.dp),
+                                shape = MaterialTheme.shapes.extraLarge,
                                 spotColor = Color.Black.copy(alpha = 0.25f),
                             ).background(
                                 brush =
@@ -81,7 +82,7 @@ private fun TabItem(
                                                 AppColors.tabGradientBottom,
                                             ),
                                     ),
-                                shape = RoundedCornerShape(100.dp),
+                                shape = MaterialTheme.shapes.extraLarge,
                             )
                     } else {
                         Modifier
@@ -97,7 +98,7 @@ private fun TabItem(
                     fontWeight = FontWeight.Medium,
                     lineHeight = font16.fontSize * 1.25f,
                 ),
-            color = if (isSelected) AppColors.white else AppColors.grayText,
+            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -110,7 +111,7 @@ fun AuthTabSelectorPreview() {
     Box(
         modifier =
             Modifier
-                .background(AppColors.deepBlue)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(24.dp),
     ) {
         AuthTabSelector(
