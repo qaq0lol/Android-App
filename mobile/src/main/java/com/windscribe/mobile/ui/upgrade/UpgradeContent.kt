@@ -1,5 +1,8 @@
 package com.windscribe.mobile.ui.upgrade
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,12 +25,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
@@ -42,14 +45,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.common.AppBackground
 import com.windscribe.mobile.ui.common.AppProgressBar
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
 import com.windscribe.mobile.ui.helper.hapticClickable
-import com.windscribe.mobile.ui.helper.hapticClickableRipple
 import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font12
 import com.windscribe.mobile.ui.theme.font14
@@ -141,84 +142,75 @@ private fun HeroSection(
     state: UpgradeState,
     actions: UpgradeActions,
 ) {
-    // No fixed height: the box wraps its content (close row + logo + hero) so the StarsView
-    // starfield (matchParentSize) covers exactly that region and the feature list follows
-    // immediately — a fixed height left a dead gap between the hero and "Unlimited Everything".
-    Box(modifier = Modifier.fillMaxWidth()) {
-        AndroidView(
-            factory = { context -> StarsView(context) },
-            modifier = Modifier.matchParentSize(),
-        )
+    val foreground = MaterialTheme.colorScheme.onPrimaryContainer
+    androidx.compose.material3.Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = foreground,
+        tonalElevation = 2.dp,
+        shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
+    ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp, start = 8.dp, end = 8.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_close_no_background),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .hapticClickableRipple { actions.onClose() }
-                            .padding(8.dp),
-                )
+                androidx.compose.material3.IconButton(onClick = actions.onClose) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(com.windscribe.vpn.R.string.cancel),
+                        tint = foreground,
+                    )
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 if (state.showRestore) {
-                    Text(
-                        text = stringResource(com.windscribe.vpn.R.string.restore),
-                        style = font14.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                        modifier =
-                            Modifier
-                                .hapticClickable { actions.onRestore() }
-                                .padding(8.dp),
+                    androidx.compose.material3.TextButton(onClick = actions.onRestore) {
+                        Text(
+                            text = stringResource(com.windscribe.vpn.R.string.restore),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = foreground,
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            androidx.compose.material3.Surface(
+                modifier = Modifier.size(88.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                tonalElevation = 1.dp,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Filled.Security,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
             }
-            Image(
-                painter = painterResource(R.drawable.upgrade_logo),
-                contentDescription = null,
-                modifier = Modifier.padding(top = 24.dp),
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = stringResource(com.windscribe.vpn.R.string.upgrade_to_pro),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = foreground,
+                textAlign = TextAlign.Center,
             )
-            // Hero region (matches activity_upgrade.xml): the perspective-floor grid
-            // (upgrade_hero_grid, 458x82dp) sits 105dp down from the hero top — wider than the
-            // screen and low, so it reads as a receding horizon — with the plane drawn on top of
-            // it. The grid must keep its intrinsic 458x82 size (not fillMaxWidth) and must NOT be
-            // covered by the plane, otherwise the floor disappears (the previous bug).
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .padding(top = 16.dp),
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.upgrade_hero_grid),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 105.dp)
-                            .width(458.dp)
-                            .height(82.dp),
-                )
-                Image(
-                    painter = painterResource(R.drawable.upgrade_hero),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier =
-                        Modifier
-                            .align(Alignment.Center)
-                            .fillMaxSize(),
-                )
-            }
+            Text(
+                text = stringResource(com.windscribe.vpn.R.string.go_pro_for_unlimited_everything),
+                style = MaterialTheme.typography.bodyLarge,
+                color = foreground.copy(alpha = 0.82f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp),
+            )
         }
     }
 }
@@ -408,13 +400,13 @@ private fun PlanTileView(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                     ),
-                color = AppColors.black,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier =
                     Modifier
                         .align(Alignment.TopEnd)
                         .padding(top = 8.dp, end = 8.dp)
                         .background(
-                            color = Color(0xFFCADFF2),
+                            color = MaterialTheme.colorScheme.primaryContainer,
                             shape = MaterialTheme.shapes.extraSmall,
                         ).padding(horizontal = 8.dp, vertical = 4.dp),
             )
@@ -502,7 +494,7 @@ private fun BoxScope.ErrorOverlay(
             Text(
                 text = "OK",
                 style = font14,
-                color = AppColors.neonGreen,
+                color = MaterialTheme.colorScheme.primary,
                 modifier =
                     Modifier
                         .hapticClickable { onDismiss() }
