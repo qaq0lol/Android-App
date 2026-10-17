@@ -144,14 +144,14 @@ private fun ValidationErrorDialog(
     val title = if (isImportResult) "Import Results" else "Invalid CIDR Notation"
 
     AlertDialog(
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.preferencesBackgroundColor,
         modifier =
             Modifier.border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.medium,
             ),
         title = {
             Text(
@@ -252,14 +252,14 @@ private fun DeleteAllConfirmDialog(
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.preferencesBackgroundColor,
         modifier =
             Modifier.border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.medium,
             ),
         title = {
             Text(
@@ -311,7 +311,7 @@ private fun InputSection(
                 .heightIn(min = 54.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ).padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -382,7 +382,7 @@ private fun ActionButtons(
                     .heightIn(min = 48.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                     ).clickable { onImport() }
                     .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -420,7 +420,7 @@ private fun ActionButtons(
                                     alpha = 0.05f,
                                 )
                             },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                     ).clickable(enabled = hasItems) { onDeleteAll() }
                     .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
