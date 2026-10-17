@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.auth
 
+import androidx.compose.material3.MaterialTheme
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -133,7 +134,7 @@ fun EmergencyConnectCloseIcon(modifier: Modifier = Modifier) {
         Icon(
             painter = painterResource(id = R.drawable.close),
             contentDescription = "Close",
-            tint = AppColors.white,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(24.dp),
         )
     }
@@ -145,7 +146,7 @@ fun EmergencyConnectHeroIcon() {
         painter = painterResource(id = R.drawable.emergency_icon_white),
         contentDescription = null,
         modifier = Modifier.size(60.dp),
-        tint = AppColors.white,
+        tint = MaterialTheme.colorScheme.onSurface,
     )
 }
 
@@ -155,7 +156,7 @@ fun EmergencyConnectTitle() {
         text = stringResource(id = com.windscribe.vpn.R.string.emergency_connect),
         style = font24,
         textAlign = TextAlign.Center,
-        color = AppColors.white,
+        color = MaterialTheme.colorScheme.onSurface,
     )
 }
 
@@ -172,7 +173,7 @@ fun EmergencyConnectDescription(uiState: EmergencyConnectUIState) {
         text = descriptionText,
         style = font16,
         textAlign = TextAlign.Center,
-        color = AppColors.white.copy(alpha = 0.50f),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
         modifier = Modifier.padding(horizontal = 16.dp),
     )
 }
@@ -187,12 +188,12 @@ fun EmergencyConnectProgressBar(
             Text(
                 text = connectionProgressText,
                 style = font16,
-                color = AppColors.white.copy(alpha = 0.50f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
             )
             Spacer(modifier = Modifier.height(16.dp))
             CircularProgressIndicator(
                 modifier = Modifier.size(48.dp),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -207,7 +208,7 @@ fun EmergencyConnectCancelButton() {
         Text(
             text = stringResource(id = com.windscribe.vpn.R.string.cancel),
             style = font16,
-            color = AppColors.white.copy(alpha = 0.50f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
         )
     }
 }
