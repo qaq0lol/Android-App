@@ -88,7 +88,7 @@ private fun Header() {
             Modifier
                 .fillMaxWidth()
                 .background(
-                    color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                 ).padding(16.dp),
     ) {

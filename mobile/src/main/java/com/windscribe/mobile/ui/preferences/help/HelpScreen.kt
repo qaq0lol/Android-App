@@ -128,7 +128,7 @@ fun HelpContent(
 private fun CommunitySupport() {
     val activity = LocalActivity.current as? AppStartActivity
 
-    val backgroundColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f)
+    val backgroundColor = MaterialTheme.colorScheme.surfaceContainerLow
     val textColor = MaterialTheme.colorScheme.primaryTextColor
 
     Column {
@@ -259,7 +259,7 @@ private fun DebugView() {
                         MaterialTheme.colorScheme.primaryTextColor.copy(
                             alpha = 0.05f,
                         ),
-                    shape = RoundedCornerShape(size = 12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ).hapticClickable {
                     navController.navigate(Screen.Debug.route)
                 }.padding(vertical = 14.dp, horizontal = 14.dp),

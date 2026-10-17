@@ -162,7 +162,7 @@ private fun VersionName(versionName: String) {
     Row(
         Modifier
             .background(
-                color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = MaterialTheme.shapes.medium,
             ).padding(start = 14.dp, top = 14.dp, end = 14.dp, bottom = 14.dp),
     ) {

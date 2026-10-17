@@ -74,7 +74,7 @@ private fun AboutItem(
             .fillMaxWidth()
             .height(44.dp)
             .background(
-                color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = MaterialTheme.shapes.medium,
             ).hapticClickable {
                 activity?.openUrl(path)
