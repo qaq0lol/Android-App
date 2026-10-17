@@ -31,7 +31,7 @@ fun DescriptionWithLearnMore(
                         TextLinkStyles(
                             style =
                                 SpanStyle(
-                                    color = AppColors.mediumBlue,
+                                    color = MaterialTheme.colorScheme.secondary,
                                     fontWeight = FontWeight.Medium,
                                 ),
                         ),
