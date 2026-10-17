@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -142,7 +143,7 @@ fun RowScope.NetworkNameSheetContent(
             Text(
                 text = networkInfo.name ?: stringResource(com.windscribe.vpn.R.string.unknown),
                 style = font16.copy(fontWeight = FontWeight.Medium),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier =
@@ -165,8 +166,8 @@ fun RowScope.NetworkNameSheetContent(
                         Modifier
                             .matchParentSize()
                             .background(
-                                color = AppColors.midnightNavy.copy(alpha = 1.0f),
-                                shape = RoundedCornerShape(2.dp),
+                                color = MaterialTheme.colorScheme.background.copy(alpha = 1.0f),
+                                shape = MaterialTheme.shapes.extraSmall,
                             ),
                 )
             }
@@ -175,7 +176,7 @@ fun RowScope.NetworkNameSheetContent(
         Image(
             painter = painterResource(R.drawable.arrow_right_small),
             contentDescription = null,
-            colorFilter = ColorFilter.tint(AppColors.white.copy(alpha = 0.70f)),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f)),
             modifier =
                 Modifier
                     .size(24.dp)
