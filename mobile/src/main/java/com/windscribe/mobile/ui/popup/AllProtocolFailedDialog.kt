@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.popup
 
+import androidx.compose.material3.MaterialTheme
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -53,7 +54,7 @@ fun AllProtocolFailedDialogScreen() {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(AppColors.deepBlue),
+                .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
         Column(
