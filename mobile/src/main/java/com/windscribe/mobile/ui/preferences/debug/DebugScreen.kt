@@ -4,7 +4,10 @@ import PreferencesNavBar
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -71,7 +74,12 @@ fun DebugContent(
             LazyColumn(
                 state = listState,
                 modifier =
-                    Modifier.combinedClickable(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .padding(12.dp)
+                        .combinedClickable(
                         onClick = {},
                         onLongClick = {
                             exportLog(context)

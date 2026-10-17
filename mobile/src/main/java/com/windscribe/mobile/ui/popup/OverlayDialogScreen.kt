@@ -3,6 +3,8 @@ package com.windscribe.mobile.ui.popup
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,7 +38,6 @@ import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.AppStartActivityViewModel
 import com.windscribe.mobile.ui.DialogData
 import com.windscribe.mobile.ui.common.NextButton
-import com.windscribe.mobile.ui.common.theme
 import com.windscribe.mobile.ui.theme.font14
 import com.windscribe.mobile.ui.theme.font16
 import com.windscribe.mobile.ui.theme.font22
@@ -73,22 +75,29 @@ fun OverlayDialogContent(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(theme(R.attr.wdPrimaryInvertedColor))
+                .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
                 .navigationBarsPadding(),
     ) {
         // Close button positioned absolutely at top-right
-        Image(
-            painter = painterResource(R.drawable.ic_close),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(theme(R.attr.wdPrimaryColor)),
+        Box(
             modifier =
                 Modifier
                     .align(Alignment.TopEnd)
-                    .padding(32.dp)
-                    .size(24.dp)
+                    .padding(16.dp)
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .clickable { onDismiss() },
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_close),
+                contentDescription = stringResource(com.windscribe.vpn.R.string.cancel),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+                modifier = Modifier.size(24.dp).padding(4.dp),
+            )
+        }
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -128,7 +137,7 @@ fun OverlayDialogContent(
             Text(
                 text = dialogData?.title ?: "",
                 style = font22,
-                color = theme(R.attr.wdPrimaryColor),
+                color = MaterialTheme.colorScheme.primaryTextColor,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
