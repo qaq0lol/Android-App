@@ -395,7 +395,7 @@ private fun ConnectionStatusSheetContent(
     val containerColor =
         when (state) {
             is ConnectionUIState.Connected -> AppColors.mintGreen
-            else -> AppColors.white
+            else -> MaterialTheme.colorScheme.onSurface
         }
     Row(
         modifier = Modifier.padding(start = 12.dp, top = 16.dp),
@@ -602,7 +602,7 @@ internal fun BoxScope.NetworkInfoSheet(
                         connectionViewmodel = connectionViewmodel,
                         bridgeApiViewModel = bridgeApiViewModel,
                         style = font16,
-                        color = AppColors.white,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier =
                             Modifier.graphicsLayer {
                                 renderEffect =
@@ -622,7 +622,7 @@ internal fun BoxScope.NetworkInfoSheet(
                                     .matchParentSize()
                                     .background(
                                         color = MaterialTheme.colorScheme.surface.copy(alpha = 1.0f),
-                                        shape = RoundedCornerShape(2.dp),
+                                        shape = MaterialTheme.shapes.extraSmall,
                                     ),
                         )
                     }
@@ -652,7 +652,7 @@ internal fun BoxScope.NetworkInfoSheet(
 @Composable
 private fun ConnectionStatus(connectionUIState: ConnectionUIState) {
     val containerColor =
-        if (connectionUIState is ConnectionUIState.Connected) AppColors.mintGreen else AppColors.white
+        if (connectionUIState is ConnectionUIState.Connected) AppColors.mintGreen else MaterialTheme.colorScheme.onSurface
     val stateTag =
         when (connectionUIState) {
             is ConnectionUIState.Connected -> "connection_status_connected"
@@ -719,8 +719,8 @@ private fun ConnectedBackgroundContent(connectionUIState: ConnectionUIState) {
                             Brush.verticalGradient(
                                 colors =
                                     listOf(
-                                        AppColors.primaryBlue,
-                                        AppColors.midnightNavy,
+                                        MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.colorScheme.background,
                                     ),
                             ),
                     ),
@@ -869,7 +869,7 @@ private fun HeaderContent(
                                 textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.Bold,
                             ),
-                        color = AppColors.midnightNavy,
+                        color = MaterialTheme.colorScheme.background,
                         modifier = Modifier.align(Alignment.Center),
                     )
                 }
@@ -978,13 +978,13 @@ private fun IPMenuItem(
     Image(
         painter = painterResource(id = icon),
         contentDescription = contentDescription,
-        colorFilter = ColorFilter.tint(AppColors.white),
+        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
         modifier =
             Modifier
                 .size(24.dp)
                 .clickable(
                     interactionSource = interactionSource,
-                    indication = ripple(bounded = false, color = AppColors.white),
+                    indication = ripple(bounded = false, color = MaterialTheme.colorScheme.onSurface),
                     onClick = onClick,
                 ),
     )
