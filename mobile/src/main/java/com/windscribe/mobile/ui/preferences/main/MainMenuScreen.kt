@@ -159,7 +159,7 @@ private fun MainMenuItem(
         Modifier
             .testTag("menu_item_$nextRoute")
             .fillMaxWidth()
-            .height(44.dp)
+            .height(56.dp)
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                 shape = RoundedCornerShape(size = 16.dp),
@@ -168,7 +168,7 @@ private fun MainMenuItem(
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
                 }
                 navController.navigate(nextRoute)
-            }.padding(start = 14.dp, end = 14.dp),
+            }.padding(start = 16.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
