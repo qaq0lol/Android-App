@@ -199,7 +199,7 @@ private fun ScreenDescription() {
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ).padding(12.dp),
     ) {
         Text(
@@ -265,7 +265,7 @@ private fun ExtraTlsPaddingSection(
         icon = R.drawable.ic_anti_censorship_icon,
         description = com.windscribe.vpn.R.string.extra_tls_padding_description,
         enabled,
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         onSelect = { onExtraTlsPaddingToggled() },
     )
 }
@@ -283,7 +283,7 @@ private fun ServerRoutingSection(
             selectedMode,
             description = com.windscribe.vpn.R.string.server_routing_description,
             textAlign = TextAlign.Start,
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.medium,
         ) {
             onServerRoutingSelected(it.key)
         }
