@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.auth
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -68,7 +69,7 @@ fun HashedLoginForm(
         Text(
             text = stringResource(com.windscribe.vpn.R.string.account_hash),
             style = font16.copy(fontWeight = FontWeight.Medium),
-            color = if (isError) AppColors.red else AppColors.white,
+            color = if (isError) AppColors.red else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 8.dp),
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -134,7 +135,7 @@ private fun ExpandableSection(
             Text(
                 text = text,
                 style = font16.copy(fontWeight = FontWeight.Medium),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -159,7 +160,7 @@ private fun ExpandableSection(
                             Modifier
                                 .size(24.dp)
                                 .rotate(rotation),
-                        colorFilter = ColorFilter.tint(AppColors.white.copy(alpha = 0.50f)),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f)),
                     )
                 }
             }
@@ -176,14 +177,14 @@ private fun OptionalBadge() {
         modifier =
             Modifier
                 .background(
-                    color = AppColors.white.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(100.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ).padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
         Text(
             text = stringResource(com.windscribe.vpn.R.string.optional),
             style = font12.copy(fontWeight = FontWeight.Medium),
-            color = AppColors.white.copy(alpha = 0.6f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         )
     }
 }
