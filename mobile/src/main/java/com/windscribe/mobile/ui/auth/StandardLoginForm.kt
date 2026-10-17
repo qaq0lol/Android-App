@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.auth
 
+import androidx.compose.material3.MaterialTheme
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -69,7 +70,7 @@ fun StandardLoginForm(
         Text(
             text = stringResource(com.windscribe.vpn.R.string.username),
             style = font16.copy(fontWeight = FontWeight.Medium),
-            color = if (isUsernameError) AppColors.red else AppColors.white,
+            color = if (isUsernameError) AppColors.red else MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -100,7 +101,7 @@ fun StandardLoginForm(
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.password),
                 style = font16.copy(fontWeight = FontWeight.Medium),
-                color = if (isPasswordError) AppColors.red else AppColors.white,
+                color = if (isPasswordError) AppColors.red else MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.forgot_password),
@@ -110,7 +111,7 @@ fun StandardLoginForm(
                         textDecoration = TextDecoration.Underline,
                         lineHeight = font14.fontSize * 1.5f,
                     ),
-                color = AppColors.grayText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier =
                     Modifier.clickable {
                         val url = NetworkKeyConstants.getWebsiteLink(NetworkKeyConstants.URL_FORGOT_PASSWORD)
@@ -190,7 +191,7 @@ private fun ExpandableSection(
             Text(
                 text = text,
                 style = font16.copy(fontWeight = FontWeight.Medium),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -215,7 +216,7 @@ private fun ExpandableSection(
                             Modifier
                                 .size(24.dp)
                                 .rotate(rotation),
-                        colorFilter = ColorFilter.tint(AppColors.white.copy(alpha = 0.50f)),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f)),
                     )
                 }
             }
@@ -232,14 +233,14 @@ private fun OptionalBadge() {
         modifier =
             Modifier
                 .background(
-                    color = AppColors.white.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(100.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ).padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
         Text(
             text = stringResource(com.windscribe.vpn.R.string.optional),
             style = font12.copy(fontWeight = FontWeight.Medium),
-            color = AppColors.white.copy(alpha = 0.6f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         )
     }
 }
