@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.popup
 
+import androidx.compose.material3.MaterialTheme
 import NavBar
 import android.annotation.SuppressLint
 import android.content.Context
@@ -110,7 +111,7 @@ fun NewsfeedContent(
             modifier =
                 Modifier
                     .testTag("newsfeed_screen")
-                    .background(AppColors.charcoalBlue)
+                    .background(MaterialTheme.colorScheme.surface)
                     .fillMaxSize()
                     .navigationBarsPadding()
                     .padding(horizontal = 16.dp)
@@ -196,8 +197,8 @@ private fun NotificationList(
         modifier =
             Modifier
                 .background(
-                    color = AppColors.white.copy(0.05f),
-                    shape = RoundedCornerShape(9.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(0.05f),
+                    shape = MaterialTheme.shapes.medium,
                 ).verticalScroll(scrollState),
     ) {
         list.forEachIndexed { index, notification ->
@@ -208,7 +209,7 @@ private fun NotificationList(
                 index == list.lastIndex,
                 actions,
             )
-            if (index != list.lastIndex) HorizontalDivider(color = AppColors.charcoalBlue)
+            if (index != list.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.surface)
         }
     }
 }
@@ -240,7 +241,7 @@ private fun NotificationItem(
             Modifier
                 .testTag("newsfeed_item")
                 .background(
-                    if (expanded.value) AppColors.white.copy(alpha = 0.08f) else Color.Transparent,
+                    if (expanded.value) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else Color.Transparent,
                     shape,
                 ),
     ) {
@@ -257,7 +258,7 @@ private fun NotificationItem(
                 notification.title,
                 style = font16.copy(fontWeight = FontWeight.Medium),
                 textAlign = TextAlign.Start,
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -278,7 +279,7 @@ private fun NotificationItem(
             notification.date,
             style = font14.copy(fontWeight = FontWeight.Normal),
             textAlign = TextAlign.Start,
-            color = AppColors.slateGray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(start = 16.dp),
@@ -299,7 +300,7 @@ private fun ExpandedNotificationContent(
     Text(
         text = notification.message,
         style = font14.copy(fontWeight = FontWeight.Normal),
-        color = AppColors.white,
+        color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Start,
         modifier =
             Modifier
