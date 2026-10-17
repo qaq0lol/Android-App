@@ -517,6 +517,7 @@ private fun LocationNameContent(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(end = 12.dp),
             )
         }
@@ -535,6 +536,7 @@ private fun LocationNameContent(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(start = 12.dp, end = 12.dp),
             )
         }
