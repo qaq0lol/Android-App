@@ -154,7 +154,7 @@ fun AuthTextField(
                                 Modifier.border(
                                     width = 1.dp,
                                     color = MaterialTheme.colorScheme.error,
-                                    shape = RoundedCornerShape(9.dp),
+                                    shape = MaterialTheme.shapes.medium,
                                 )
                             } else {
                                 Modifier
