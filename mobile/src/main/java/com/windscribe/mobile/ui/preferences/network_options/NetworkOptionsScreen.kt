@@ -140,7 +140,7 @@ private fun Network(networkInfo: NetworkInfo) {
                 .height(48.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ).hapticClickable {
                     navController.currentBackStackEntry?.savedStateHandle?.set(
                         "network_name",
