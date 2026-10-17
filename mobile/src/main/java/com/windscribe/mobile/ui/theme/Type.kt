@@ -20,35 +20,34 @@ val DmSans = FontFamily(Font(com.windscribe.vpn.R.font.dm_sans))
 val font9 =
     TextStyle(
         fontSize = 9.sp,
-        fontFamily = IbmPlex,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        color = AppColors.white,
         textAlign = TextAlign.Center,
     )
 val font12 =
     TextStyle(
-        fontFamily = IbmPlex,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         textAlign = TextAlign.Center,
     )
 val font16 =
     TextStyle(
-        fontFamily = IbmPlex,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         textAlign = TextAlign.Center,
     )
 val font14 =
     TextStyle(
-        fontFamily = IbmPlex,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         textAlign = TextAlign.Center,
     )
 val font18 =
     TextStyle(
-        fontFamily = IbmPlex,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,
         fontSize = 18.sp,
         textAlign = TextAlign.Center,
@@ -56,14 +55,14 @@ val font18 =
 
 val font22 =
     TextStyle(
-        fontFamily = IbmPlex,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         textAlign = TextAlign.Center,
     )
 val font24 =
     TextStyle(
-        fontFamily = IbmPlex,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
         textAlign = TextAlign.Center,
@@ -71,14 +70,13 @@ val font24 =
 val font26 =
     TextStyle(
         fontSize = 26.sp,
-        fontFamily = IbmPlex,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,
-        color = AppColors.white,
     )
 
 val font28 =
     TextStyle(
-        fontFamily = IbmPlex,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.W300,
         fontSize = 28.sp,
         textAlign = TextAlign.Center,
