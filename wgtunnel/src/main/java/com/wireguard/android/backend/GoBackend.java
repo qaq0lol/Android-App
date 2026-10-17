@@ -326,12 +326,64 @@ public final class GoBackend implements Backend {
             ensureEndpointsResolved(config);
             if (firstHopConfig != null) {
                 ensureEndpointsResolved(firstHopConfig);
+                validateFirstHopRoutes(config, firstHopConfig);
             }
         }
 
         synchronized (tunnelStateLock) {
             setStateInternalLocked(tunnel, config, state, firstHopConfig);
         }
+    }
+
+
+    private void validateFirstHopRoutes(final Config innerConfig, final Config firstHopConfig) throws Exception {
+        for (final Peer innerPeer : innerConfig.getPeers()) {
+            final InetEndpoint endpoint = innerPeer.getEndpoint().orElse(null);
+            if (endpoint == null) {
+                continue;
+            }
+            final InetEndpoint resolved = endpoint.getResolved().orElse(null);
+            if (resolved == null) {
+                throw new BackendException(Reason.DNS_RESOLUTION_FAILURE, endpoint.getHost());
+            }
+            final InetAddress destination = InetAddress.getByName(resolved.getHost());
+            boolean routedByFirstHop = false;
+            for (final Peer firstHopPeer : firstHopConfig.getPeers()) {
+                for (final InetNetwork allowed : firstHopPeer.getAllowedIps()) {
+                    if (networkContains(allowed, destination)) {
+                        routedByFirstHop = true;
+                        break;
+                    }
+                }
+                if (routedByFirstHop) {
+                    break;
+                }
+            }
+            if (!routedByFirstHop) {
+                throw new IllegalArgumentException(
+                        "The first-hop WireGuard AllowedIPs does not include the selected Windscribe server endpoint ("
+                                + destination.getHostAddress()
+                                + "). Add the endpoint's IP range to the first-hop peer AllowedIPs.");
+            }
+        }
+    }
+
+    private static boolean networkContains(final InetNetwork network, final InetAddress address) {
+        final byte[] networkBytes = network.getAddress().getAddress();
+        final byte[] addressBytes = address.getAddress();
+        if (networkBytes.length != addressBytes.length) {
+            return false;
+        }
+        int bits = network.getMask();
+        for (int i = 0; i < networkBytes.length && bits > 0; i++) {
+            final int compareBits = Math.min(8, bits);
+            final int mask = 0xff << (8 - compareBits) & 0xff;
+            if ((networkBytes[i] & mask) != (addressBytes[i] & mask)) {
+                return false;
+            }
+            bits -= compareBits;
+        }
+        return true;
     }
 
     private void ensureEndpointsResolved(final Config config) throws Exception {
