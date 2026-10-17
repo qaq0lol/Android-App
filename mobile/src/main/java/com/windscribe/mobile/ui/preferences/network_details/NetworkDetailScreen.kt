@@ -174,7 +174,7 @@ private fun PreferredProtocol(
             onSelect = {
                 onProtocolSelected(it)
             },
-            shape = RoundedCornerShape(0.dp),
+            shape = MaterialTheme.shapes.extraSmall,
         )
         Spacer(modifier = Modifier.height(1.dp))
         CustomDropDown(
