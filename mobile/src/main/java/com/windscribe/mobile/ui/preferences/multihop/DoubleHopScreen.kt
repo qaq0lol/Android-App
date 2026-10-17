@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -107,6 +110,30 @@ fun DoubleHopScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(14.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Enable double-hop",
+                                style = font16,
+                                color = MaterialTheme.colorScheme.primaryTextColor,
+                            )
+                            Text(
+                                text = if (state.enabled) "Enabled for the next connection" else "Disabled",
+                                style = font14,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = state.enabled,
+                            enabled = state.hasProfile,
+                            onCheckedChange = viewModel::setEnabled,
+                        )
+                    }
+                    Spacer(Modifier.height(14.dp))
                     Button(
                         onClick = {
                             importLauncher.launch(arrayOf("text/plain", "application/octet-stream", "*/*"))
@@ -146,13 +173,13 @@ fun DoubleHopScreen(
 
             Spacer(Modifier.height(18.dp))
             Text(
-                text = "Traffic routing is not enabled yet",
+                text = "Second hop requirements",
                 style = font16,
                 color = MaterialTheme.colorScheme.primaryTextColor,
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "This step only imports and securely stores the first-hop profile. It does not currently route Windscribe through this WireGuard tunnel or change your active VPN. The actual double-hop engine must chain the tunnel sockets and packet routes in one Android VPN service before this can be enabled safely.",
+                text = "Double-hop currently requires WireGuard as the Windscribe second-hop protocol. The client will refuse to start OpenVPN or IKEv2 while double-hop is enabled, so it cannot silently fall back to a single-hop connection. The first-hop peer's AllowedIPs must also include the selected Windscribe WireGuard server endpoint.",
                 style = font14,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
