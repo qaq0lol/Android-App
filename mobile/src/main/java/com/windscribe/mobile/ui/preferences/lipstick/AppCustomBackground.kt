@@ -135,7 +135,7 @@ private fun AspectRationSection(
         onDropdownClick = { expanded.value = !expanded.value },
         dropdownItems = LookAndFeelHelper.getAspectRatioOptions(),
         onItemSelected = { actions.onAspectRatioSelected(it) },
-        shape = RoundedCornerShape(0.dp),
+        shape = MaterialTheme.shapes.extraSmall,
     )
 }
 
@@ -222,7 +222,7 @@ private fun WhenDisconnectedSection(
                 }
             }
         },
-        shape = RoundedCornerShape(0.dp),
+        shape = MaterialTheme.shapes.extraSmall,
     )
 }
 
