@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -131,9 +132,7 @@ fun UpgradeContent(
 }
 
 /**
- * Top section: a single tall box so the [StarsView] starfield fills the whole upper region —
- * behind the close row, the logo and the hero plane — matching the original constraint where the
- * stars span from the top of the screen to the bottom of the hero image.
+ * Material You hero header using the current dynamic palette and a native security icon.
  */
 @Composable
 private fun HeroSection(
@@ -291,20 +290,22 @@ private fun PlanTileView(
     showRadio: Boolean,
     onClick: () -> Unit,
 ) {
+    val cardShape = MaterialTheme.shapes.large
+    val cardColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow
+    val cardTextColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
     Box(
         modifier =
             modifier
                 .height(142.dp)
+                .clip(cardShape)
+                .background(cardColor)
+                .border(
+                    width = if (selected) 2.dp else 1.dp,
+                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                    shape = cardShape,
+                )
                 .hapticClickable { onClick() },
     ) {
-        AndroidView(
-            factory = { context -> PlanUpgradeStarsBackgroundView(context) },
-            update = { it.active = selected },
-            modifier = Modifier.matchParentSize(),
-        )
-        // Original tile (activity_upgrade.xml): title pinned top, price directly below it
-        // (marginTop 2dp), and the billed line pinned to the BOTTOM. So price belongs to the top
-        // group and only the billed line floats down — not price+billed pushed down together.
         Column(
             modifier =
                 Modifier
@@ -315,37 +316,29 @@ private fun PlanTileView(
                 Text(
                     text = stringResource(titleRes),
                     style = font14.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = cardTextColor,
                 )
                 tile.discountLabel?.let { label ->
                     Text(
                         text = label,
-                        style =
-                            font14.copy(
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                        color = MaterialTheme.colorScheme.background,
+                        style = font14.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier =
                             Modifier
                                 .padding(start = 8.dp)
                                 .background(
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
                                     shape = MaterialTheme.shapes.extraSmall,
-                                ).padding(horizontal = 4.dp, vertical = 2.dp),
+                                )
+                                .padding(horizontal = 4.dp, vertical = 2.dp),
                     )
                 }
             }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = tile.price,
-                style =
-                    font14.copy(
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Start,
-                    ),
-                color = MaterialTheme.colorScheme.onSurface,
+                style = font14.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Start),
+                color = cardTextColor,
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
@@ -359,12 +352,8 @@ private fun PlanTileView(
                         }
                         append(tile.billedLabel.text)
                     },
-                style =
-                    font14.copy(
-                        fontWeight = FontWeight.Normal,
-                        textAlign = TextAlign.Start,
-                    ),
-                color = MaterialTheme.colorScheme.onSurface,
+                style = font14.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
+                color = cardTextColor.copy(alpha = 0.82f),
                 maxLines = 2,
             )
         }
@@ -383,7 +372,7 @@ private fun PlanTileView(
                                 .size(20.dp)
                                 .border(
                                     width = 2.dp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                    color = MaterialTheme.colorScheme.outline,
                                     shape = CircleShape,
                                 ),
                     )
@@ -393,20 +382,17 @@ private fun PlanTileView(
         tile.promoLabel?.let { promo ->
             Text(
                 text = promo.uppercase(),
-                style =
-                    font14.copy(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                style = font14.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
                 modifier =
                     Modifier
                         .align(Alignment.TopEnd)
                         .padding(top = 8.dp, end = 8.dp)
                         .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
                             shape = MaterialTheme.shapes.extraSmall,
-                        ).padding(horizontal = 8.dp, vertical = 4.dp),
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
             )
         }
     }
