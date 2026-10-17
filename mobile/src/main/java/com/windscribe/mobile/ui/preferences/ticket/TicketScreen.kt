@@ -250,7 +250,7 @@ private fun TextField(
                     onValueChange(it)
                 },
                 singleLine = singleLine,
-                shape = RoundedCornerShape(9.dp),
+                shape = MaterialTheme.shapes.medium,
                 keyboardOptions =
                     KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
