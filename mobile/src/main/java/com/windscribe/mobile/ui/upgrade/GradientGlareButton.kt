@@ -6,7 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,9 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
@@ -42,22 +39,6 @@ import kotlinx.coroutines.delay
  * over 800ms, an 8000ms pause between sweeps, and a 1500ms initial delay.
  */
 
-private val GradientColors =
-    listOf(
-        Color(0xFFD9D3FF),
-        Color(0xFFDBCCF7),
-        Color(0xFFF2E3F0),
-        Color(0xFFDAD6EB),
-        Color(0xFFC9E3F2),
-        Color(0xFFC3E5ED),
-        Color(0xFFBDEDED),
-        Color(0xFFC2E8F0),
-        Color(0xFFCADEF2),
-    )
-
-private val GradientStops =
-    floatArrayOf(0.05f, 0.17f, 0.38f, 0.45f, 0.51f, 0.56f, 0.59f, 0.67f, 0.76f)
-
 private const val SWEEP_DURATION_MS = 800
 private const val PAUSE_BETWEEN_SWEEPS_MS = 8000L
 private const val INITIAL_DELAY_MS = 1500L
@@ -69,6 +50,7 @@ fun GradientGlareButton(
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
+    val buttonColor = MaterialTheme.colorScheme.primary
     val density = LocalDensity.current
     val glareSizePx = with(density) { 66.dp.toPx() }
     val strokePx = with(density) { 2.dp.toPx() }
@@ -98,20 +80,13 @@ fun GradientGlareButton(
                 .fillMaxWidth()
                 .height(50.dp)
                 .alpha(if (enabled) 1f else 0.5f)
-                .clip(RoundedCornerShape(percent = 50))
+                .clip(MaterialTheme.shapes.large)
                 .hapticClickable { if (enabled) onClick() }
                 .drawWithCache {
                     val cornerRadius = size.height / 2f
-                    val brush =
-                        Brush.linearGradient(
-                            colorStops = GradientStops.zip(GradientColors).toTypedArray(),
-                            start = Offset(size.width * 0.21f, -size.height * 2.86f),
-                            end = Offset(size.width * 0.77f, size.height * 4.21f),
-                            tileMode = TileMode.Clamp,
-                        )
                     onDrawBehind {
                         drawRoundRect(
-                            brush = brush,
+                            color = buttonColor,
                             cornerRadius = CornerRadius(cornerRadius, cornerRadius),
                         )
                         val pos = glare.value
@@ -125,7 +100,7 @@ fun GradientGlareButton(
         Text(
             text = text,
             style = font18.copy(fontSize = 18.sp, textAlign = TextAlign.Center),
-            color = Color(0xFF090E19),
+            color = MaterialTheme.colorScheme.onPrimary,
         )
     }
 }
