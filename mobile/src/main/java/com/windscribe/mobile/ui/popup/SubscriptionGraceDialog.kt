@@ -26,14 +26,14 @@ fun SubscriptionGraceDialog(
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.preferencesBackgroundColor,
         modifier =
             Modifier.border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.medium,
             ),
         title = {
             Text(
