@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.common
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -72,14 +73,14 @@ fun AccessibleCaptchaDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = AppColors.charcoalBlue,
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
                     .semantics { paneTitle = title },
-            border = BorderStroke(1.dp, AppColors.white.copy(alpha = 0.05f)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)),
             tonalElevation = 8.dp,
         ) {
             AccessibleCaptchaContent(request, error, refreshing, onCancel, onRefresh, onSolutionSubmit)
@@ -109,7 +110,7 @@ private fun AccessibleCaptchaContent(
     ) {
         Text(
             text = stringResource(com.windscribe.vpn.R.string.complete_puzzle_to_continue),
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             style = font18.copy(fontWeight = FontWeight.Medium),
             modifier = Modifier.semantics { heading() },
         )
@@ -118,7 +119,7 @@ private fun AccessibleCaptchaContent(
             text = stringResource(com.windscribe.vpn.R.string.captcha_enter_code),
             style = font12.copy(fontWeight = FontWeight.Normal),
             textAlign = TextAlign.Center,
-            color = AppColors.white.copy(alpha = 0.50f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
         )
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -192,14 +193,14 @@ private fun RefreshingStatus() {
     Row(verticalAlignment = Alignment.CenterVertically) {
         CircularProgressIndicator(
             modifier = Modifier.size(16.dp),
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             strokeWidth = 2.dp,
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = stringResource(com.windscribe.vpn.R.string.captcha_refreshing),
             style = font12,
-            color = AppColors.white.copy(alpha = 0.50f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
         )
     }
@@ -236,8 +237,8 @@ private fun AsciiArt(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(AppColors.white.copy(alpha = 0.05f))
+                .clip(MaterialTheme.shapes.small)
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
                 .padding(horizontal = 12.dp, vertical = 16.dp)
                 .clearAndSetSemantics { contentDescription = description },
         contentAlignment = Alignment.Center,
@@ -246,7 +247,7 @@ private fun AsciiArt(
             return@BoxWithConstraints
         }
         val cell = minOf(maxWidth / columns, ASCII_MAX_HEIGHT.dp / rows.size)
-        val ink = AppColors.white
+        val ink = MaterialTheme.colorScheme.onSurface
         Canvas(modifier = Modifier.size(cell * columns, cell * rows.size)) {
             val cellPx = cell.toPx()
             rows.forEachIndexed { y, line ->
