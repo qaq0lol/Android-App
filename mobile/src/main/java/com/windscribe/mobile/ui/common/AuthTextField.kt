@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -42,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.windscribe.mobile.R
-import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font16
 
 @Composable
@@ -70,14 +70,14 @@ fun AuthTextField(
             Text(
                 text = hint,
                 style = font16.copy(fontWeight = FontWeight.Medium),
-                color = if (isError) AppColors.red else AppColors.white,
+                color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.clickable { onHintClick() },
             )
             if (isError) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_input_error_icon),
                     contentDescription = stringResource(id = com.windscribe.vpn.R.string.username),
-                    tint = Color.Red,
+                    tint = MaterialTheme.colorScheme.error,
                 )
             }
         }
@@ -91,7 +91,7 @@ fun AuthTextField(
                 },
                 isError = isError,
                 singleLine = true,
-                shape = RoundedCornerShape(9.dp),
+                shape = MaterialTheme.shapes.medium,
                 keyboardOptions =
                     KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
@@ -104,7 +104,7 @@ fun AuthTextField(
                         Text(
                             text = placeHolder,
                             style = font16.copy(fontWeight = FontWeight.Normal),
-                            color = AppColors.white.copy(alpha = 0.70f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Start,
                         )
                     }
@@ -114,19 +114,19 @@ fun AuthTextField(
                         focusedTextColor = if (isError) AppColors.red else AppColors.white,
                         unfocusedTextColor = if (isError) AppColors.red else AppColors.white,
                         disabledTextColor = if (isError) AppColors.red else AppColors.white,
-                        unfocusedContainerColor = AppColors.white.copy(0.05f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                         focusedContainerColor = AppColors.white.copy(0.05f),
                         disabledContainerColor = AppColors.white.copy(0.05f),
                         errorContainerColor = AppColors.white.copy(0.05f),
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         errorIndicatorColor = Color.Transparent,
-                        cursorColor = AppColors.white,
+                        cursorColor = MaterialTheme.colorScheme.primary,
                         disabledIndicatorColor = Color.Transparent,
                         selectionColors =
                             androidx.compose.foundation.text.selection.TextSelectionColors(
-                                handleColor = AppColors.white,
-                                backgroundColor = AppColors.white.copy(alpha = 0.3f),
+                                handleColor = MaterialTheme.colorScheme.primary,
+                                backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                             ),
                     ),
                 visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
@@ -141,7 +141,7 @@ fun AuthTextField(
                                         id = if (passwordVisible) R.drawable.ic_eye_off else R.drawable.ic_eye,
                                     ),
                                 stringResource(id = com.windscribe.vpn.R.string.password),
-                                tint = AppColors.white.copy(alpha = 0.50f),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -153,7 +153,7 @@ fun AuthTextField(
                             if (isError) {
                                 Modifier.border(
                                     width = 1.dp,
-                                    color = AppColors.red,
+                                    color = MaterialTheme.colorScheme.error,
                                     shape = RoundedCornerShape(9.dp),
                                 )
                             } else {
