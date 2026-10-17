@@ -69,16 +69,28 @@ fun AppConnectButtonContent(
     onHapticFeedbackHandled: () -> Unit,
     onConnectButtonClick: () -> Unit,
 ) {
-    val rotation by rememberInfiniteTransition(label = "rotation").animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(durationMillis = 2000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "ringRotation",
-    )
+    val isConnected = state is ConnectionUIState.Connected
+    val isConnecting = state is ConnectionUIState.Connecting
+    val isSplitRouting =
+        (state as? ConnectionUIState.Connected)?.connectedUsingSplitRouting == true
+    // Run the repeating transition only while connecting to avoid needless frame-by-frame recomposition.
+    val rotation =
+        if (isConnecting) {
+            val transition = rememberInfiniteTransition(label = "rotation")
+            val animatedRotation by transition.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(durationMillis = 2000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart,
+                    ),
+                label = "ringRotation",
+            )
+            animatedRotation
+        } else {
+            0f
+        }
     val haptics = LocalHapticFeedback.current
     if (shouldPlayHapticFeedback) {
         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -123,11 +135,8 @@ fun AppConnectButtonContent(
                 ) {
                     onConnectButtonClick()
                 },
+        contentAlignment = Alignment.Center,
     ) {
-        val isConnected = state is ConnectionUIState.Connected
-        val isConnecting = state is ConnectionUIState.Connecting
-        val isSplitRouting =
-            (state as? ConnectionUIState.Connected)?.connectedUsingSplitRouting == true
         val actionColor = if (isConnected) AppColors.actionGreen else MaterialTheme.colorScheme.primary
         val powerIconColor = if (isConnected) AppColors.white else MaterialTheme.colorScheme.onPrimary
         val splitRoutingColor = MaterialTheme.colorScheme.tertiary
