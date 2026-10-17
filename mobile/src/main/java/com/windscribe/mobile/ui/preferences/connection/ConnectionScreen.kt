@@ -360,7 +360,7 @@ private fun DecoyTrafficMode(
                 R.string.fake_traffic_volume,
                 state.trafficMultipliers,
                 state.trafficMultiplier,
-                shape = RoundedCornerShape(0.dp),
+                shape = MaterialTheme.shapes.extraSmall,
             ) {
                 actions.onFakeTrafficVolumeSelected(it)
             }
@@ -527,7 +527,7 @@ private fun ConnectionMode(
                 onSelect = {
                     actions.onProtocolSelected(it)
                 },
-                shape = RoundedCornerShape(0.dp),
+                shape = MaterialTheme.shapes.extraSmall,
             )
             Spacer(modifier = Modifier.height(1.dp))
             CustomDropDown(
@@ -984,7 +984,7 @@ private fun AlwaysOnVPN() {
             Modifier
                 .background(
                     MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ).padding(14.dp)
                 .fillMaxWidth(),
     ) {
