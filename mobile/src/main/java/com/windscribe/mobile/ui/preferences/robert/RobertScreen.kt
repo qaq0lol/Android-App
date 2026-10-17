@@ -172,7 +172,7 @@ private fun RobertScreenDescription() {
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ).padding(top = 14.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
     ) {
         Icon(
