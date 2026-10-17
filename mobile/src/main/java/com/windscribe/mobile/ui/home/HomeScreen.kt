@@ -35,7 +35,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -316,14 +325,18 @@ fun HandleToast(connectionViewmodel: ConnectionViewmodel) {
 
 @Composable
 private fun Background(content: @Composable () -> Unit) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(AppColors.midnightNavy)
-                .navigationBarsPadding(),
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
     ) {
-        content()
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .navigationBarsPadding(),
+        ) {
+            content()
+        }
     }
 }
 
@@ -338,29 +351,58 @@ private fun CompactUI(
     ForceStatusBarIcons(true)
     val searchState by serverViewModel.showSearchView.collectAsState()
     Background {
-        ConnectedBackground(connectionViewmodel)
-        Column {
-            Spacer(modifier = Modifier.height(36.dp))
-            LocationImage(connectionViewmodel, homeViewmodel, bridgeApiViewModel)
-            ServerListScreen(serverViewModel, connectionViewmodel, bridgeApiViewModel, configViewmodel, homeViewmodel)
-        }
-        Column {
+        Column(modifier = Modifier.fillMaxSize()) {
             Header(connectionViewmodel, homeViewmodel)
-            ConnectionStatusSheet(connectionViewmodel)
-            Spacer(modifier = Modifier.height(32.dp))
-            LocationName(connectionViewmodel)
-            Spacer(modifier = Modifier.weight(1.0f))
+
+            // Top Status & Location Card (M3 Elevated Card - Google Fi / Google One style)
+            Card(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(end = 80.dp),
+                    ) {
+                        ConnectionStatusSheet(connectionViewmodel)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LocationName(connectionViewmodel)
+                    }
+
+                    Box(
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                    ) {
+                        AppConnectButton(connectionViewmodel)
+                    }
+                }
+            }
+
+            // Server List Area
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+            ) {
+                LocationImage(connectionViewmodel, homeViewmodel, bridgeApiViewModel)
+                ServerListScreen(serverViewModel, connectionViewmodel, bridgeApiViewModel, configViewmodel, homeViewmodel)
+            }
         }
+
         IPContextMenu(bridgeApiViewModel)
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(top = 61.dp, end = 16.dp),
-            contentAlignment = Alignment.TopEnd,
-        ) {
-            AppConnectButton(connectionViewmodel)
-        }
+
         if (searchState) {
             SearchServerList(serverViewModel, connectionViewmodel, homeViewmodel)
         }
@@ -393,18 +435,17 @@ private fun ConnectionStatusSheetContent(
 ) {
     val containerColor =
         when (state) {
-            is ConnectionUIState.Connected -> AppColors.mintGreen
-            else -> AppColors.white
+            is ConnectionUIState.Connected -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
         }
     Row(
-        modifier = Modifier.padding(start = 12.dp, top = 16.dp),
+        modifier = Modifier.padding(top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ConnectionStatus(state)
         val showDecoyTraffic = state is ConnectionUIState.Connected && isDecoyTrafficEnabled
 
-        // Add initial spacing
-        Spacer(modifier = Modifier.width(if (isProtocolTweaksEnabled || showDecoyTraffic) 4.dp else 12.dp))
+        Spacer(modifier = Modifier.width(if (isProtocolTweaksEnabled || showDecoyTraffic) 4.dp else 8.dp))
 
         if (isProtocolTweaksEnabled) {
             Image(
@@ -417,9 +458,7 @@ private fun ConnectionStatusSheetContent(
                         },
                     ),
                 contentDescription = null,
-                modifier =
-                    Modifier
-                        .size(24.dp),
+                modifier = Modifier.size(20.dp),
                 contentScale = ContentScale.Inside,
                 colorFilter = ColorFilter.tint(containerColor),
             )
@@ -429,14 +468,14 @@ private fun ConnectionStatusSheetContent(
         if (showDecoyTraffic) {
             Text(
                 stringResource(com.windscribe.vpn.R.string.decoy),
-                style = font12,
-                color = AppColors.neonGreen,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.tertiary,
             )
             Spacer(modifier = Modifier.width(4.dp))
         }
         Text(
             text = "${Util.getProtocolLabel(state.protocolInfo?.protocol ?: "")}  ${state.protocolInfo?.port}",
-            style = font12.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
             color = containerColor,
         )
         Spacer(modifier = Modifier.width(4.dp))
@@ -451,9 +490,7 @@ private fun ConnectionStatusSheetContent(
                         },
                     ),
                 contentDescription = null,
-                modifier =
-                    Modifier
-                        .size(24.dp),
+                modifier = Modifier.size(20.dp),
                 contentScale = ContentScale.Inside,
                 colorFilter = ColorFilter.tint(containerColor),
             )
@@ -463,13 +500,13 @@ private fun ConnectionStatusSheetContent(
             contentDescription = stringResource(com.windscribe.vpn.R.string.protocol_change),
             modifier =
                 Modifier
-                    .size(24.dp)
+                    .size(20.dp)
                     .semantics { role = Role.Button }
                     .hapticClickable {
                         onProtocolChangeClick()
                     }.testTag("protocol_switcher"),
             contentScale = ContentScale.None,
-            colorFilter = ColorFilter.tint(containerColor.copy(alpha = 0.4f)),
+            colorFilter = ColorFilter.tint(containerColor.copy(alpha = 0.6f)),
         )
     }
 }
@@ -496,40 +533,40 @@ private fun LocationNameContent(
     val density = LocalDensity.current
     val screenWidthDp = LocalWindowInfo.current.containerSize.width
     val maxWidthPx = with(density) { screenWidthDp.dp.toPx() }
-    val isSingleLine = fitsInOneLine("$nodeName $nickname", 26.0f, maxWidthPx, density)
+    val isSingleLine = fitsInOneLine("$nodeName $nickname", 20.0f, maxWidthPx, density)
     onSingleLineComputed(isSingleLine)
     if (isSingleLine) {
-        Row {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = nodeName,
-                style = font26.copy(textAlign = TextAlign.Start),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 12.dp),
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = " $nickname",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
-                modifier = Modifier.padding(end = 12.dp),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     } else {
         Column {
             Text(
                 text = nodeName,
-                style = font26.copy(textAlign = TextAlign.Start),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 12.dp, end = 12.dp),
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = nickname,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
-                modifier = Modifier.padding(start = 12.dp, end = 12.dp),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -650,82 +687,61 @@ internal fun BoxScope.NetworkInfoSheet(
 
 @Composable
 private fun ConnectionStatus(connectionUIState: ConnectionUIState) {
+    val isConnected = connectionUIState is ConnectionUIState.Connected
     val containerColor =
-        if (connectionUIState is ConnectionUIState.Connected) AppColors.mintGreen else AppColors.white
+        if (isConnected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHighest
+        }
+    val contentColor =
+        if (isConnected) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
     val stateTag =
         when (connectionUIState) {
             is ConnectionUIState.Connected -> "connection_status_connected"
             is ConnectionUIState.Connecting -> "connection_status_connecting"
             else -> "connection_status_disconnected"
         }
-    Box(
-        modifier =
-            Modifier
-                .testTag(stateTag)
-                .border(
-                    width = 1.dp,
-                    color = containerColor.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(size = 34.dp),
-                ).width(39.dp)
-                .height(21.dp)
-                .background(
-                    color = containerColor.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(size = 34.dp),
-                ).padding(start = 8.dp, top = 2.dp, end = 8.dp, bottom = 3.dp),
+    Surface(
+        modifier = Modifier.testTag(stateTag),
+        shape = RoundedCornerShape(12.dp),
+        color = containerColor,
     ) {
-        when (connectionUIState) {
-            is ConnectionUIState.Connected -> {
-                Text(
-                    text = "ON",
-                    style = font12.copy(fontWeight = FontWeight.SemiBold),
-                    color = containerColor,
-                    modifier = Modifier.align(Alignment.Center),
-                )
-            }
+        Box(
+            modifier =
+                Modifier
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            when (connectionUIState) {
+                is ConnectionUIState.Connected -> {
+                    Text(
+                        text = "ON",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = contentColor,
+                    )
+                }
 
-            is ConnectionUIState.Connecting -> {
-                Dots(modifier = Modifier.align(Alignment.Center))
-            }
+                is ConnectionUIState.Connecting -> {
+                    Dots(modifier = Modifier.align(Alignment.Center))
+                }
 
-            else -> {
-                Text(
-                    text = "OFF",
-                    style = font12.copy(fontWeight = FontWeight.SemiBold),
-                    color = containerColor,
-                    modifier = Modifier.align(Alignment.Center),
-                )
+                else -> {
+                    Text(
+                        text = "OFF",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = contentColor,
+                    )
+                }
             }
         }
     }
 }
 
-@Composable
-private fun ConnectedBackground(connectionViewmodel: ConnectionViewmodel) {
-    val state by connectionViewmodel.connectionUIState.collectAsState()
-    ConnectedBackgroundContent(connectionUIState = state)
-}
-
-@Composable
-private fun ConnectedBackgroundContent(connectionUIState: ConnectionUIState) {
-    if (connectionUIState is ConnectionUIState.Connected) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height((273 + 36).dp)
-                    .background(
-                        brush =
-                            Brush.verticalGradient(
-                                colors =
-                                    listOf(
-                                        AppColors.primaryBlue,
-                                        AppColors.midnightNavy,
-                                    ),
-                            ),
-                    ),
-        )
-    }
-}
 
 @Composable
 private fun Header(
@@ -733,11 +749,9 @@ private fun Header(
     homeViewmodel: HomeViewmodel,
 ) {
     val navController = LocalNavController.current
-    val state by connectionViewmodel.connectionUIState.collectAsState()
     val userState by homeViewmodel.userState.collectAsState()
     val newsfeedCount by connectionViewmodel.newFeedCount.collectAsState()
     HeaderContent(
-        connectionUIState = state,
         userState = userState,
         newsfeedCount = newsfeedCount,
         onMainMenuClick = { homeViewmodel.onMainMenuClick() },
@@ -745,136 +759,75 @@ private fun Header(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HeaderContent(
-    connectionUIState: ConnectionUIState,
     userState: UserState,
     newsfeedCount: Int,
     onMainMenuClick: () -> Unit,
     onNewsfeedClick: () -> Unit,
 ) {
-    val leftHeaderAsset =
-        if (connectionUIState is ConnectionUIState.Connected) {
-            R.drawable.header_left
-        } else {
-            R.drawable.header_left_deep
-        }
-
-    val rigtHeaderAsset =
-        if (connectionUIState is ConnectionUIState.Connected) {
-            R.drawable.header_right
-        } else {
-            R.drawable.header_right_deep
-        }
-    val height = getHeaderHeight()
-    Box(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier =
-                Modifier
-                    .height(height)
-                    .fillMaxWidth()
-                    .clipToBounds(),
-        ) {
-            // Left
-            Box(
-                modifier =
-                    Modifier
-                        .height(height)
-                        .weight(1.0f),
-            ) {
+    TopAppBar(
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
-                    painter = painterResource(leftHeaderAsset),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds,
-                )
-            }
-
-            // Right
-            Box(
-                modifier =
-                    Modifier
-                        .height(height)
-                        .width(163.dp),
-            ) {
-                Image(
-                    painter = painterResource(rigtHeaderAsset),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds,
-                )
-            }
-        }
-
-        Row(
-            modifier =
-                Modifier
-                    .align(Alignment.BottomStart) // Ensures it starts from the bottom left
-                    .padding(start = 12.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_ham_button),
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .testTag("main_menu_button")
-                        .hapticClickable {
-                            onMainMenuClick()
-                        },
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Image(
-                painter = painterResource(R.drawable.logo_home),
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .testTag("newsfeed_open")
-                        .height(18.dp)
-                        .clickable {
-                            onNewsfeedClick()
-                        },
-                contentScale = ContentScale.FillHeight,
-            )
-            if (userState is UserState.Pro) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Image(
-                    painter = painterResource(R.drawable.header_pro_icon),
-                    contentDescription = null,
+                    painter = painterResource(R.drawable.logo_home),
+                    contentDescription = "Windscribe Logo",
                     modifier =
                         Modifier
-                            .clickable {
-                                onNewsfeedClick()
-                            },
+                            .testTag("newsfeed_open")
+                            .height(20.dp)
+                            .clickable { onNewsfeedClick() },
                     contentScale = ContentScale.FillHeight,
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-            if (newsfeedCount > 0) {
-                Box(
-                    modifier =
-                        Modifier
-                            .offset(y = ((-12).dp))
-                            .size(14.dp)
-                            .background(
-                                color = AppColors.neonGreen,
-                                shape = CircleShape,
-                            ),
-                ) {
-                    Text(
-                        "$newsfeedCount",
-                        style =
-                            font9.copy(
-                                textAlign = TextAlign.Center,
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        color = AppColors.midnightNavy,
-                        modifier = Modifier.align(Alignment.Center),
+                if (userState is UserState.Pro) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Image(
+                        painter = painterResource(R.drawable.header_pro_icon),
+                        contentDescription = "PRO",
+                        modifier =
+                            Modifier
+                                .height(16.dp)
+                                .clickable { onNewsfeedClick() },
+                        contentScale = ContentScale.FillHeight,
                     )
                 }
+                if (newsfeedCount > 0) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                "$newsfeedCount",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                color = MaterialTheme.colorScheme.onError,
+                            )
+                        }
+                    }
+                }
             }
-        }
-    }
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = onMainMenuClick,
+                modifier = Modifier.testTag("main_menu_button"),
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_ham_button),
+                    contentDescription = "Main Menu",
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+                )
+            }
+        },
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+    )
 }
 
 @Composable
