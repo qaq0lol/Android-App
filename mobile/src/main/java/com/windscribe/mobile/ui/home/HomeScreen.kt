@@ -754,129 +754,93 @@ private fun HeaderContent(
     onMainMenuClick: () -> Unit,
     onNewsfeedClick: () -> Unit,
 ) {
-    val leftHeaderAsset =
-        if (connectionUIState is ConnectionUIState.Connected) {
-            R.drawable.header_left
-        } else {
-            R.drawable.header_left_deep
-        }
-
-    val rigtHeaderAsset =
-        if (connectionUIState is ConnectionUIState.Connected) {
-            R.drawable.header_right
-        } else {
-            R.drawable.header_right_deep
-        }
     val height = getHeaderHeight()
-    Box(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier =
-                Modifier
-                    .height(height)
-                    .fillMaxWidth()
-                    .clipToBounds(),
-        ) {
-            // Left
-            Box(
-                modifier =
-                    Modifier
-                        .height(height)
-                        .weight(1.0f),
-            ) {
-                Image(
-                    painter = painterResource(leftHeaderAsset),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds,
-                )
-            }
+    val isConnected = connectionUIState is ConnectionUIState.Connected
+    val headerColor =
+        if (isConnected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+    val headerContentColor =
+        if (isConnected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
 
-            // Right
-            Box(
-                modifier =
-                    Modifier
-                        .height(height)
-                        .width(163.dp),
-            ) {
-                Image(
-                    painter = painterResource(rigtHeaderAsset),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds,
-                )
-            }
-        }
-
+    androidx.compose.material3.Surface(
+        modifier = Modifier.fillMaxWidth().height(height),
+        color = headerColor,
+        contentColor = headerContentColor,
+        tonalElevation = 2.dp,
+        shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
+    ) {
         Row(
-            modifier =
-                Modifier
-                    .align(Alignment.BottomStart) // Ensures it starts from the bottom left
-                    .padding(start = 12.dp, bottom = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Image(
-                painter = painterResource(R.drawable.ic_ham_button),
-                contentDescription = null,
+            Box(
                 modifier =
                     Modifier
+                        .size(48.dp)
                         .testTag("main_menu_button")
-                        .hapticClickable {
-                            onMainMenuClick()
-                        },
-            )
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f))
+                        .hapticClickable { onMainMenuClick() },
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.material3.Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Filled.Menu,
+                    contentDescription = stringResource(com.windscribe.vpn.R.string.preferences),
+                    tint = headerContentColor,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
             Spacer(modifier = Modifier.width(12.dp))
-            Image(
-                painter = painterResource(R.drawable.logo_home),
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .testTag("newsfeed_open")
-                        .height(18.dp)
-                        .clickable {
-                            onNewsfeedClick()
-                        },
-                contentScale = ContentScale.FillHeight,
+            Text(
+                text = "Windscribe",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = headerContentColor,
+                maxLines = 1,
             )
             if (userState is UserState.Pro) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Image(
-                    painter = painterResource(R.drawable.header_pro_icon),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .clickable {
-                                onNewsfeedClick()
-                            },
-                    contentScale = ContentScale.FillHeight,
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-            if (newsfeedCount > 0) {
+                Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier =
                         Modifier
-                            .offset(y = ((-12).dp))
-                            .size(14.dp)
-                            .background(
-                                color = AppColors.neonGreen,
-                                shape = CircleShape,
-                            ),
+                            .clip(MaterialTheme.shapes.small)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .clickable { onNewsfeedClick() }
+                            .padding(horizontal = 8.dp, vertical = 5.dp),
                 ) {
                     Text(
-                        "$newsfeedCount",
-                        style =
-                            font9.copy(
-                                textAlign = TextAlign.Center,
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        color = MaterialTheme.colorScheme.background,
-                        modifier = Modifier.align(Alignment.Center),
+                        text = "PRO",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            androidx.compose.material3.BadgedBox(
+                badge = {
+                    if (newsfeedCount > 0) {
+                        androidx.compose.material3.Badge {
+                            Text(
+                                text = newsfeedCount.coerceAtMost(99).toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    }
+                },
+            ) {
+                androidx.compose.material3.IconButton(
+                    onClick = onNewsfeedClick,
+                    modifier = Modifier.testTag("newsfeed_open"),
+                ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Filled.Notifications,
+                        contentDescription = stringResource(com.windscribe.vpn.R.string.news_feed),
+                        tint = headerContentColor,
                     )
                 }
             }
         }
     }
-}
 
 @Composable
 private fun IPContextMenu(bridgeApiViewModel: BridgeApiViewModel) {
