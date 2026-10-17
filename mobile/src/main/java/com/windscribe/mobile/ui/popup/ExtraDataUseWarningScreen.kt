@@ -105,7 +105,7 @@ fun ExtraDataUseWarningContent(
                             .border(
                                 width = 1.dp,
                                 color = MaterialTheme.colorScheme.preferencesSubtitleColor,
-                                shape = RoundedCornerShape(12.dp),
+                                shape = MaterialTheme.shapes.medium,
                             ).padding(16.dp)
                             .align(Alignment.TopCenter),
                 ) {
