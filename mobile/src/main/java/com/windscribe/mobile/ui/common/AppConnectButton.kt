@@ -137,13 +137,14 @@ fun AppConnectButtonContent(
                 },
         contentAlignment = Alignment.Center,
     ) {
-        val actionColor = if (isConnected) AppColors.actionGreen else MaterialTheme.colorScheme.primary
-        val powerIconColor = if (isConnected) AppColors.white else MaterialTheme.colorScheme.onPrimary
-        val splitRoutingColor = MaterialTheme.colorScheme.tertiary
+        // Keep the power button palette consistent in light and dark mode.
+        val actionColor = if (isConnected) AppColors.actionGreen else AppColors.mediumBlue
+        val powerIconColor = AppColors.white
+        val splitRoutingColor = AppColors.cyberBlue
         val ringColor =
             when {
                 isConnected -> AppColors.mintGreen
-                isConnecting -> MaterialTheme.colorScheme.primary
+                isConnecting -> AppColors.mediumBlue
                 else -> MaterialTheme.colorScheme.outlineVariant
             }
         Canvas(
