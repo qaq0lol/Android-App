@@ -138,7 +138,7 @@ private fun WhenDisconnectedSection(
         onDropdownClick = { expandedMain.value = !expandedMain.value },
         dropdownItems = LookAndFeelHelper.getSoundOptions(),
         onItemSelected = { actions.onWhenDisconnectedSelected(it) },
-        shape = RoundedCornerShape(0.dp),
+        shape = MaterialTheme.shapes.extraSmall,
         extraContent = {
             val title =
                 bundledItem.label.ifBlank {
