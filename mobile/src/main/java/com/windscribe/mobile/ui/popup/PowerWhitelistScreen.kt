@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.popup
 
+import androidx.compose.material3.MaterialTheme
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -87,7 +88,7 @@ fun PowerWhitelistContent(actions: PowerWhitelistActions) {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(color = AppColors.deepBlue),
+                .background(color = MaterialTheme.colorScheme.background),
     ) {
         Column(
             modifier =
@@ -153,7 +154,7 @@ fun PowerWhitelistContent(actions: PowerWhitelistActions) {
                 Text(
                     stringResource(id = com.windscribe.vpn.R.string.may_be_later),
                     style = font16,
-                    color = AppColors.white.copy(alpha = 0.50f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
                 )
             }
             TextButton(
@@ -163,7 +164,7 @@ fun PowerWhitelistContent(actions: PowerWhitelistActions) {
                 Text(
                     stringResource(id = com.windscribe.vpn.R.string.never_aks_again_for_permission),
                     style = font16,
-                    color = AppColors.white.copy(alpha = 0.50f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
                 )
             }
         }
