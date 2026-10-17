@@ -1,7 +1,7 @@
 package com.windscribe.mobile.ui.serverlist
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -34,9 +34,6 @@ import androidx.compose.ui.unit.dp
 import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.connection.BridgeApiViewModel
 import com.windscribe.mobile.ui.helper.hapticClickable
-import com.windscribe.mobile.ui.theme.serverListBackgroundColor
-import com.windscribe.mobile.ui.theme.serverListNavigationGradientEnd
-import com.windscribe.mobile.ui.theme.serverListSecondaryColor
 
 data class ServerTabIcon(
     val unfilledIcon: Int,
@@ -129,7 +126,7 @@ fun ServerListNavigation(
                     Image(
                         painter = painterResource(if (isSelected) tab.filledIcon else tab.unfilledIcon),
                         contentDescription = androidx.compose.ui.res.stringResource(description),
-                        modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale).height(24.dp).width(24.dp),
+                        modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale).size(24.dp),
                         colorFilter =
                             ColorFilter.tint(
                                 if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
