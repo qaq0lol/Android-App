@@ -31,19 +31,19 @@ fun AppProgressBar(
             verticalArrangement = Arrangement.Center,
             modifier =
                 Modifier
-                    .background(AppColors.deepBlue.copy(alpha = 0.90f))
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.90f))
                     .fillMaxSize(),
         ) {
             Spacer(modifier = Modifier.height(48.dp))
             Text(
                 text = message,
                 style = font16,
-                color = AppColors.white.copy(alpha = 0.50f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
             )
             Spacer(modifier = Modifier.height(16.dp))
             CircularProgressIndicator(
                 modifier = Modifier.size(48.dp),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
