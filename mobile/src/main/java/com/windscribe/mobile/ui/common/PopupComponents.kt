@@ -78,10 +78,10 @@ fun PopupPrimaryActionButton(
                 .height(48.dp),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = AppColors.actionGreen,
-                contentColor = MaterialTheme.colorScheme.background,
-                disabledContainerColor = MaterialTheme.colorScheme.onSurface,
-                disabledContentColor = AppColors.green,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
             ),
         interactionSource = interactionSource,
         shape = MaterialTheme.shapes.large,
@@ -109,8 +109,8 @@ fun PopupSecondaryActionButton(
                 .height(48.dp),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = .10f),
-                contentColor = MaterialTheme.colorScheme.primaryTextColor,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 disabledContainerColor = MaterialTheme.colorScheme.onSurface,
                 disabledContentColor = AppColors.green,
             ),
