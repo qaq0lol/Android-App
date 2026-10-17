@@ -126,8 +126,11 @@ fun AppConnectButtonContent(
     ) {
         val isConnected = state is ConnectionUIState.Connected
         val isConnecting = state is ConnectionUIState.Connecting
+        val isSplitRouting =
+            (state as? ConnectionUIState.Connected)?.connectedUsingSplitRouting == true
         val actionColor = if (isConnected) AppColors.actionGreen else MaterialTheme.colorScheme.primary
         val powerIconColor = if (isConnected) AppColors.white else MaterialTheme.colorScheme.onPrimary
+        val splitRoutingColor = MaterialTheme.colorScheme.tertiary
         val ringColor =
             when {
                 isConnected -> AppColors.mintGreen
@@ -150,6 +153,18 @@ fun AppConnectButtonContent(
                 size = Size(size.width - ringStroke * 2, size.height - ringStroke * 2),
                 style = Stroke(width = ringStroke, cap = StrokeCap.Round),
             )
+            // Preserve the distinct split-routing indicator with a short Material 3 accent arc.
+            if (isSplitRouting) {
+                drawArc(
+                    color = splitRoutingColor,
+                    startAngle = 205f,
+                    sweepAngle = 60f,
+                    useCenter = false,
+                    topLeft = androidx.compose.ui.geometry.Offset(ringStroke, ringStroke),
+                    size = Size(size.width - ringStroke * 2, size.height - ringStroke * 2),
+                    style = Stroke(width = ringStroke + 1.dp.toPx(), cap = StrokeCap.Round),
+                )
+            }
         }
         Box(
             modifier =
