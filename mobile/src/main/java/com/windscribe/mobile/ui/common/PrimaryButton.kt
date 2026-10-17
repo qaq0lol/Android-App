@@ -54,7 +54,7 @@ fun PrimaryButton(
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
         Text(
             text = text,
