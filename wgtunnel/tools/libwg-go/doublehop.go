@@ -290,9 +290,13 @@ func (b *chainBind) receive(packets [][]byte, sizes []int, endpoints []conn.Endp
 		default:
 		}
 
-		packet, err := b.tun.receive()
-		if err != nil {
+		var packet []byte
+		select {
+		case <-sessionClosed:
 			return 0, net.ErrClosed
+		case <-b.tun.done:
+			return 0, net.ErrClosed
+		case packet = <-b.tun.inbound:
 		}
 		srcIP, dstIP, srcPort, dstPort, payload, ok := parseUDPIPPacket(packet)
 		if !ok {
