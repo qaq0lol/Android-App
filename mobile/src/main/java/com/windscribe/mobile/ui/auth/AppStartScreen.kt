@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.auth
 
+import androidx.compose.material3.MaterialTheme
 import FeatureSection
 import android.content.Intent
 import android.content.res.Configuration
@@ -166,7 +167,7 @@ fun CompactLayout(
             Modifier
                 .padding(0.dp)
                 .fillMaxSize()
-                .background(AppColors.deepBlue),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         Image(
             painter = painterResource(R.drawable.welcome_background),
@@ -202,7 +203,7 @@ fun ExpandedLayout(
             Modifier
                 .padding(0.dp)
                 .fillMaxSize()
-                .background(AppColors.deepBlue),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         Image(
             painter = painterResource(R.drawable.welcome_background),
@@ -295,13 +296,13 @@ private fun GoogleButton(
             .fillMaxWidth(),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = AppColors.white,
-                disabledContainerColor = AppColors.white,
+                containerColor = MaterialTheme.colorScheme.onSurface,
+                disabledContainerColor = MaterialTheme.colorScheme.onSurface,
                 disabledContentColor = AppColors.black,
                 contentColor = AppColors.black,
             ),
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
         Row {
             Image(
@@ -332,21 +333,21 @@ private fun LoginButton() {
             .testTag("welcome_login_button")
             .height(48.dp)
             .fillMaxWidth()
-            .border(1.dp, AppColors.white.copy(alpha = 0.30f), RoundedCornerShape(24.dp)),
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.30f), RoundedCornerShape(24.dp)),
         colors =
             ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
                 disabledContainerColor = Color.Transparent,
-                disabledContentColor = AppColors.white,
-                contentColor = AppColors.white,
+                disabledContentColor = MaterialTheme.colorScheme.onSurface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
             ),
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
         Text(
             text = stringResource(com.windscribe.vpn.R.string.login),
             style = font18.copy(fontWeight = FontWeight.Medium),
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
