@@ -352,20 +352,22 @@ open class WindVpnController
             attempt: Int = 0,
             hostname: String? = null,
         ) {
-            val requestedProtocol = protocolInformation?.protocol ?: preferencesHelper.selectedProtocol
-            if (firstHopProfileStore.isEnabled() && requestedProtocol != PROTO_WIRE_GUARD) {
+            val requestedProtocolInfo = protocolInformation ?: getProtocolInformationToConnect()
+            if (firstHopProfileStore.isEnabled() && requestedProtocolInfo.protocol != PROTO_WIRE_GUARD) {
                 val message = "Double-hop is enabled. Select WireGuard as the Windscribe second-hop protocol before connecting."
+                val connectionError =
+                    VPNState.Error(
+                        error = VPNState.ErrorType.GenericError,
+                        message = message,
+                        showError = true,
+                    )
                 logger.warn(message)
                 preferencesHelper.isReconnecting = false
+                if (vpnBackendHolder.activeBackend?.active == true) {
+                    vpnBackendHolder.disconnect(connectionError)
+                }
                 vpnConnectionStateManager.setState(
-                    VPNState(
-                        VPNState.Status.Disconnected,
-                        VPNState.Error(
-                            error = VPNState.ErrorType.GenericError,
-                            message = message,
-                            showError = true,
-                        ),
-                    ),
+                    VPNState(VPNState.Status.Disconnected, connectionError),
                     force = true,
                 )
                 return
