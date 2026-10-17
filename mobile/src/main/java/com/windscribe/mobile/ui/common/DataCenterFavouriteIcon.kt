@@ -36,7 +36,7 @@ fun DataCenterFavouriteIcon(
                         ripple(
                             bounded = false,
                             radius = 16.dp,
-                            color = AppColors.white,
+                            color = MaterialTheme.colorScheme.onSurface,
                         ),
                 ) {
                     onClick()
