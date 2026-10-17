@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.auth
 
+import androidx.compose.material3.MaterialTheme
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
@@ -81,7 +82,7 @@ fun HashedSignupForm(
                 withStyle(
                     style =
                         SpanStyle(
-                            color = AppColors.grayText,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium,
                         ),
                 ) {
@@ -99,7 +100,7 @@ fun HashedSignupForm(
                     withStyle(
                         style =
                             SpanStyle(
-                                color = AppColors.grayText,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium,
                                 textDecoration = TextDecoration.Underline,
                             ),
@@ -127,8 +128,8 @@ fun HashedSignupForm(
                 Modifier
                     .fillMaxWidth()
                     .background(
-                        color = AppColors.white.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                        shape = MaterialTheme.shapes.small,
                     ).drawBehind {
                         val stroke =
                             Stroke(
@@ -140,7 +141,7 @@ fun HashedSignupForm(
                                     ),
                             )
                         drawRoundRect(
-                            color = AppColors.white,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = stroke,
                             cornerRadius = CornerRadius(8.dp.toPx()),
                         )
@@ -167,7 +168,7 @@ fun HashedSignupForm(
                         lineHeight = 24.sp,
                         textAlign = TextAlign.Center,
                     ),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
             )
         }
@@ -227,8 +228,8 @@ fun HashedSignupForm(
                 Modifier
                     .fillMaxWidth()
                     .background(
-                        color = AppColors.white.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                        shape = MaterialTheme.shapes.small,
                     ).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -239,7 +240,7 @@ fun HashedSignupForm(
                 colors =
                     CheckboxDefaults.colors(
                         checkedColor = AppColors.neonGreen,
-                        uncheckedColor = AppColors.white.copy(alpha = 0.5f),
+                        uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                         checkmarkColor = AppColors.green,
                     ),
                 modifier = Modifier.size(24.dp),
@@ -251,7 +252,7 @@ fun HashedSignupForm(
                         lineHeight = font12.fontSize * 1.5f,
                     ),
                 textAlign = TextAlign.Start,
-                color = AppColors.white.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
             )
         }
     }
@@ -281,7 +282,7 @@ private fun ExpandableSection(
             Text(
                 text = text,
                 style = font16.copy(fontWeight = FontWeight.Medium),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -306,7 +307,7 @@ private fun ExpandableSection(
                             Modifier
                                 .size(24.dp)
                                 .rotate(rotation),
-                        colorFilter = ColorFilter.tint(AppColors.white.copy(alpha = 0.50f)),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f)),
                     )
                 }
             }
@@ -323,14 +324,14 @@ private fun OptionalBadge() {
         modifier =
             Modifier
                 .background(
-                    color = AppColors.white.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(100.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ).padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
         Text(
             text = stringResource(com.windscribe.vpn.R.string.optional),
             style = font12.copy(fontWeight = FontWeight.Medium),
-            color = AppColors.white.copy(alpha = 0.6f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         )
     }
 }
@@ -350,18 +351,18 @@ private fun ActionButton(
                         Brush.verticalGradient(
                             colors =
                                 listOf(
-                                    AppColors.white.copy(alpha = 0.1f),
-                                    AppColors.white.copy(alpha = 0.05f),
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
                                 ),
                         ),
-                    shape = RoundedCornerShape(100.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ).clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             painter = painterResource(id = iconRes),
             contentDescription = contentDescription,
-            tint = AppColors.white,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(24.dp),
         )
     }
