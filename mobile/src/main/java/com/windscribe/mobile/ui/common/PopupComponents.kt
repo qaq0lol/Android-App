@@ -79,12 +79,12 @@ fun PopupPrimaryActionButton(
         colors =
             ButtonDefaults.buttonColors(
                 containerColor = AppColors.actionGreen,
-                contentColor = AppColors.midnightNavy,
-                disabledContainerColor = AppColors.white,
+                contentColor = MaterialTheme.colorScheme.background,
+                disabledContainerColor = MaterialTheme.colorScheme.onSurface,
                 disabledContentColor = AppColors.green,
             ),
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
         Text(
             text = text,
@@ -111,11 +111,11 @@ fun PopupSecondaryActionButton(
             ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = .10f),
                 contentColor = MaterialTheme.colorScheme.primaryTextColor,
-                disabledContainerColor = AppColors.white,
+                disabledContainerColor = MaterialTheme.colorScheme.onSurface,
                 disabledContentColor = AppColors.green,
             ),
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
         Text(
             text = text,
