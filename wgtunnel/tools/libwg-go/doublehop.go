@@ -139,9 +139,8 @@ type chainBind struct {
 	mu        sync.RWMutex
 	port      uint16
 	opened    bool
-	closed    chan struct{}
-	closeOnce sync.Once
-	allowed   map[netip.AddrPort]struct{}
+	closed  chan struct{}
+	allowed map[netip.AddrPort]struct{}
 }
 
 func newChainBind(t *chainTun, addresses string) (*chainBind, error) {
@@ -189,6 +188,11 @@ func (b *chainBind) Open(port uint16) ([]conn.ReceiveFunc, uint16, error) {
 	if b.opened {
 		return nil, 0, conn.ErrBindAlreadyOpen
 	}
+	select {
+	case <-b.closed:
+		b.closed = make(chan struct{})
+	default:
+	}
 	if port == 0 {
 		next := nextChainPort.Add(1)
 		port = uint16(49152 + (next % 15000))
@@ -202,11 +206,11 @@ func (b *chainBind) Open(port uint16) ([]conn.ReceiveFunc, uint16, error) {
 }
 
 func (b *chainBind) Close() error {
-	b.closeOnce.Do(func() {
-		close(b.closed)
-	})
 	b.mu.Lock()
-	b.opened = false
+	if b.opened {
+		close(b.closed)
+		b.opened = false
+	}
 	b.mu.Unlock()
 	return nil
 }
@@ -274,9 +278,12 @@ func (b *chainBind) receive(packets [][]byte, sizes []int, endpoints []conn.Endp
 	if len(packets) == 0 || len(sizes) == 0 || len(endpoints) == 0 {
 		return 0, syscall.EINVAL
 	}
+	b.mu.RLock()
+	sessionClosed := b.closed
+	b.mu.RUnlock()
 	for {
 		select {
-		case <-b.closed:
+		case <-sessionClosed:
 			return 0, net.ErrClosed
 		case <-b.tun.done:
 			return 0, net.ErrClosed
