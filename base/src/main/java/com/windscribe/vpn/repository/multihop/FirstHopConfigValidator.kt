@@ -21,7 +21,10 @@ object FirstHopConfigValidator {
         require(configText.contains("[Peer]", ignoreCase = true)) {
             "The selected file does not contain a WireGuard [Peer] section."
         }
-        WireGuardVpnProfile.createConfigFromString(configText)
+        val parsedConfig = WireGuardVpnProfile.createConfigFromString(configText)
+        require(parsedConfig.getInterface().getAddresses().isNotEmpty()) {
+            "The WireGuard Interface section must contain at least one Address."
+        }
         return WireGuardVpnProfile.getHostName(configText)
             ?: throw IllegalArgumentException("The WireGuard peer must have a valid Endpoint.")
     }
