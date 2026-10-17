@@ -84,7 +84,7 @@ fun ServerListScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.serverListBackgroundColor)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                     .padding(vertical = 8.dp),
             verticalArrangement = Arrangement.Top,
         ) {
