@@ -30,13 +30,11 @@ import com.windscribe.mobile.ui.theme.font18
 import kotlinx.coroutines.delay
 
 /**
- * Compose reimplementation of the legacy `PlanUpgradeGradientButton`: a fully-rounded pill filled
- * with the same diagonal multi-stop gradient, with a soft diagonal "glare" line that sweeps across
- * once and then pauses, on the same cadence as the original view.
+ * Material 3 primary action button for plan upgrades.
  *
- * Original timings/geometry (PlanUpgradeGradientButton): gradient stops + colors verbatim; glare =
- * a 66dp-wide forward-slash drawn three times (a crisp pass + two blurred passes), animated 0..width
- * over 800ms, an 8000ms pause between sweeps, and a 1500ms initial delay.
+ * The former gradient fill has been replaced with the current theme's primary container and
+ * onPrimary text colors. A subtle, clipped diagonal highlight remains as non-interactive polish.
+ * The highlight animation does not affect the enabled state or the supplied click callback.
  */
 
 private const val SWEEP_DURATION_MS = 800
@@ -57,8 +55,7 @@ fun GradientGlareButton(
     val blurInnerPx = with(density) { 2.5.dp.toPx() }
     val blurOuterPx = with(density) { 3.dp.toPx() }
 
-    // Glare position as a fraction 0..1 of the button width; -1f = idle (hidden). Sweeps over
-    // 800ms, then waits 8s before the next sweep, after a 1500ms initial delay.
+    // Glare position as a fraction 0..1 of the button width; -1f = idle (hidden).
     val glare = remember { Animatable(-1f) }
     LaunchedEffect(enabled) {
         if (!enabled) {
