@@ -22,6 +22,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -162,8 +163,8 @@ private fun MainMenuItem(
             .height(56.dp)
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                shape = RoundedCornerShape(size = 16.dp),
-            ).clickable {
+                shape = MaterialTheme.shapes.large,
+            ).clickable(role = Role.Button) {
                 if (hapticFeedbackEnabled) {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
                 }
@@ -210,8 +211,8 @@ private fun LogoutItem(
             .testTag("logout_button")
             .background(
                 color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
-                shape = RoundedCornerShape(size = 12.dp),
-            ).clickable(enabled = !showProgress) {
+                shape = MaterialTheme.shapes.medium,
+            ).clickable(enabled = !showProgress, role = Role.Button) {
                 if (hapticFeedbackEnabled) {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
                 }
