@@ -17,16 +17,24 @@ import com.windscribe.mobile.ui.helper.MultiDevicePreview
 
 val DarkColorScheme =
     darkColorScheme(
-        primary = AppColors.deepBlue,
-        secondary = AppColors.deepBlue,
+        primary = AppColors.primaryBlue,
+        secondary = AppColors.mediumBlue,
         background = AppColors.deepBlue,
+        surface = AppColors.charcoalBlue,
+        onPrimary = AppColors.white,
+        onBackground = AppColors.white,
+        onSurface = AppColors.white,
     )
 
 private val LightColorScheme =
     lightColorScheme(
-        primary = AppColors.deepBlue,
-        secondary = AppColors.deepBlue,
-        background = AppColors.deepBlue,
+        primary = AppColors.primaryBlue,
+        secondary = AppColors.mediumBlue,
+        background = Color(0xFFF2F2F7),
+        surface = AppColors.white,
+        onPrimary = AppColors.white,
+        onBackground = Color(0xFF1C1C1E),
+        onSurface = Color(0xFF1C1C1E),
     )
 
 @Composable
@@ -44,14 +52,14 @@ fun AndroidTheme(
 
 // Main
 val ColorScheme.backgroundColor: Color
-    @Composable get() = colorForTheme(AppColors.deepBlue, AppColors.white)
+    @Composable get() = colorForTheme(AppColors.deepBlue, Color(0xFFF2F2F7))
 
 val ColorScheme.primaryTextColor: Color
-    @Composable get() = colorForTheme(AppColors.white, AppColors.deepBlue)
+    @Composable get() = colorForTheme(AppColors.white, Color(0xFF1C1C1E))
 
 // Preferences
 val ColorScheme.preferencesBackgroundColor: Color
-    @Composable get() = colorForTheme(AppColors.charcoalBlue, AppColors.white)
+    @Composable get() = colorForTheme(AppColors.charcoalBlue, Color(0xFFF2F2F7))
 
 val ColorScheme.preferencesSubtitleColor: Color
     @Composable get() = AppColors.slateGray
