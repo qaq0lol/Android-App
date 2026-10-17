@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/netip"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -169,12 +170,12 @@ func newChainBind(t *chainTun, addresses string) (*chainBind, error) {
 
 func splitAddressList(value string) []string {
 	var result []string
-	for _, item := range stringsSplit(value, ",") {
-		item = stringsTrimSpace(item)
+	for _, item := range strings.Split(value, ",") {
+		item = strings.TrimSpace(item)
 		if item == "" {
 			continue
 		}
-		if slash := stringsIndexByte(item, '/'); slash >= 0 {
+		if slash := strings.IndexByte(item, '/'); slash >= 0 {
 			item = item[:slash]
 		}
 		result = append(result, item)
@@ -436,4 +437,20 @@ func internetChecksum(data []byte) uint16 {
 		sum = (sum & 0xffff) + (sum >> 16)
 	}
 	return ^uint16(sum)
+}
+
+
+// withoutPersistentKeepalive temporarily removes keepalive timers while the outer sockets are
+// created. Android must protect those sockets from the single system VPN before any traffic is
+// sent. wgStartDoubleHop restores the original settings after protect() has been applied.
+func withoutPersistentKeepalive(settings string) string {
+	var result strings.Builder
+	for _, line := range strings.Split(settings, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "persistent_keepalive_interval=") {
+			continue
+		}
+		result.WriteString(line)
+		result.WriteByte('\n')
+	}
+	return result.String()
 }
