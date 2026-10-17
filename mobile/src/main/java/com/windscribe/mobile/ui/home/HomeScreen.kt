@@ -66,7 +66,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -548,7 +548,8 @@ internal fun BoxScope.NetworkInfoSheet(
     val showContextMenu by bridgeApiViewModel.ipContextMenuState.collectAsState()
     val isBridgeApiReady by bridgeApiViewModel.bridgeApiReady.collectAsState()
     val hideIp by homeViewmodel.hideIp.collectAsState()
-    val ipAddress by bridgeApiViewModel.ipState.collectAsState()
+    // Keep the displayed address and copied address sourced from the same state.
+    val ipAddress by connectionViewmodel.ipState.collectAsState()
     val context = LocalContext.current
     var showIpAndIcon by remember { mutableStateOf(true) }
 
@@ -581,7 +582,7 @@ internal fun BoxScope.NetworkInfoSheet(
                 Box(
                     modifier =
                         Modifier
-                            .pointerInput(hideIp) {
+                            .pointerInput(hideIp, ipAddress) {
                                 detectTapGestures(
                                     onTap = {
                                         if (!hideIp) {
@@ -603,10 +604,10 @@ internal fun BoxScope.NetworkInfoSheet(
                     AnimatedIPAddress(
                         connectionViewmodel = connectionViewmodel,
                         bridgeApiViewModel = bridgeApiViewModel,
-                        style = font16,
+                        style = font16.copy(fontFeatureSettings = "tnum"),
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier =
-                            Modifier.graphicsLayer {
+                            Modifier.width(132.dp).graphicsLayer {
                                 renderEffect =
                                     if (hideIp && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                                         BlurEffect(15f, 15f)
@@ -639,7 +640,7 @@ internal fun BoxScope.NetworkInfoSheet(
                             .alpha(if (isBridgeApiReady) 1.0f else 0.3f)
                             .size(24.dp)
                             .onGloballyPositioned { layoutCoordinates ->
-                                bridgeApiViewModel.onIpContextMenuPosition(layoutCoordinates.boundsInWindow().topLeft)
+                                bridgeApiViewModel.onIpContextMenuPosition(layoutCoordinates.boundsInRoot().topLeft)
                             }.hapticClickable {
                                 if (isBridgeApiReady) {
                                     bridgeApiViewModel.setContextMenuState(true)
