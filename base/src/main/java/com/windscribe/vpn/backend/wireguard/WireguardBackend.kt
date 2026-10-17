@@ -19,6 +19,7 @@ import com.windscribe.vpn.commonutils.ResourceHelper
 import com.windscribe.vpn.localdatabase.LocalDbInterface
 import com.windscribe.vpn.repository.AdvanceParameterRepository
 import com.windscribe.vpn.repository.UserRepository
+import com.windscribe.vpn.repository.multihop.FirstHopProfileStore
 import com.windscribe.vpn.state.DeviceStateManager
 import com.windscribe.vpn.state.NetworkInfoManager
 import com.windscribe.vpn.state.VPNConnectionStateManager
@@ -56,6 +57,7 @@ class WireguardBackend
         localDbInterface: LocalDbInterface,
         val wgLogger: WgLogger,
         val wgConfigRepository: com.windscribe.vpn.repository.WgConfigRepository,
+        private val firstHopProfileStore: FirstHopProfileStore,
         private val apiManager: IApiCallManager,
         wsNetWrapper: WSNetWrapper,
         resourceHelper: ResourceHelper,
@@ -196,14 +198,39 @@ class WireguardBackend
                     withContext(Dispatchers.IO) {
                         val content = WireGuardVpnProfile.createConfigFromString(profile.content)
                         try {
-                            backend.setState(testTunnel, UP, content)
-                            // Start tunnel health monitoring after connection is established
+                            val firstHopConfig =
+                                if (firstHopProfileStore.isEnabled()) {
+                                    val firstHopText =
+                                        firstHopProfileStore.getConfig()
+                                            ?: throw IllegalStateException("Double-hop is enabled but the first-hop profile is missing.")
+                                    WireGuardVpnProfile.createConfigFromString(firstHopText)
+                                } else {
+                                    null
+                                }
+
+                            if (firstHopConfig != null) {
+                                vpnLogger.info("Starting WireGuard double-hop: imported first hop plus Windscribe WireGuard second hop.")
+                                backend.setStateDoubleHop(testTunnel, UP, content, firstHopConfig)
+                            } else {
+                                backend.setState(testTunnel, UP, content)
+                            }
+
+                            // Start tunnel health monitoring after connection is established.
                             if (!preferencesHelper.isConnectingToConfigured) {
                                 tunnelHealthCheck.start(profile.content)
                             }
                         } catch (e: Exception) {
                             vpnLogger.error("Exception while setting WireGuard state UP.", e)
-                            updateState(VPNState(Disconnected))
+                            updateState(
+                                VPNState(
+                                    Disconnected,
+                                    VPNState.Error(
+                                        error = VPNState.ErrorType.GenericError,
+                                        message = e.message ?: "Could not start the WireGuard tunnel.",
+                                        showError = true,
+                                    ),
+                                ),
+                            )
                         }
                     }
                 } ?: kotlin.run {
