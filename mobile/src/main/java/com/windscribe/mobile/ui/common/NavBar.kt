@@ -20,7 +20,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.helper.hapticClickableRipple
-import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font18
 import com.windscribe.mobile.ui.theme.font24
 import com.windscribe.mobile.ui.theme.primaryTextColor
@@ -37,18 +36,18 @@ fun NavBar(
             Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(top = 24.dp, bottom = 8.dp),
+                .padding(top = 12.dp, bottom = 12.dp),
     ) {
         Image(
             painter = painterResource(id = R.drawable.arrow_left),
             contentDescription = stringResource(id = com.windscribe.vpn.R.string.image_description),
-            colorFilter = ColorFilter.tint(AppColors.white),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
             modifier =
                 Modifier
                     .size(24.dp)
                     .clickable(
                         interactionSource = interactionSource,
-                        indication = ripple(bounded = false, color = AppColors.white),
+                        indication = ripple(bounded = false, color = MaterialTheme.colorScheme.primary),
                         onClick = onNavClick,
                     ).padding(4.dp)
                     .align(Alignment.CenterStart),
@@ -57,7 +56,7 @@ fun NavBar(
         Text(
             text = title,
             style = font24,
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             modifier =
                 Modifier
