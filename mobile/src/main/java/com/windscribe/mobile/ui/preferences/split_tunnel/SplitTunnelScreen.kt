@@ -192,7 +192,7 @@ private fun ShowSystemAppsToggle(
                 .height(48.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = MaterialTheme.shapes.small,
                 ).clickable { onShowSystemAppsToggle() }
                 .padding(start = 16.dp, end = 0.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -324,7 +324,7 @@ private fun IpsHostnamesRow(
                 .height(48.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ).clickable { onClick() }
                 .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
