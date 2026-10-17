@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.upgrade
 
+import androidx.compose.material3.MaterialTheme
 import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -94,7 +95,7 @@ fun UpgradeSuccessScreen(isGhostAccount: Boolean) {
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.welcome_to_windscribe_pro),
                 style = font22.copy(textAlign = TextAlign.Center),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -103,7 +104,7 @@ fun UpgradeSuccessScreen(isGhostAccount: Boolean) {
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.thanks_for_upgrading),
                 style = font16.copy(textAlign = TextAlign.Center),
-                color = AppColors.white.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -113,7 +114,7 @@ fun UpgradeSuccessScreen(isGhostAccount: Boolean) {
             FeatureTitleRow(com.windscribe.vpn.R.string.connect_to_any_location)
             FeatureTitleRow(com.windscribe.vpn.R.string.unlimited_bandwidth)
             HorizontalDivider(
-                color = AppColors.white.copy(alpha = 0.1f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                 modifier =
                     Modifier
                         .padding(top = 24.dp, start = 16.dp, end = 16.dp),
@@ -121,7 +122,7 @@ fun UpgradeSuccessScreen(isGhostAccount: Boolean) {
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.share),
                 style = font12.copy(textAlign = TextAlign.Start),
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -176,7 +177,7 @@ private fun FeatureTitleRow(titleRes: Int) {
         Text(
             text = stringResource(titleRes),
             style = font14.copy(textAlign = TextAlign.Start),
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
         Image(
@@ -214,7 +215,7 @@ private fun SocialLinkRow(
         Text(
             text = stringResource(titleRes),
             style = font14.copy(textAlign = TextAlign.Start),
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier =
                 Modifier
                     .weight(1f)
