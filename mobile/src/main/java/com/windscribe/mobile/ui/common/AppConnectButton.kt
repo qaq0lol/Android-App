@@ -131,7 +131,7 @@ fun AppConnectButtonContent(
         val isConnected = state is ConnectionUIState.Connected
         val isConnecting = state is ConnectionUIState.Connecting
         val actionColor = if (isConnected) AppColors.actionGreen else MaterialTheme.colorScheme.primary
-        val powerIconColor = MaterialTheme.colorScheme.onPrimary
+        val powerIconColor = if (isConnected) AppColors.white else MaterialTheme.colorScheme.onPrimary
         val ringColor =
             when {
                 isConnected -> AppColors.mintGreen
@@ -168,7 +168,7 @@ fun AppConnectButtonContent(
                 val inset = strokeWidth
                 drawArc(
                     color = powerIconColor,
-                    startAngle = 45f,
+                    startAngle = 315f,
                     sweepAngle = 270f,
                     useCenter = false,
                     topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
