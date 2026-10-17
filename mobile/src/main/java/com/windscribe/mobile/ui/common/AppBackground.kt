@@ -8,7 +8,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.windscribe.mobile.ui.helper.ForceStatusBarIcons
-import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.preferencesBackgroundColor
 
 @Composable
@@ -18,7 +17,7 @@ fun AppBackground(content: @Composable BoxScope.() -> Unit) {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(AppColors.charcoalBlue),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         content()
     }
