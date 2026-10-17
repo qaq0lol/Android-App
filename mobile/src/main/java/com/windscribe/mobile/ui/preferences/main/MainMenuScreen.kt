@@ -161,8 +161,8 @@ private fun MainMenuItem(
             .fillMaxWidth()
             .height(44.dp)
             .background(
-                color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                shape = RoundedCornerShape(size = 12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                shape = RoundedCornerShape(size = 16.dp),
             ).clickable {
                 if (hapticFeedbackEnabled) {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
@@ -209,7 +209,7 @@ private fun LogoutItem(
             .height(44.dp)
             .testTag("logout_button")
             .background(
-                color = AppColors.yellow.copy(0.05f),
+                color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
                 shape = RoundedCornerShape(size = 12.dp),
             ).clickable(enabled = !showProgress) {
                 if (hapticFeedbackEnabled) {
@@ -227,13 +227,13 @@ private fun LogoutItem(
                     .size(24.dp),
             painter = painterResource(com.windscribe.mobile.R.drawable.ic_sign_out),
             contentDescription = "",
-            tint = AppColors.yellow.copy(alpha = alpha),
+            tint = MaterialTheme.colorScheme.error.copy(alpha = alpha),
         )
         Text(
             stringResource(R.string.logout),
             modifier = Modifier.padding(start = 16.dp),
             style = font16.copy(fontWeight = FontWeight.Medium),
-            color = AppColors.yellow.copy(alpha = alpha),
+            color = MaterialTheme.colorScheme.error.copy(alpha = alpha),
         )
     }
 }
