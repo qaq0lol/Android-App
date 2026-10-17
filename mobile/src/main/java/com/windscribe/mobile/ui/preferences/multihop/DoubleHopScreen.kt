@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -55,10 +54,10 @@ fun DoubleHopScreen(
                     val configText =
                         context.contentResolver.openInputStream(uri)?.use { stream ->
                             readBounded(stream, MAX_CONFIG_BYTES)
-                        } ?: throw IllegalArgumentException("The selected file could not be opened.")
+                        } ?: throw IllegalArgumentException("无法打开所选文件。")
                     viewModel.importConfig(configText)
                 } catch (e: Exception) {
-                    viewModel.reportImportError(e.message ?: "Could not read the selected file.")
+                    viewModel.reportImportError(e.message ?: "无法读取所选文件。")
                 }
             }
         }
@@ -78,13 +77,13 @@ fun DoubleHopScreen(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "WireGuard first hop",
+                text = "第一跳：WireGuard",
                 style = font16,
                 color = MaterialTheme.colorScheme.primaryTextColor,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Import a WireGuard .conf file to save it as the planned upstream tunnel. The profile is validated with the existing WireGuard parser and stored using encrypted Android preferences.",
+                text = "导入 WireGuard .conf 配置作为第一跳。程序会校验配置，并使用 Android 加密存储保存私钥。",
                 style = font14,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -97,15 +96,15 @@ fun DoubleHopScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = if (state.hasProfile) "First-hop profile saved" else "No first-hop profile",
+                        text = if (state.hasProfile) "第一跳配置已保存" else "尚未导入第一跳配置",
                         style = font16,
                         color = MaterialTheme.colorScheme.primaryTextColor,
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
                         text =
-                            state.endpoint?.let { "WireGuard endpoint: $it" }
-                                ?: "Choose a WireGuard configuration file to begin.",
+                            state.endpoint?.let { "WireGuard 服务器：$it" }
+                                ?: "请选择 WireGuard 配置文件。",
                         style = font14,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -117,12 +116,12 @@ fun DoubleHopScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Enable double-hop",
+                                text = "启用双重中转",
                                 style = font16,
                                 color = MaterialTheme.colorScheme.primaryTextColor,
                             )
                             Text(
-                                text = if (state.enabled) "Enabled for the next connection" else "Disabled",
+                                text = if (state.enabled) "已启用，下一次连接生效" else "已关闭",
                                 style = font14,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -140,7 +139,7 @@ fun DoubleHopScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(if (state.hasProfile) "Replace configuration" else "Import WireGuard configuration")
+                        Text(if (state.hasProfile) "替换配置" else "导入 WireGuard 配置")
                     }
                     if (state.hasProfile) {
                         Spacer(Modifier.height(8.dp))
@@ -148,7 +147,7 @@ fun DoubleHopScreen(
                             onClick = viewModel::removeConfig,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text("Remove configuration")
+                            Text("删除配置")
                         }
                     }
                 }
@@ -173,13 +172,13 @@ fun DoubleHopScreen(
 
             Spacer(Modifier.height(18.dp))
             Text(
-                text = "Second hop requirements",
+                text = "第二跳要求",
                 style = font16,
                 color = MaterialTheme.colorScheme.primaryTextColor,
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "Double-hop currently requires WireGuard as the Windscribe second-hop protocol. The client will refuse to start OpenVPN or IKEv2 while double-hop is enabled, so it cannot silently fall back to a single-hop connection. The first-hop peer's AllowedIPs must also include the selected Windscribe WireGuard server endpoint.",
+                text = "目前第二跳必须选择 Windscribe WireGuard。启用双重中转时，客户端会阻止 OpenVPN 或 IKEv2 连接，避免静默退化为单跳。第一跳 Peer 的 AllowedIPs 还必须包含所选 Windscribe WireGuard 服务器的地址。",
                 style = font14,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -198,7 +197,7 @@ private fun readBounded(
         val count = input.read(buffer)
         if (count < 0) break
         total += count
-        require(total <= maximumBytes) { "The selected file is larger than 64 KiB." }
+        require(total <= maximumBytes) { "配置文件不能超过 64 KiB。" }
         output.write(buffer, 0, count)
     }
     return output.toString(StandardCharsets.UTF_8.name())
