@@ -7,9 +7,10 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
-  group: material-you-${{ github.ref }}
+  group: material-you-validation-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
