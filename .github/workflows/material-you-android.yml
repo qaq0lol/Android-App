@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - material-you-full-rebuild
+      - feature/wireguard-first-hop-import
   pull_request:
     branches:
       - main
