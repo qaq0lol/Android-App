@@ -32,7 +32,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.windscribe.mobile.R
-import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font16
 import com.windscribe.mobile.ui.theme.font18
 import com.windscribe.mobile.ui.theme.font22
@@ -81,7 +80,7 @@ fun PopupPrimaryActionButton(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         interactionSource = interactionSource,
         shape = MaterialTheme.shapes.large,
@@ -111,8 +110,8 @@ fun PopupSecondaryActionButton(
             ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                disabledContainerColor = MaterialTheme.colorScheme.onSurface,
-                disabledContentColor = AppColors.green,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
             ),
         interactionSource = interactionSource,
         shape = MaterialTheme.shapes.large,
