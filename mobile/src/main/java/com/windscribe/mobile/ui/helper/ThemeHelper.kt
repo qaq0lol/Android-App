@@ -6,13 +6,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.windscribe.mobile.ui.theme.DarkColorScheme
+import com.windscribe.mobile.ui.theme.isDark
 
 @Composable
 fun ForceStatusBarIcons(forceLight: Boolean = false) {
     val view = LocalView.current
     val activity = view.context as? Activity
-    val isDark = MaterialTheme.colorScheme == DarkColorScheme
+    val isDark = MaterialTheme.colorScheme.isDark
     if (activity == null) return
     WindowCompat.setDecorFitsSystemWindows(activity.window, false)
     SideEffect {

@@ -339,7 +339,7 @@ private fun CompactUI(
     homeViewmodel: HomeViewmodel,
     bridgeApiViewModel: BridgeApiViewModel,
 ) {
-    ForceStatusBarIcons(true)
+    ForceStatusBarIcons()
     val searchState by serverViewModel.showSearchView.collectAsState()
     Background {
         ConnectedBackground(connectionViewmodel)
