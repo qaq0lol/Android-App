@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.connection
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -97,7 +98,7 @@ fun SetupPreferredProtocolContent(
             Modifier
                 .fillMaxSize()
                 .testTag("preferred_protocol_screen")
-                .background(color = AppColors.deepBlue)
+                .background(color = MaterialTheme.colorScheme.background)
                 .clickable(enabled = false) {},
     ) {
         Column(
@@ -117,12 +118,12 @@ fun SetupPreferredProtocolContent(
                     Modifier
                         .size(100.dp)
                         .padding(top = 8.dp),
-                colorFilter = ColorFilter.tint(AppColors.white),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
             )
             Text(
                 text = stringResource(com.windscribe.vpn.R.string.set_this_protocol_as_preferred, Util.getProtocolLabel(protocol.protocol)),
                 style = font24,
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
             Text(
@@ -132,7 +133,7 @@ fun SetupPreferredProtocolContent(
                             .windscribe_will_always_use_this_protocol_to_connect_on_this_network_in_the_future_to_avoid_any_interruptions,
                     ),
                 style = font16,
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
@@ -152,7 +153,7 @@ fun SetupPreferredProtocolContent(
                 Text(
                     stringResource(com.windscribe.vpn.R.string.cancel),
                     style = font16,
-                    color = AppColors.white,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
