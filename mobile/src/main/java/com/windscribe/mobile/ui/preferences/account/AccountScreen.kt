@@ -311,7 +311,7 @@ private fun TextFieldDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.primaryTextColor,
             tonalElevation = 8.dp,
         ) {
@@ -594,7 +594,7 @@ private fun AccountInfo(accountState: AccountState) {
                                 Modifier
                                     .background(
                                         color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                                        shape = RoundedCornerShape(6.dp),
+                                        shape = MaterialTheme.shapes.small,
                                     ).padding(horizontal = 12.dp, vertical = 8.dp)
                                     .fillMaxWidth(),
                         )
@@ -605,7 +605,7 @@ private fun AccountInfo(accountState: AccountState) {
                         Row(
                             modifier =
                                 Modifier
-                                    .background(AppColors.yellow, shape = RoundedCornerShape(6.dp))
+                                    .background(AppColors.yellow, shape = MaterialTheme.shapes.small)
                                     .clickable {
                                         navController.navigate(Screen.ConfirmEmail.route)
                                     }.padding(horizontal = 12.dp, vertical = 8.dp)
@@ -740,7 +740,7 @@ private fun PlanInfo(accountState: AccountState) {
                             ) {
                                 MaterialTheme.colorScheme.primaryTextColor
                             } else {
-                                AppColors.cyberBlue
+                                MaterialTheme.colorScheme.tertiary
                             },
                     ),
             )
@@ -807,8 +807,8 @@ private fun PlanInfo(accountState: AccountState) {
             Spacer(modifier = Modifier.height(16.dp))
             ActionButton(
                 stringResource(R.string.upgrade_to_pro),
-                textColor = AppColors.cyberBlue,
-                backgroundColor = AppColors.cyberBlue.copy(alpha = 0.05f),
+                textColor = MaterialTheme.colorScheme.tertiary,
+                backgroundColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f),
             ) {
                 navController.navigate(Screen.Upgrade.route)
             }
