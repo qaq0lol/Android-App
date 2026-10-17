@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -52,7 +51,7 @@ fun SwitchItemView(
         modifier =
             Modifier
                 .background(
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                    MaterialTheme.colorScheme.surfaceContainerLow,
                     shape = shape,
                 ).padding(16.dp)
                 .fillMaxWidth(),

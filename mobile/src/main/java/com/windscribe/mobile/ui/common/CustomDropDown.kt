@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -44,7 +44,7 @@ fun CustomDropDown(
     @StringRes title: Int,
     items: List<DropDownStringItem>,
     selectedItemKey: String,
-    shape: RoundedCornerShape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
+    shape: Shape = MaterialTheme.shapes.medium,
     @StringRes description: Int? = null,
     textAlign: TextAlign = TextAlign.Center,
     onSelect: (DropDownStringItem) -> Unit,
@@ -57,7 +57,7 @@ fun CustomDropDown(
         modifier =
             Modifier
                 .background(
-                    MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    MaterialTheme.colorScheme.surfaceContainerLow,
                     shape = shape,
                 ).padding(14.dp)
                 .fillMaxWidth(),

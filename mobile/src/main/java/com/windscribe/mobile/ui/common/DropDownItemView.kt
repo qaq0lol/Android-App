@@ -59,7 +59,7 @@ fun DropDownItemView(
         modifier =
             Modifier
                 .background(
-                    MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    MaterialTheme.colorScheme.surfaceContainerLow,
                     shape = MaterialTheme.shapes.medium,
                 ).padding(14.dp)
                 .fillMaxWidth(),
