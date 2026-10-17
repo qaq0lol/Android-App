@@ -165,7 +165,7 @@ private fun ProgressIndicator() {
                 Modifier
                     .size(48.dp)
                     .align(Alignment.Center),
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
