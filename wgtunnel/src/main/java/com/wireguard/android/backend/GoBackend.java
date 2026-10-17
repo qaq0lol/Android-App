@@ -263,6 +263,37 @@ public final class GoBackend implements Backend {
     }
 
 
+
+    /**
+     * Resolve peer endpoint hostnames before the Android VPN TUN is established.
+     *
+     * When using an imported underlay, DNS lookups made after Builder.establish() can
+     * otherwise be routed into the not-yet-started inner VPN and stall the connection.
+     */
+    private String createResolvedUserspaceConfig(final Config config) throws Exception {
+        String settings = config.toWgUserspaceString();
+        for (final Peer peer : config.getPeers()) {
+            final InetEndpoint endpoint = peer.getEndpoint().orElse(null);
+            if (endpoint == null) {
+                continue;
+            }
+            final InetEndpoint resolved = endpoint.getResolved().orElse(null);
+            if (resolved == null) {
+                throw new BackendException(Reason.DNS_RESOLUTION_FAILURE, endpoint.getHost());
+            }
+            final String oldEndpoint = "endpoint=" + endpoint.toString();
+            final String resolvedEndpoint = "endpoint=" + resolved.toString();
+            if (!oldEndpoint.equals(resolvedEndpoint)) {
+                settings = settings.replace(oldEndpoint, resolvedEndpoint);
+                if (settings.contains(oldEndpoint)) {
+                    throw new IllegalStateException(
+                            "Could not replace unresolved WireGuard endpoint " + endpoint.getHost());
+                }
+            }
+        }
+        return settings;
+    }
+
     private static String getInterfaceAddresses(final Config config) {
         final StringBuilder addresses = new StringBuilder();
         for (final InetNetwork address : config.getInterface().getAddresses()) {
@@ -443,7 +474,7 @@ public final class GoBackend implements Backend {
             // DNS resolution already completed in setStateInternal() before acquiring lock
 
             // Build config
-            final String goConfig = config.toWgUserspaceString();
+            final String goConfig = firstHopConfig == null ? config.toWgUserspaceString() : createResolvedUserspaceConfig(config);
 
             // Create the vpn tunnel with android API
             final VpnService.Builder builder = service.getBuilder();
@@ -505,7 +536,7 @@ public final class GoBackend implements Backend {
             final DNSDetails dnsDetails = service.getDnsDetails();
             final boolean customTun = dnsDetails != null && dnsDetails.getType() == DnsType.Proxy;
 
-            final String firstHopSettings = firstHopConfig == null ? null : firstHopConfig.toWgUserspaceString();
+            final String firstHopSettings = firstHopConfig == null ? null : createResolvedUserspaceConfig(firstHopConfig);
             final String firstHopAddresses = firstHopConfig == null ? null : getInterfaceAddresses(firstHopConfig);
 
             if (customTun) {
