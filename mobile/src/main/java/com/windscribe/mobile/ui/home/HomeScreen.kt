@@ -347,7 +347,7 @@ private fun CompactUI(
         Box(modifier = Modifier.fillMaxSize()) {
             ConnectedBackground(connectionViewmodel)
             Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-                Box(modifier = Modifier.fillMaxWidth().height(276.dp).clipToBounds()) {
+                Box(modifier = Modifier.fillMaxWidth().height(246.dp).clipToBounds()) {
                     LocationImage(connectionViewmodel)
                     Box(
                         modifier = Modifier.fillMaxSize().background(
@@ -370,7 +370,7 @@ private fun CompactUI(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Surface(
-                                modifier = Modifier.weight(1f).height(95.dp).padding(end = 12.dp),
+                                modifier = Modifier.weight(1f).height(82.dp).padding(end = 12.dp),
                                 shape = RoundedCornerShape(20.dp),
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
@@ -511,14 +511,14 @@ private fun LocationNameContent(
     val screenWidthPx = LocalWindowInfo.current.containerSize.width.toFloat()
     val maxWidthPx = (screenWidthPx - with(density) { 150.dp.toPx() }).coerceAtLeast(0f)
     val isSingleLine = remember(nodeName, nickname, maxWidthPx, density) {
-        fitsInOneLine("$nodeName $nickname", 26.0f, maxWidthPx, density)
+        fitsInOneLine("$nodeName $nickname", 18.0f, maxWidthPx, density)
     }
     LaunchedEffect(isSingleLine) { onSingleLineComputed(isSingleLine) }
     if (isSingleLine) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = nodeName,
-                style = font26.copy(textAlign = TextAlign.Start, fontWeight = FontWeight.SemiBold),
+                style = font26.copy(fontSize = 18.sp, lineHeight = 22.sp, textAlign = TextAlign.Start, fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -526,17 +526,17 @@ private fun LocationNameContent(
             )
             if (nickname.isNotBlank()) {
                 Text(" $nickname", maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
+                    style = font26.copy(fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     } else {
         Column {
-            Text(nodeName, style = font26.copy(textAlign = TextAlign.Start, fontWeight = FontWeight.SemiBold),
+            Text(nodeName, style = font26.copy(fontSize = 18.sp, lineHeight = 22.sp, textAlign = TextAlign.Start, fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (nickname.isNotBlank()) {
                 Text(nickname, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
+                    style = font26.copy(fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
