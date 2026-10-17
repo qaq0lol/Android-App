@@ -7,12 +7,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font12
 
 @Composable
@@ -31,13 +31,13 @@ fun ActionButtonLighter(
                 .padding(horizontal = 16.dp),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = AppColors.neonGreen.copy(alpha = 0.05f),
-                contentColor = AppColors.neonGreen,
-                disabledContainerColor = AppColors.neonGreen.copy(alpha = 0.05f),
-                disabledContentColor = AppColors.neonGreen,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
         Text(
             text = text,
