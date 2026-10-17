@@ -693,4 +693,5 @@
     <string name="accessibility_status_connecting">正在连接</string>
     <string name="accessibility_status_disconnected">已断开连接</string>
 
+    <string name="double_hop">双重中转</string>
 </resources>
