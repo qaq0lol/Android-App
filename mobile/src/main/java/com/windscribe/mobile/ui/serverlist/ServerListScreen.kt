@@ -40,84 +40,53 @@ fun ServerListScreen(
     bridgeApiViewModel: BridgeApiViewModel = hiltViewModel<BridgeApiViewModelImpl>(),
     configViewmodel: ConfigViewmodel = hiltViewModel<ConfigViewmodelImpl>(),
     homeViewmodel: HomeViewmodel = hiltViewModel<HomeViewmodelImpl>(),
+    modifier: Modifier = Modifier,
 ) {
     val selectedType by viewModel.selectedServerListType.collectAsState()
-
-    val pagerState =
-        rememberPagerState(
-            initialPage = 0,
-            initialPageOffsetFraction = 0.0f,
-            pageCount = { 4 },
-        )
-
+    val pagerState = rememberPagerState(initialPage = 0, initialPageOffsetFraction = 0.0f, pageCount = { 4 })
     val hapticFeedback by homeViewmodel.hapticFeedbackEnabled.collectAsState()
     val haptic = LocalHapticFeedback.current
-
     val coroutineScope = rememberCoroutineScope()
 
-    /**
-     * ViewModel -> Pager (one-way, guarded)
-     */
     LaunchedEffect(selectedType) {
         val targetPage = selectedType.toPageIndex()
-
         if (pagerState.currentPage != targetPage) {
-            if (hapticFeedback) {
-                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-            }
+            if (hapticFeedback) haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
             pagerState.animateScrollToPage(targetPage)
         }
     }
-
-    /**
-     * Pager -> ViewModel (only when settled, prevents feedback loop)
-     */
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }
-            .collect { page ->
-                viewModel.setSelectedType(page.toServerListType())
-            }
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            viewModel.setSelectedType(page.toServerListType())
+        }
     }
 
-    Box {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.serverListBackgroundColor)
-                    .padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.Top,
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                beyondViewportPageCount = 3,
-                modifier = Modifier.weight(1f),
-            ) { pageIndex ->
-
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.TopStart,
-                ) {
-                    when (pageIndex) {
-                        0 -> AllServerList(viewModel, connectionViewModel, homeViewmodel)
-                        1 -> FavouriteList(viewModel, connectionViewModel, homeViewmodel)
-                        2 -> StaticIPServerList(viewModel, connectionViewModel)
-                        3 -> ConfigServerList(viewModel, connectionViewModel, configViewmodel)
-                    }
+    Column(
+        modifier = modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.serverListBackgroundColor)
+            .padding(top = 8.dp, bottom = 8.dp),
+        verticalArrangement = Arrangement.Top,
+    ) {
+        ServerListNavigation(
+            modifier = Modifier.fillMaxWidth(),
+            viewModel = viewModel,
+            bridgeApiViewModel = bridgeApiViewModel,
+            onTabSelected = { index -> coroutineScope.launch { viewModel.setSelectedType(index.toServerListType()) } },
+        )
+        HorizontalPager(
+            state = pagerState,
+            beyondViewportPageCount = 3,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        ) { pageIndex ->
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
+                when (pageIndex) {
+                    0 -> AllServerList(viewModel, connectionViewModel, homeViewmodel)
+                    1 -> FavouriteList(viewModel, connectionViewModel, homeViewmodel)
+                    2 -> StaticIPServerList(viewModel, connectionViewModel)
+                    3 -> ConfigServerList(viewModel, connectionViewModel, configViewmodel)
                 }
             }
         }
-
-        ServerListNavigation(
-            modifier = Modifier.offset(y = (-54f).dp),
-            viewModel = viewModel,
-            bridgeApiViewModel = bridgeApiViewModel,
-            onTabSelected = { index ->
-                coroutineScope.launch {
-                    viewModel.setSelectedType(index.toServerListType())
-                }
-            },
-        )
     }
 }
 

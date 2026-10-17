@@ -37,6 +37,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.windscribe.mobile.ui.common.PreferenceBackground
+import com.windscribe.mobile.ui.preferences.lipstick.WallpaperCustomizationSection
 import com.windscribe.mobile.ui.connection.ToastMessage
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
@@ -117,6 +118,8 @@ fun LookAndFeelScreen(viewmodel: LipstickViewmodel = hiltViewModel<LipstickViewm
             }
             Spacer(modifier = Modifier.height(20.dp))
             Column(modifier = Modifier.verticalScroll(scrollState)) {
+                WallpaperCustomizationSection()
+                Spacer(modifier = Modifier.height(16.dp))
                 AppTheme(viewmodel)
                 Spacer(modifier = Modifier.height(16.dp))
                 AppCustomBackground(state = backgroundState, actions = backgroundActions)

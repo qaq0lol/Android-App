@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wallpaper_title">Custom app wallpaper</string>
+    <string name="wallpaper_description">Choose a photo for the home screen and settings. The image is stored privately in this app.</string>
+    <string name="wallpaper_choose">Choose image</string>
+    <string name="wallpaper_reset">Restore default</string>
+    <string name="wallpaper_importing">Importing…</string>
+    <string name="wallpaper_applied">Wallpaper updated</string>
+    <string name="wallpaper_error">Could not load the image. Choose a supported image under 25 MB.</string>
+    <string name="home_secure_connection">Secure connection</string>
+    <string name="home_private_by_design">Private by design</string>
+</resources>

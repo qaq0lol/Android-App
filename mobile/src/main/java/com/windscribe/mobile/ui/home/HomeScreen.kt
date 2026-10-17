@@ -17,6 +17,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
+import com.windscribe.mobile.ui.common.AppWallpaperBackground
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -320,15 +323,7 @@ fun HandleToast(connectionViewmodel: ConnectionViewmodel) {
 
 @Composable
 private fun Background(content: @Composable () -> Unit) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .navigationBarsPadding(),
-    ) {
-        content()
-    }
+    AppWallpaperBackground(modifier = Modifier.fillMaxSize().navigationBarsPadding()) { content() }
 }
 
 @Composable
@@ -342,31 +337,62 @@ private fun CompactUI(
     ForceStatusBarIcons()
     val searchState by serverViewModel.showSearchView.collectAsState()
     Background {
-        ConnectedBackground(connectionViewmodel)
-        Column {
-            Spacer(modifier = Modifier.height(36.dp))
-            LocationImage(connectionViewmodel, homeViewmodel, bridgeApiViewModel)
-            ServerListScreen(serverViewModel, connectionViewmodel, bridgeApiViewModel, configViewmodel, homeViewmodel)
-        }
-        Column {
-            Header(connectionViewmodel, homeViewmodel)
-            ConnectionStatusSheet(connectionViewmodel)
-            Spacer(modifier = Modifier.height(32.dp))
-            LocationName(connectionViewmodel)
-            Spacer(modifier = Modifier.weight(1.0f))
-        }
-        IPContextMenu(bridgeApiViewModel)
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(top = 61.dp, end = 16.dp),
-            contentAlignment = Alignment.TopEnd,
-        ) {
-            AppConnectButton(connectionViewmodel)
-        }
-        if (searchState) {
-            SearchServerList(serverViewModel, connectionViewmodel, homeViewmodel)
+        Box(modifier = Modifier.fillMaxSize()) {
+            ConnectedBackground(connectionViewmodel)
+            Column(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.fillMaxWidth().height(276.dp)) {
+                    LocationImage(connectionViewmodel, homeViewmodel, bridgeApiViewModel)
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.10f),
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.38f),
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.78f),
+                                ),
+                            ),
+                        ),
+                    )
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Header(connectionViewmodel, homeViewmodel)
+                        ConnectionStatusSheet(connectionViewmodel)
+                        Spacer(modifier = Modifier.weight(1f))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 18.dp, bottom = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Surface(
+                                modifier = Modifier.weight(1f).padding(end = 12.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
+                                tonalElevation = 1.dp,
+                            ) {
+                                Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                                    LocationName(connectionViewmodel)
+                                }
+                            }
+                            AppConnectButton(connectionViewmodel)
+                        }
+                    }
+                }
+                Surface(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                    color = Color.Transparent,
+                ) {
+                    ServerListScreen(
+                        viewModel = serverViewModel,
+                        connectionViewModel = connectionViewmodel,
+                        bridgeApiViewModel = bridgeApiViewModel,
+                        configViewmodel = configViewmodel,
+                        homeViewmodel = homeViewmodel,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+            IPContextMenu(bridgeApiViewModel)
+            if (searchState) SearchServerList(serverViewModel, connectionViewmodel, homeViewmodel)
         }
     }
 }
@@ -395,86 +421,58 @@ private fun ConnectionStatusSheetContent(
     isPreferredProtocolEnabled: Boolean,
     onProtocolChangeClick: () -> Unit,
 ) {
-    val containerColor =
-        when (state) {
-            is ConnectionUIState.Connected -> AppColors.mintGreen
-            else -> MaterialTheme.colorScheme.onSurface
-        }
-    Row(
-        modifier = Modifier.padding(start = 12.dp, top = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val containerColor = if (state is ConnectionUIState.Connected) AppColors.mintGreen else MaterialTheme.colorScheme.onSurface
+    val showDecoyTraffic = state is ConnectionUIState.Connected && isDecoyTrafficEnabled
+    Surface(
+        modifier = Modifier.padding(start = 18.dp, top = 4.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+        tonalElevation = 1.dp,
     ) {
-        ConnectionStatus(state)
-        val showDecoyTraffic = state is ConnectionUIState.Connected && isDecoyTrafficEnabled
-
-        // Add initial spacing
-        Spacer(modifier = Modifier.width(if (isProtocolTweaksEnabled || showDecoyTraffic) 4.dp else 12.dp))
-
-        if (isProtocolTweaksEnabled) {
-            Image(
-                painter =
-                    painterResource(
-                        if (state is ConnectionUIState.Connected) {
-                            R.drawable.ic_anti_censorship_enabled
-                        } else {
-                            R.drawable.ic_anti_censorship_disabled
-                        },
-                    ),
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .size(24.dp),
-                contentScale = ContentScale.Inside,
-                colorFilter = ColorFilter.tint(containerColor),
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-        }
-
-        if (showDecoyTraffic) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ConnectionStatus(state)
+            Spacer(modifier = Modifier.width(if (isProtocolTweaksEnabled || showDecoyTraffic) 4.dp else 12.dp))
+            if (isProtocolTweaksEnabled) {
+                Image(
+                    painter = painterResource(if (state is ConnectionUIState.Connected) R.drawable.ic_anti_censorship_enabled else R.drawable.ic_anti_censorship_disabled),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    contentScale = ContentScale.Inside,
+                    colorFilter = ColorFilter.tint(containerColor),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+            if (showDecoyTraffic) {
+                Text(stringResource(com.windscribe.vpn.R.string.decoy), style = font12, color = AppColors.neonGreen)
+                Spacer(modifier = Modifier.width(4.dp))
+            }
             Text(
-                stringResource(com.windscribe.vpn.R.string.decoy),
-                style = font12,
-                color = AppColors.neonGreen,
+                text = "${Util.getProtocolLabel(state.protocolInfo?.protocol ?: "")}  ${state.protocolInfo?.port}",
+                style = font12.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                color = containerColor,
             )
             Spacer(modifier = Modifier.width(4.dp))
-        }
-        Text(
-            text = "${Util.getProtocolLabel(state.protocolInfo?.protocol ?: "")}  ${state.protocolInfo?.port}",
-            style = font12.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
-            color = containerColor,
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        if (isPreferredProtocolEnabled) {
+            if (isPreferredProtocolEnabled) {
+                Image(
+                    painter = painterResource(if (state is ConnectionUIState.Connected) R.drawable.ic_preferred_protocol_status_enabled else R.drawable.ic_preferred_protocol_status_disabled),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    contentScale = ContentScale.Inside,
+                    colorFilter = ColorFilter.tint(containerColor),
+                )
+            }
             Image(
-                painter =
-                    painterResource(
-                        if (state is ConnectionUIState.Connected) {
-                            R.drawable.ic_preferred_protocol_status_enabled
-                        } else {
-                            R.drawable.ic_preferred_protocol_status_disabled
-                        },
-                    ),
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .size(24.dp),
-                contentScale = ContentScale.Inside,
-                colorFilter = ColorFilter.tint(containerColor),
+                painter = painterResource(R.drawable.arrow_right_small),
+                contentDescription = stringResource(com.windscribe.vpn.R.string.protocol_change),
+                modifier = Modifier.size(24.dp).semantics { role = Role.Button }.hapticClickable { onProtocolChangeClick() }.testTag("protocol_switcher"),
+                contentScale = ContentScale.None,
+                colorFilter = ColorFilter.tint(containerColor.copy(alpha = 0.4f)),
             )
         }
-        Image(
-            painter = painterResource(R.drawable.arrow_right_small),
-            contentDescription = stringResource(com.windscribe.vpn.R.string.protocol_change),
-            modifier =
-                Modifier
-                    .size(24.dp)
-                    .semantics { role = Role.Button }
-                    .hapticClickable {
-                        onProtocolChangeClick()
-                    }.testTag("protocol_switcher"),
-            contentScale = ContentScale.None,
-            colorFilter = ColorFilter.tint(containerColor.copy(alpha = 0.4f)),
-        )
     }
 }
 
@@ -498,47 +496,38 @@ private fun LocationNameContent(
     val nodeName = info?.nodeName ?: ""
     val nickname = info?.nickName ?: ""
     val density = LocalDensity.current
-    val screenWidthDp = LocalWindowInfo.current.containerSize.width
-    val maxWidthPx = with(density) { screenWidthDp.dp.toPx() }
-    val isSingleLine = fitsInOneLine("$nodeName $nickname", 26.0f, maxWidthPx, density)
-    onSingleLineComputed(isSingleLine)
+    // LocalWindowInfo.containerSize is measured in pixels; do not reinterpret it as dp.
+    val screenWidthPx = LocalWindowInfo.current.containerSize.width.toFloat()
+    val maxWidthPx = (screenWidthPx - with(density) { 150.dp.toPx() }).coerceAtLeast(0f)
+    val isSingleLine = remember(nodeName, nickname, maxWidthPx, density) {
+        fitsInOneLine("$nodeName $nickname", 26.0f, maxWidthPx, density)
+    }
+    LaunchedEffect(isSingleLine) { onSingleLineComputed(isSingleLine) }
     if (isSingleLine) {
-        Row {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = nodeName,
-                style = font26.copy(textAlign = TextAlign.Start),
-                color = MaterialTheme.colorScheme.onBackground,
+                style = font26.copy(textAlign = TextAlign.Start, fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 12.dp),
+                modifier = Modifier.weight(1f, fill = false),
             )
-            Text(
-                text = " $nickname",
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(end = 12.dp),
-            )
+            if (nickname.isNotBlank()) {
+                Text(" $nickname", maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     } else {
         Column {
-            Text(
-                text = nodeName,
-                style = font26.copy(textAlign = TextAlign.Start),
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 12.dp, end = 12.dp),
-            )
-            Text(
-                text = nickname,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(start = 12.dp, end = 12.dp),
-            )
+            Text(nodeName, style = font26.copy(textAlign = TextAlign.Start, fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (nickname.isNotBlank()) {
+                Text(nickname, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    style = font26.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
@@ -761,89 +750,62 @@ private fun HeaderContent(
     onMainMenuClick: () -> Unit,
     onNewsfeedClick: () -> Unit,
 ) {
-    val height = getHeaderHeight()
     val isConnected = connectionUIState is ConnectionUIState.Connected
-    val headerColor =
-        if (isConnected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-    val headerContentColor =
-        if (isConnected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-
-    androidx.compose.material3.Surface(
-        modifier = Modifier.fillMaxWidth().height(height),
-        color = headerColor,
+    val headerContentColor = MaterialTheme.colorScheme.onSurface
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(58.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.84f),
         contentColor = headerContentColor,
-        tonalElevation = 2.dp,
-        shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 3.dp,
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .testTag("main_menu_button")
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f))
-                        .hapticClickable { onMainMenuClick() },
+                modifier = Modifier.size(42.dp).testTag("main_menu_button").clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f))
+                    .hapticClickable { onMainMenuClick() },
                 contentAlignment = Alignment.Center,
             ) {
                 androidx.compose.material3.Icon(
                     imageVector = Icons.Filled.Menu,
                     contentDescription = stringResource(com.windscribe.vpn.R.string.preferences),
-                    tint = headerContentColor,
-                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(23.dp),
                 )
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = "Windscribe",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = headerContentColor,
-                maxLines = 1,
-            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(verticalArrangement = Arrangement.Center) {
+                Text("Windscribe", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = headerContentColor, maxLines = 1)
+                Text(
+                    text = stringResource(if (isConnected) R.string.home_secure_connection else R.string.home_private_by_design),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
             if (userState is UserState.Pro) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Box(
-                    modifier =
-                        Modifier
-                            .clip(MaterialTheme.shapes.small)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                            .clickable { onNewsfeedClick() }
-                            .padding(horizontal = 8.dp, vertical = 5.dp),
+                    modifier = Modifier.clip(MaterialTheme.shapes.small)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .clickable { onNewsfeedClick() }
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
                 ) {
-                    Text(
-                        text = "PRO",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
+                    Text("PRO", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
             Spacer(modifier = Modifier.weight(1f))
             androidx.compose.material3.BadgedBox(
                 badge = {
                     if (newsfeedCount > 0) {
-                        androidx.compose.material3.Badge {
-                            Text(
-                                text = newsfeedCount.coerceAtMost(99).toString(),
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
+                        androidx.compose.material3.Badge { Text(newsfeedCount.coerceAtMost(99).toString(), style = MaterialTheme.typography.labelSmall) }
                     }
                 },
             ) {
-                androidx.compose.material3.IconButton(
-                    onClick = onNewsfeedClick,
-                    modifier = Modifier.testTag("newsfeed_open"),
-                ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = stringResource(com.windscribe.vpn.R.string.news_feed),
-                        tint = headerContentColor,
-                    )
+                androidx.compose.material3.IconButton(onClick = onNewsfeedClick, modifier = Modifier.testTag("newsfeed_open")) {
+                    androidx.compose.material3.Icon(imageVector = Icons.Filled.Notifications, contentDescription = stringResource(com.windscribe.vpn.R.string.news_feed), tint = headerContentColor)
                 }
             }
         }
