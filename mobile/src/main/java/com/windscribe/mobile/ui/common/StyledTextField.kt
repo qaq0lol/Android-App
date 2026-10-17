@@ -117,7 +117,7 @@ fun StyledTextField(
                     ).border(
                         width = 1.dp,
                         color = borderColor,
-                        shape = RoundedCornerShape(9.dp),
+                        shape = MaterialTheme.shapes.medium,
                     ).padding(horizontal = 16.dp, vertical = 0.dp)
                     .height(48.dp),
             decorationBox = { innerTextField ->
