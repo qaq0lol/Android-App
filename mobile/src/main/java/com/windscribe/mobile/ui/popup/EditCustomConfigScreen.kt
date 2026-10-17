@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.popup
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -128,14 +129,14 @@ fun EditCustomConfigContent(
         if (isRemember) {
             AppColors.neonGreen
         } else {
-            AppColors.white
+            MaterialTheme.colorScheme.onSurface
         }
     val scrollState = rememberScrollState()
     Box(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(color = AppColors.deepBlue),
+                .background(color = MaterialTheme.colorScheme.background),
     ) {
         Column(
             modifier =
@@ -154,7 +155,7 @@ fun EditCustomConfigContent(
             Image(
                 painter = painterResource(id = R.drawable.ic_network_security_feature_icon),
                 contentDescription = null,
-                colorFilter = ColorFilter.tint(AppColors.white),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
             )
             Text(
                 text = stringResource(id = com.windscribe.vpn.R.string.edit_config_file),
@@ -244,7 +245,7 @@ private fun CustomTextField(
         Text(
             text = hint,
             style = font16.copy(fontWeight = FontWeight.Medium),
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
         )
         Box {
@@ -256,7 +257,7 @@ private fun CustomTextField(
                 },
                 isError = false,
                 singleLine = true,
-                shape = RoundedCornerShape(9.dp),
+                shape = MaterialTheme.shapes.medium,
                 keyboardOptions =
                     KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
@@ -275,28 +276,28 @@ private fun CustomTextField(
                                         id = if (passwordVisible) R.drawable.ic_eye_off else R.drawable.ic_eye,
                                     ),
                                 contentDescription = "Toggle password visibility",
-                                tint = AppColors.white.copy(alpha = 0.50f),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
                             )
                         }
                     }
                 },
                 colors =
                     TextFieldDefaults.colors(
-                        focusedTextColor = AppColors.white,
-                        unfocusedTextColor = AppColors.white,
-                        disabledTextColor = AppColors.white,
-                        unfocusedContainerColor = AppColors.white.copy(0.05f),
-                        focusedContainerColor = AppColors.white.copy(0.05f),
-                        disabledContainerColor = AppColors.white.copy(0.05f),
-                        errorContainerColor = AppColors.white.copy(0.05f),
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
+                        focusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
+                        disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
+                        errorContainerColor = MaterialTheme.colorScheme.onSurface.copy(0.05f),
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         errorIndicatorColor = Color.Transparent,
-                        cursorColor = AppColors.white,
+                        cursorColor = MaterialTheme.colorScheme.onSurface,
                         selectionColors =
                             androidx.compose.foundation.text.selection.TextSelectionColors(
-                                handleColor = AppColors.white,
-                                backgroundColor = AppColors.white.copy(alpha = 0.3f),
+                                handleColor = MaterialTheme.colorScheme.onSurface,
+                                backgroundColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                             ),
                     ),
                 modifier =
@@ -305,7 +306,7 @@ private fun CustomTextField(
                         .height(52.dp),
                 textStyle =
                     font16.copy(
-                        color = AppColors.white,
+                        color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start,
                     ),
             )
