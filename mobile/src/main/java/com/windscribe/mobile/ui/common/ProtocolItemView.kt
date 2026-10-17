@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.common
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,7 +39,7 @@ fun ProtocolItemView(
     onSelected: () -> Unit = {},
 ) {
     val showBorder = procolInfo.type == ProtocolConnectionStatus.Connected || procolInfo.type == ProtocolConnectionStatus.NextUp
-    val color = AppColors.white
+    val color = MaterialTheme.colorScheme.onSurface
     val borderColor =
         if (showBorder) {
             AppColors.neonGreen.copy(alpha = 0.3f)
@@ -50,8 +51,8 @@ fun ProtocolItemView(
             Modifier
                 .fillMaxWidth()
                 .testTag("protocol_${procolInfo.protocol}")
-                .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(8.dp))
-                .background(color.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp))
+                .border(width = 1.dp, color = borderColor, shape = MaterialTheme.shapes.small)
+                .background(color.copy(alpha = 0.1f), shape = MaterialTheme.shapes.small)
                 .clickable {
                     onSelected()
                 }.padding(horizontal = 16.dp, vertical = 14.dp),
