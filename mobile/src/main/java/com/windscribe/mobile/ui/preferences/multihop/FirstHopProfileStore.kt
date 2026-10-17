@@ -4,9 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.windscribe.vpn.backend.wireguard.WireGuardVpnProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -44,21 +42,7 @@ class FirstHopProfileStore
         }
 
         fun save(configText: String): String {
-            require(configText.toByteArray(StandardCharsets.UTF_8).size <= MAX_CONFIG_BYTES) {
-                "WireGuard configuration is larger than 64 KiB."
-            }
-            require(configText.contains("[Interface]", ignoreCase = true)) {
-                "The selected file does not contain a WireGuard [Interface] section."
-            }
-            require(configText.contains("[Peer]", ignoreCase = true)) {
-                "The selected file does not contain a WireGuard [Peer] section."
-            }
-
-            // Parse with the same WireGuard parser used by the existing VPN implementation.
-            WireGuardVpnProfile.createConfigFromString(configText)
-            val endpoint =
-                WireGuardVpnProfile.getHostName(configText)
-                    ?: throw IllegalArgumentException("The WireGuard peer must have a valid Endpoint.")
+            val endpoint = FirstHopConfigValidator.validate(configText)
 
             // Commit before reporting success, so a storage failure is visible to the user.
             check(
@@ -93,6 +77,5 @@ class FirstHopProfileStore
             private const val PREFERENCES_FILE = "double_hop_first_hop_secure"
             private const val KEY_CONFIG = "first_hop_wireguard_config"
             private const val KEY_ENDPOINT = "first_hop_wireguard_endpoint"
-            private const val MAX_CONFIG_BYTES = 64 * 1024
         }
     }
