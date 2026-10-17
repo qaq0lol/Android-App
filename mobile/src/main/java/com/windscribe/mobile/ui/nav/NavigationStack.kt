@@ -58,6 +58,7 @@ import com.windscribe.mobile.ui.preferences.help.HelpScreen
 import com.windscribe.mobile.ui.preferences.icons.CustomIconsScreen
 import com.windscribe.mobile.ui.preferences.lipstick.LookAndFeelScreen
 import com.windscribe.mobile.ui.preferences.main.MainMenuScreen
+import com.windscribe.mobile.ui.preferences.multihop.DoubleHopScreen
 import com.windscribe.mobile.ui.preferences.network_details.NetworkDetailScreen
 import com.windscribe.mobile.ui.preferences.network_options.NetworkOptionsScreen
 import com.windscribe.mobile.ui.preferences.robert.RobertScreen
@@ -147,6 +148,9 @@ private fun NavGraphBuilder.addNavigationScreens() {
     }
     slidingComposable(route = Screen.Connection.route) {
         ConnectionScreen()
+    }
+    slidingComposable(route = Screen.DoubleHop.route) {
+        DoubleHopScreen()
     }
     slidingComposable(route = Screen.AntiCensorship.route) {
         AntiCensorshipScreen()
