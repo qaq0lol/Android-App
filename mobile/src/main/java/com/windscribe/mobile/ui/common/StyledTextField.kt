@@ -172,7 +172,7 @@ fun StyledTextFieldPreview() {
         Text(
             text = "Active State (click to focus)",
             style = font16,
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(vertical = 8.dp),
         )
         StyledTextField(
@@ -187,7 +187,7 @@ fun StyledTextFieldPreview() {
         Text(
             text = "Error State",
             style = font16,
-            color = AppColors.white,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(vertical = 8.dp),
         )
         StyledTextField(
