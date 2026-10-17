@@ -97,6 +97,37 @@ fun AppConnectButtonContent(
             if (isOff) com.windscribe.vpn.R.string.connect else com.windscribe.vpn.R.string.disconnect,
         )
     val status =
+        when (state) {
+            is ConnectionUIState.Connecting -> stringResource(com.windscribe.vpn.R.string.accessibility_status_connecting)
+            is ConnectionUIState.Connected ->
+                if (state.connectedUsingSplitRouting) {
+                    stringResource(com.windscribe.vpn.R.string.accessibility_status_connected_split_routing)
+                } else {
+                    stringResource(com.windscribe.vpn.R.string.accessibility_status_connected)
+                }
+
+            else -> stringResource(com.windscribe.vpn.R.string.accessibility_status_disconnected)
+        }
+    Box(
+        modifier =
+            Modifier
+                .size(95.dp)
+                .testTag("home_connect_button")
+                .semantics(mergeDescendants = true) {
+                    contentDescription = name
+                    stateDescription = status
+                    // The connection can finish while the user is reading elsewhere on the screen.
+                    liveRegion = LiveRegionMode.Polite
+                }.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    // Names the action rather than the button, so it reads "double tap to connect".
+                    onClickLabel = actionLabel,
+                    role = Role.Button,
+                ) {
+                    onConnectButtonClick()
+                },
+    ) {
         val isConnected = state is ConnectionUIState.Connected
         val isConnecting = state is ConnectionUIState.Connecting
         val actionColor = if (isConnected) AppColors.actionGreen else MaterialTheme.colorScheme.primary
@@ -145,7 +176,7 @@ fun AppConnectButtonContent(
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                 )
                 drawLine(
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = powerIconColor,
                     start = androidx.compose.ui.geometry.Offset(size.width / 2f, 0f),
                     end = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.48f),
                     strokeWidth = strokeWidth,
