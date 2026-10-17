@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -320,7 +321,7 @@ private fun Background(content: @Composable () -> Unit) {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(AppColors.midnightNavy)
+                .background(MaterialTheme.colorScheme.background)
                 .navigationBarsPadding(),
     ) {
         content()
@@ -620,7 +621,7 @@ internal fun BoxScope.NetworkInfoSheet(
                                 Modifier
                                     .matchParentSize()
                                     .background(
-                                        color = AppColors.midnightNavy.copy(alpha = 1.0f),
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 1.0f),
                                         shape = RoundedCornerShape(2.dp),
                                     ),
                         )
