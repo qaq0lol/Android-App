@@ -258,7 +258,23 @@ func wgStartDoubleHop(handleID int32, innerSettings string) int32 {
 		logger.Errorf("Could not create second-hop transport over first hop: %v", err)
 		return -1
 	}
-	innerDevice := device.NewDevice(handle.innerTun, bind, logger)
+
+	// Transfer ownership of the Android TUN to the new inner device before constructing it.
+	// If construction or startup fails, innerDevice.Close() owns cleanup and wgTurnOff will
+	// only tear down the outer device. This prevents closing the same TUN descriptor twice.
+	tunnelHandlesMutex.Lock()
+	current, stillExists := tunnelHandles[handleID]
+	if !stillExists || !current.doubleHop || current.innerTun == nil {
+		tunnelHandlesMutex.Unlock()
+		bind.Close()
+		return -1
+	}
+	innerTun := current.innerTun
+	current.innerTun = nil
+	tunnelHandles[handleID] = current
+	tunnelHandlesMutex.Unlock()
+
+	innerDevice := device.NewDevice(innerTun, bind, logger)
 	if err := innerDevice.IpcSet(innerSettings); err != nil {
 		logger.Errorf("Could not configure Windscribe second-hop WireGuard device: %v", err)
 		innerDevice.Close()
@@ -279,7 +295,6 @@ func wgStartDoubleHop(handleID int32, innerSettings string) int32 {
 		return -1
 	}
 	current.device = innerDevice
-	current.innerTun = nil // ownership now belongs to the inner device
 	current.chainBind = bind
 	tunnelHandles[handleID] = current
 	tunnelHandlesMutex.Unlock()
