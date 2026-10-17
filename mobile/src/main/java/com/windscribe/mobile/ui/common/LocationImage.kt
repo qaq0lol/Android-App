@@ -204,12 +204,13 @@ fun LocationImage(
                     animationSpec = tween(durationMillis = 600),
                     label = "overlay_alpha",
                 )
+                val overlayPrimaryColor = MaterialTheme.colorScheme.primary
                 val overlayBrush =
-                    remember {
+                    remember(overlayPrimaryColor) {
                         Brush.verticalGradient(
                             colors =
                                 listOf(
-                                    MaterialTheme.colorScheme.primary,
+                                    overlayPrimaryColor,
                                     Color.Transparent,
                                 ),
                         )

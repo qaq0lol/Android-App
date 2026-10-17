@@ -71,6 +71,7 @@ fun HashedSignupForm(
     onLearnMoreClick: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val hashBorderColor = MaterialTheme.colorScheme.onSurface
 
     Column(modifier = modifier) {
         // Description text with inline "Learn more" link
@@ -141,7 +142,7 @@ fun HashedSignupForm(
                                     ),
                             )
                         drawRoundRect(
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = hashBorderColor,
                             style = stroke,
                             cornerRadius = CornerRadius(8.dp.toPx()),
                         )

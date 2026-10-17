@@ -123,7 +123,7 @@ fun OverlayDialogContent(
                 Image(
                     painter = painterResource(dialogIcon),
                     contentDescription = "Attention",
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primaryTextColor),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
                     contentScale = ContentScale.Fit,
                     modifier =
                         Modifier
@@ -137,7 +137,7 @@ fun OverlayDialogContent(
             Text(
                 text = dialogData?.title ?: "",
                 style = font22,
-                color = MaterialTheme.colorScheme.primaryTextColor,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
@@ -153,7 +153,7 @@ fun OverlayDialogContent(
                 Text(
                     text = dialogData?.description ?: "",
                     style = font14,
-                    color = MaterialTheme.colorScheme.primaryTextColor,
+                    color = MaterialTheme.colorScheme.onSurface,
                     textAlign = if (isIconAtBottom) TextAlign.Start else TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -166,7 +166,7 @@ fun OverlayDialogContent(
                 Image(
                     painter = painterResource(dialogIcon),
                     contentDescription = "Attention",
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primaryTextColor),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
                     contentScale = ContentScale.Fit,
                     modifier =
                         Modifier
@@ -191,7 +191,7 @@ fun OverlayDialogContent(
                 Text(
                     text = stringResource(com.windscribe.vpn.R.string.cancel),
                     style = font16,
-                    color = MaterialTheme.colorScheme.primaryTextColor,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
 

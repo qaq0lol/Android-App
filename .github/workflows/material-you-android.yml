@@ -43,5 +43,14 @@ jobs:
       - name: Build Google debug variant
         run: ./gradlew --no-daemon :mobile:assembleGoogleDebug
 
+      - name: Upload Google debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windscribe-Material-You-debug-apk
+          path: mobile/build/outputs/apk/google/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Run Google debug unit tests
         run: ./gradlew --no-daemon :mobile:testGoogleDebugUnitTest

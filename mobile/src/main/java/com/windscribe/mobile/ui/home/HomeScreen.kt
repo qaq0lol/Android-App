@@ -848,6 +848,7 @@ private fun HeaderContent(
             }
         }
     }
+}
 
 @Composable
 private fun IPContextMenu(bridgeApiViewModel: BridgeApiViewModel) {

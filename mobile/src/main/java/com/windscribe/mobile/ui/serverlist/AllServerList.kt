@@ -163,6 +163,7 @@ fun UpgradeBar(viewModel: HomeViewmodel) {
     val haptic = LocalHapticFeedback.current
     if (userState is UserState.Free) {
         val angle = (userState as UserState.Free).dataLeftAngle
+        val backgroundTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f)
         val textColor =
             if (angle <= 0) {
                 AppColors.red
@@ -214,7 +215,7 @@ fun UpgradeBar(viewModel: HomeViewmodel) {
                             )
 
                             drawArc(
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f),
+                                color = backgroundTrackColor,
                                 startAngle = 160f + angle,
                                 sweepAngle = 360f - angle,
                                 useCenter = false,
