@@ -262,37 +262,49 @@ public final class GoBackend implements Backend {
         return getState(tunnel);
     }
 
-    private void setStateInternal(final Tunnel tunnel, @Nullable final Config config, final State state)
-            throws Exception {
-        // Perform DNS resolution BEFORE acquiring lock to prevent ANR
-        // DNS lookups can be slow and should not block other operations
+    private void setStateInternal(
+            final Tunnel tunnel,
+            @Nullable final Config config,
+            final State state,
+            @Nullable final Config firstHopConfig) throws Exception {
+        // Resolve both peers before entering the tunnel-state lock; DNS can block for seconds.
         if (state == State.UP && config != null) {
-            dnsRetry: for (int i = 0; i < DNS_RESOLUTION_RETRIES; ++i) {
-                // Pre-resolve IPs so they're cached when building the userspace string
-                for (final Peer peer : config.getPeers()) {
-                    final InetEndpoint ep = peer.getEndpoint().orElse(null);
-                    if (ep == null)
-                        continue;
-                    if (ep.getResolved().orElse(null) == null) {
-                        if (i < DNS_RESOLUTION_RETRIES - 1) {
-                            Log.w(TAG, "DNS host \"" + ep.getHost() + "\" failed to resolve; trying again");
-                            Thread.sleep(1000);
-                            continue dnsRetry;
-                        } else
-                            throw new BackendException(Reason.DNS_RESOLUTION_FAILURE, ep.getHost());
-                    }
-                }
-                break;
+            ensureEndpointsResolved(config);
+            if (firstHopConfig != null) {
+                ensureEndpointsResolved(firstHopConfig);
             }
         }
 
         synchronized (tunnelStateLock) {
-            setStateInternalLocked(tunnel, config, state);
+            setStateInternalLocked(tunnel, config, state, firstHopConfig);
         }
     }
 
-    private void setStateInternalLocked(final Tunnel tunnel, @Nullable final Config config, final State state)
-            throws Exception {
+    private void ensureEndpointsResolved(final Config config) throws Exception {
+        dnsRetry: for (int i = 0; i < DNS_RESOLUTION_RETRIES; ++i) {
+            for (final Peer peer : config.getPeers()) {
+                final InetEndpoint endpoint = peer.getEndpoint().orElse(null);
+                if (endpoint == null) {
+                    continue;
+                }
+                if (endpoint.getResolved().orElse(null) == null) {
+                    if (i < DNS_RESOLUTION_RETRIES - 1) {
+                        Log.w(TAG, "DNS host \"" + endpoint.getHost() + "\" failed to resolve; trying again");
+                        Thread.sleep(1000);
+                        continue dnsRetry;
+                    }
+                    throw new BackendException(Reason.DNS_RESOLUTION_FAILURE, endpoint.getHost());
+                }
+            }
+            return;
+        }
+    }
+
+    private void setStateInternalLocked(
+            final Tunnel tunnel,
+            @Nullable final Config config,
+            final State state,
+            @Nullable final Config firstHopConfig) throws Exception {
         Log.i(TAG, "Bringing tunnel " + tunnel.getName() + ' ' + state);
 
         if (state == State.UP) {
