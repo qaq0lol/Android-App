@@ -6,7 +6,10 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -20,7 +23,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -92,105 +97,58 @@ fun AppConnectButtonContent(
             if (isOff) com.windscribe.vpn.R.string.connect else com.windscribe.vpn.R.string.disconnect,
         )
     val status =
-        when (state) {
-            is ConnectionUIState.Connecting -> stringResource(com.windscribe.vpn.R.string.accessibility_status_connecting)
-            is ConnectionUIState.Connected ->
-                if (state.connectedUsingSplitRouting) {
-                    stringResource(com.windscribe.vpn.R.string.accessibility_status_connected_split_routing)
-                } else {
-                    stringResource(com.windscribe.vpn.R.string.accessibility_status_connected)
-                }
-
-            else -> stringResource(com.windscribe.vpn.R.string.accessibility_status_disconnected)
+        val isConnected = state is ConnectionUIState.Connected
+        val isConnecting = state is ConnectionUIState.Connecting
+        val actionColor = if (isConnected) AppColors.actionGreen else MaterialTheme.colorScheme.primary
+        val ringColor =
+            when {
+                isConnected -> AppColors.mintGreen
+                isConnecting -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.outlineVariant
+            }
+        Canvas(
+            modifier =
+                Modifier
+                    .size(95.dp)
+                    .graphicsLayer { rotationZ = if (isConnecting) rotation else 0f },
+        ) {
+            val ringStroke = 3.dp.toPx()
+            drawArc(
+                color = ringColor,
+                startAngle = 45f,
+                sweepAngle = if (isConnecting) 285f else 270f,
+                useCenter = false,
+                topLeft = androidx.compose.ui.geometry.Offset(ringStroke, ringStroke),
+                size = Size(size.width - ringStroke * 2, size.height - ringStroke * 2),
+                style = Stroke(width = ringStroke, cap = StrokeCap.Round),
+            )
         }
-    Box(
-        modifier =
-            Modifier
-                .size(95.dp)
-                .testTag("home_connect_button")
-                .semantics(mergeDescendants = true) {
-                    contentDescription = name
-                    stateDescription = status
-                    // The connection can finish while the user is reading elsewhere on the screen.
-                    liveRegion = LiveRegionMode.Polite
-                }.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    // Names the action rather than the button, so it reads "double tap to connect".
-                    onClickLabel = actionLabel,
-                    role = Role.Button,
-                ) {
-                    onConnectButtonClick()
-                },
-    ) {
-        when (state) {
-            is ConnectionUIState.Connecting -> {
-                Image(
-                    painter = painterResource(R.drawable.ic_on_button),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .height(80.dp)
-                            .width(80.dp)
-                            .align(Alignment.Center),
-                    contentScale = ContentScale.FillHeight,
+        Box(
+            modifier =
+                Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(actionColor),
+            contentAlignment = Alignment.Center,
+        ) {
+            Canvas(modifier = Modifier.size(34.dp)) {
+                val strokeWidth = 3.6.dp.toPx()
+                val inset = strokeWidth
+                drawArc(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    startAngle = 45f,
+                    sweepAngle = 270f,
+                    useCenter = false,
+                    topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                    size = Size(size.width - inset * 2, size.height - inset * 2),
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                 )
-                Image(
-                    painter = painterResource(R.drawable.ic_connecting_ring),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .height(95.dp)
-                            .width(95.dp)
-                            .align(Alignment.Center)
-                            .graphicsLayer { rotationZ = rotation },
-                    // Rotate continuously
-                    contentScale = ContentScale.FillHeight,
-                    colorFilter = ColorFilter.tint(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)),
-                )
-            }
-
-            is ConnectionUIState.Connected -> {
-                Image(
-                    painter = painterResource(R.drawable.ic_on_button),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .height(80.dp)
-                            .width(80.dp)
-                            .align(Alignment.Center),
-                    contentScale = ContentScale.FillHeight,
-                )
-                Image(
-                    painter =
-                        painterResource(
-                            if (state.connectedUsingSplitRouting) {
-                                R.drawable.ic_connected_split_ring
-                            } else {
-                                R.drawable.ic_connected_ring
-                            },
-                        ),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .height(95.dp)
-                            .width(95.dp)
-                            .align(Alignment.Center),
-                    contentScale = ContentScale.FillHeight,
-                    colorFilter = ColorFilter.tint(color = AppColors.mintGreen),
-                )
-            }
-
-            else -> {
-                Image(
-                    painter = painterResource(R.drawable.ic_off_button),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .height(80.dp)
-                            .width(80.dp)
-                            .align(Alignment.Center),
-                    contentScale = ContentScale.FillHeight,
+                drawLine(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    start = androidx.compose.ui.geometry.Offset(size.width / 2f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.48f),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
                 )
             }
         }
