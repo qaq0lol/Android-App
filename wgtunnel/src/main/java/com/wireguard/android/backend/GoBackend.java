@@ -488,7 +488,10 @@ public final class GoBackend implements Backend {
                 builder.allowFamily(OsConstants.AF_INET6);
             }
 
-            builder.setMtu(config.getInterface().getMtu().orElse(1280));
+            // The inner WireGuard packet is itself carried inside the outer WireGuard TUN.
+            // Cap the app-facing MTU in double-hop mode to leave room for both sets of headers.
+            final int configuredMtu = config.getInterface().getMtu().orElse(1280);
+            builder.setMtu(firstHopConfig == null ? configuredMtu : Math.min(configuredMtu, 1280));
 
             service.applyExcludedRoutes(builder);
 
