@@ -262,6 +262,60 @@ public final class GoBackend implements Backend {
         return getState(tunnel);
     }
 
+
+    private static String getInterfaceAddresses(final Config config) {
+        final StringBuilder addresses = new StringBuilder();
+        for (final InetNetwork address : config.getInterface().getAddresses()) {
+            if (addresses.length() > 0) {
+                addresses.append(',');
+            }
+            addresses.append(address.toString());
+        }
+        return addresses.toString();
+    }
+
+    private void protectWireGuardSockets(
+            final VpnService service,
+            final int tunnelHandle,
+            @Nullable final Config firstHopConfig) throws Exception {
+        final int socketV4 = wgGetSocketV4(tunnelHandle);
+        final int socketV6 = wgGetSocketV6(tunnelHandle);
+        if (firstHopConfig == null) {
+            if (socketV4 >= 0) {
+                service.protect(socketV4);
+            }
+            if (socketV6 >= 0) {
+                service.protect(socketV6);
+            }
+            return;
+        }
+
+        boolean needsV4 = false;
+        boolean needsV6 = false;
+        for (final Peer peer : firstHopConfig.getPeers()) {
+            final InetEndpoint endpoint = peer.getEndpoint().orElse(null);
+            if (endpoint == null) {
+                continue;
+            }
+            final InetEndpoint resolved = endpoint.getResolved().orElse(null);
+            if (resolved == null) {
+                throw new BackendException(Reason.DNS_RESOLUTION_FAILURE, endpoint.getHost());
+            }
+            final InetAddress address = InetAddress.getByName(resolved.getHost());
+            if (address instanceof java.net.Inet6Address) {
+                needsV6 = true;
+            } else {
+                needsV4 = true;
+            }
+        }
+
+        final boolean protectedV4 = socketV4 >= 0 && service.protect(socketV4);
+        final boolean protectedV6 = socketV6 >= 0 && service.protect(socketV6);
+        if ((needsV4 && !protectedV4) || (needsV6 && !protectedV6) || (!protectedV4 && !protectedV6)) {
+            throw new BackendException(Reason.UNABLE_TO_START_VPN);
+        }
+    }
+
     private void setStateInternal(
             final Tunnel tunnel,
             @Nullable final Config config,
@@ -396,6 +450,9 @@ public final class GoBackend implements Backend {
             final DNSDetails dnsDetails = service.getDnsDetails();
             final boolean customTun = dnsDetails != null && dnsDetails.getType() == DnsType.Proxy;
 
+            final String firstHopSettings = firstHopConfig == null ? null : firstHopConfig.toWgUserspaceString();
+            final String firstHopAddresses = firstHopConfig == null ? null : getInterfaceAddresses(firstHopConfig);
+
             if (customTun) {
                 ParcelFileDescriptor tun = builder.establish();
                 if (tun == null)
@@ -406,24 +463,63 @@ public final class GoBackend implements Backend {
                 tunnelWrapper.start();
                 ParcelFileDescriptor wrappedTun = tunnelWrapper.getParcelDescriptor();
                 Log.d(TAG, "Go backend " + wgVersion());
-                currentTunnelHandle = wgTurnOn(tunnel.getName(), wrappedTun.detachFd(), goConfig, true);
+                if (firstHopConfig != null) {
+                    currentTunnelHandle = wgTurnOnDoubleHop(
+                            tunnel.getName(),
+                            wrappedTun.detachFd(),
+                            firstHopSettings,
+                            firstHopAddresses,
+                            true);
+                } else {
+                    currentTunnelHandle = wgTurnOn(tunnel.getName(), wrappedTun.detachFd(), goConfig, true);
+                }
             } else {
                 try (final ParcelFileDescriptor tun = builder.establish()) {
                     if (tun == null)
                         throw new BackendException(Reason.TUN_CREATION_ERROR);
                     Log.d(TAG, "Go backend " + wgVersion());
-                    currentTunnelHandle = wgTurnOn(tunnel.getName(), tun.detachFd(), goConfig, false);
+                    if (firstHopConfig != null) {
+                        currentTunnelHandle = wgTurnOnDoubleHop(
+                                tunnel.getName(),
+                                tun.detachFd(),
+                                firstHopSettings,
+                                firstHopAddresses,
+                                false);
+                    } else {
+                        currentTunnelHandle = wgTurnOn(tunnel.getName(), tun.detachFd(), goConfig, false);
+                    }
                 }
             }
 
-            if (currentTunnelHandle < 0)
+            if (currentTunnelHandle < 0) {
+                if (tunnelWrapper != null) {
+                    tunnelWrapper.stop();
+                    tunnelWrapper = null;
+                }
                 throw new BackendException(Reason.GO_ACTIVATION_ERROR_CODE, currentTunnelHandle);
+            }
+
+            try {
+                protectWireGuardSockets(service, currentTunnelHandle, firstHopConfig);
+                if (firstHopConfig != null) {
+                    final int startResult = wgStartDoubleHop(currentTunnelHandle, goConfig);
+                    if (startResult != 0) {
+                        throw new BackendException(Reason.GO_ACTIVATION_ERROR_CODE, startResult);
+                    }
+                }
+            } catch (final Exception e) {
+                final int failedHandle = currentTunnelHandle;
+                currentTunnelHandle = -1;
+                wgTurnOff(failedHandle);
+                if (tunnelWrapper != null) {
+                    tunnelWrapper.stop();
+                    tunnelWrapper = null;
+                }
+                throw e;
+            }
 
             currentTunnel = tunnel;
             currentConfig = config;
-
-            service.protect(wgGetSocketV4(currentTunnelHandle));
-            service.protect(wgGetSocketV6(currentTunnelHandle));
         } else {
             if (currentTunnelHandle == -1) {
                 Log.w(TAG, "Tunnel already down");
