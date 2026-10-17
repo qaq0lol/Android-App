@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.connection
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -142,7 +143,7 @@ fun ConnectionChangeContent(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(color = AppColors.midnight)
+                .background(color = MaterialTheme.colorScheme.background)
                 .clickable(enabled = false) {},
     ) {
         Column(
@@ -166,18 +167,18 @@ fun ConnectionChangeContent(
                     Modifier
                         .size(100.dp)
                         .padding(top = 8.dp),
-                colorFilter = ColorFilter.tint(AppColors.white),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
             )
             Text(
                 text = title,
                 style = font24,
-                color = AppColors.white,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
             Text(
                 text = description,
                 style = font16,
-                color = AppColors.white.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
@@ -195,7 +196,7 @@ fun ConnectionChangeContent(
                 Text(
                     stringResource(com.windscribe.vpn.R.string.cancel),
                     style = font16,
-                    color = AppColors.white.copy(alpha = 0.5f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 )
             }
         }
@@ -213,7 +214,7 @@ fun ConnectionChangeContent(
                     .clickable {
                         onCancelClick()
                     },
-            colorFilter = ColorFilter.tint(AppColors.white),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
         )
     }
 }
