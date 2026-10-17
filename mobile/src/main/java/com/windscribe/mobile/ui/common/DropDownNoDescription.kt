@@ -54,7 +54,7 @@ fun DropDownNoDescription(
             Modifier
                 .background(
                     MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ).padding(14.dp)
                 .fillMaxWidth(),
     ) {
