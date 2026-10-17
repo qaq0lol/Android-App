@@ -10,6 +10,7 @@ import com.windscribe.vpn.localdatabase.LocalDbInterface
 import com.windscribe.vpn.repository.AdvanceParameterRepository
 import com.windscribe.vpn.repository.EmergencyConnectRepository
 import com.windscribe.vpn.repository.LocationRepository
+import com.windscribe.vpn.repository.multihop.FirstHopProfileStore
 import com.windscribe.vpn.repository.WgConfigRepository
 import com.windscribe.vpn.state.DeviceStateManager
 import com.windscribe.vpn.state.VPNConnectionStateManager
@@ -40,6 +41,7 @@ class VPNModule {
         preferencesHelper: PreferencesHelper,
         deviceStateManager: DeviceStateManager,
         excludedIpHolder: ExcludedIpHolder,
+        firstHopProfileStore: FirstHopProfileStore,
     ): WindVpnController =
         WindVpnController(
             coroutineScope,
@@ -55,5 +57,6 @@ class VPNModule {
             localDbInterface,
             deviceStateManager,
             excludedIpHolder,
+            firstHopProfileStore,
         )
 }
