@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.common
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateFloatAsState
@@ -208,7 +209,7 @@ fun LocationImage(
                         Brush.verticalGradient(
                             colors =
                                 listOf(
-                                    AppColors.darkBlueAccent,
+                                    MaterialTheme.colorScheme.primary,
                                     Color.Transparent,
                                 ),
                         )
