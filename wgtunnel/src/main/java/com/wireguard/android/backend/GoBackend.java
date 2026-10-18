@@ -271,7 +271,10 @@ public final class GoBackend implements Backend {
      * otherwise be routed into the not-yet-started inner VPN and stall the connection.
      */
     private String createResolvedUserspaceConfig(final Config config) throws Exception {
-        String settings = config.toWgUserspaceString();
+        // Peer.toWgUserspaceString() already serializes the resolved endpoint. Validate that
+        // every configured peer has a cached numeric endpoint before passing settings to Go.
+        ensureEndpointsResolved(config);
+        final String settings = config.toWgUserspaceString();
         for (final Peer peer : config.getPeers()) {
             final InetEndpoint endpoint = peer.getEndpoint().orElse(null);
             if (endpoint == null) {
@@ -281,14 +284,11 @@ public final class GoBackend implements Backend {
             if (resolved == null) {
                 throw new BackendException(Reason.DNS_RESOLUTION_FAILURE, endpoint.getHost());
             }
-            final String oldEndpoint = "endpoint=" + endpoint.toString();
-            final String resolvedEndpoint = "endpoint=" + resolved.toString();
-            if (!oldEndpoint.equals(resolvedEndpoint)) {
-                settings = settings.replace(oldEndpoint, resolvedEndpoint);
-                if (settings.contains(oldEndpoint)) {
-                    throw new IllegalStateException(
-                            "Could not replace unresolved WireGuard endpoint " + endpoint.getHost());
-                }
+            final String expected = "endpoint=" + resolved;
+            if (!settings.contains(expected)) {
+                throw new IllegalStateException(
+                        "The resolved WireGuard endpoint was not included in native settings: "
+                                + endpoint.getHost());
             }
         }
         return settings;
