@@ -475,6 +475,9 @@ public final class GoBackend implements Backend {
 
             // Build config
             final String goConfig = firstHopConfig == null ? config.toWgUserspaceString() : createResolvedUserspaceConfig(config);
+            // Resolve the imported endpoint before establish() installs the system VPN route.
+            final String firstHopSettings = firstHopConfig == null ? null : createResolvedUserspaceConfig(firstHopConfig);
+            final String firstHopAddresses = firstHopConfig == null ? null : getInterfaceAddresses(firstHopConfig);
 
             // Create the vpn tunnel with android API
             final VpnService.Builder builder = service.getBuilder();
@@ -535,9 +538,6 @@ public final class GoBackend implements Backend {
 
             final DNSDetails dnsDetails = service.getDnsDetails();
             final boolean customTun = dnsDetails != null && dnsDetails.getType() == DnsType.Proxy;
-
-            final String firstHopSettings = firstHopConfig == null ? null : createResolvedUserspaceConfig(firstHopConfig);
-            final String firstHopAddresses = firstHopConfig == null ? null : getInterfaceAddresses(firstHopConfig);
 
             if (customTun) {
                 ParcelFileDescriptor tun = builder.establish();
