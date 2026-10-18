@@ -252,7 +252,9 @@ public final class GoBackend implements Backend {
             try {
                 setStateInternal(tunnel, config, state, firstHopConfig);
             } catch (final Exception e) {
-                if (originalTunnel != null)
+                // Do not silently restore a previously active single-hop tunnel when the
+                // user explicitly requested double-hop. A failed chain must remain disconnected.
+                if (originalTunnel != null && firstHopConfig == null)
                     setStateInternal(originalTunnel, originalConfig, State.UP, null);
                 throw e;
             }
