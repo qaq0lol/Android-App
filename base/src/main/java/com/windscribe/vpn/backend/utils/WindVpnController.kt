@@ -161,15 +161,14 @@ open class WindVpnController
             }
         }
 
-        private suspend fun createVpnProfileFromCity(
-            selectedCity: Int,
-            config: ProtocolInformation,
+        private suspend fun getLocationAndParamsForCity(
+            cityId: Int,
             attempt: Int = 0,
-            hostname: String?,
-        ): String {
+            hostname: String? = null,
+        ): Pair<LastSelectedLocation, VPNParameters> {
             val cityAndRegion =
-                localDbInterface.getDatacenterAndLocation(selectedCity)
-                    ?: throw Exception("City not found in database: $selectedCity")
+                localDbInterface.getDatacenterAndLocation(cityId)
+                    ?: throw Exception("City not found in database: $cityId")
             val city = cityAndRegion.datacenter
             val nodes = localDbInterface.getServersByDatacenter(city.id).filter { it.isConnectable }
             if (nodes.isEmpty()) {
@@ -178,54 +177,79 @@ open class WindVpnController
             val pinnedIp =
                 localDbInterface
                     .getFavouritesAsync()
-                    .firstOrNull { it.id == selectedCity && it.pinnedNodeIp != null }
+                    .firstOrNull { it.id == cityId && it.pinnedNodeIp != null }
                     ?.pinnedNodeIp
             val pinnedNode = nodes.firstOrNull { WindUtilities.hostnamesMatch(it.hostname, pinnedIp) }
-            // Random node
             var randomIndex = Util.getRandomNode(lastUsedRandomIndex, attempt, nodes)
-            // Node if hostname is provided to retry same hostname
             nodes.forEachIndexed { index, node ->
                 if (WindUtilities.hostnamesMatch(node.hostname, hostname)) {
                     randomIndex = index
                 }
             }
-            // Node with forced hostname from advance parameter
             val forcedNodeIndex = getForcedNodeIndex(nodes)
             if (forcedNodeIndex != -1) {
-                logger.debug("Forcing node to {}", nodes[forcedNodeIndex])
                 randomIndex = forcedNodeIndex
             }
             val selectedNode: Server =
                 if (pinnedNode != null && attempt == 0) pinnedNode else nodes[randomIndex]
-            logger.debug("{}", selectedNode)
             lastUsedRandomIndex = randomIndex
             val coordinatesArray = (city.coordinates ?: "").split(",".toRegex()).toTypedArray()
-            val ikev2Ip = selectedNode.ip
-            val udpIp = selectedNode.ip2
-            val tcpIp = selectedNode.ip2
-            val stealthIp = selectedNode.ip3
-            val hostname = selectedNode.hostname
-            val publicKey = city.pubKey
+            val lat = if (coordinatesArray.isNotEmpty()) coordinatesArray[0] else "0"
+            val lon = if (coordinatesArray.size > 1) coordinatesArray[1] else "0"
             val location =
                 LastSelectedLocation(
                     city.id,
                     city.nodeName ?: "",
                     city.nickName ?: "",
                     cityAndRegion.location?.countryCode,
-                    coordinatesArray[0],
-                    coordinatesArray[1],
+                    lat,
+                    lon,
                 )
             val vpnParameters =
                 VPNParameters(
-                    ikev2Ip,
-                    udpIp,
-                    tcpIp,
-                    stealthIp,
-                    hostname,
-                    publicKey ?: "",
+                    selectedNode.ip,
+                    selectedNode.ip2,
+                    selectedNode.ip2,
+                    selectedNode.ip3,
+                    selectedNode.hostname,
+                    city.pubKey ?: "",
                     city.ovpnX509 ?: "",
                     selectedNode.ipv6 == 1,
                 )
+            return Pair(location, vpnParameters)
+        }
+
+        private suspend fun createVpnProfileFromCity(
+            selectedCity: Int,
+            config: ProtocolInformation,
+            attempt: Int = 0,
+            hostname: String?,
+        ): String {
+            if (preferencesHelper.isDoubleHopEnabled && config.protocol == PROTO_WIRE_GUARD) {
+                val firstHopId = preferencesHelper.doubleHopFirstHopId
+                val secondHopId = if (preferencesHelper.doubleHopSecondHopId != -1) {
+                    preferencesHelper.doubleHopSecondHopId
+                } else {
+                    selectedCity
+                }
+                if (firstHopId != -1 && firstHopId != secondHopId) {
+                    try {
+                        val (entryLocation, entryParams) = getLocationAndParamsForCity(firstHopId, attempt)
+                        val (exitLocation, exitParams) = getLocationAndParamsForCity(secondHopId, attempt, hostname)
+                        return vpnProfileCreator.createDoubleHopWireGuardProfile(
+                            entryLocation,
+                            entryParams,
+                            exitLocation,
+                            exitParams,
+                            config
+                        )
+                    } catch (e: Exception) {
+                        logger.error("Failed to build Double Hop profile, fallback to single hop: ${e.message}")
+                    }
+                }
+            }
+
+            val (location, vpnParameters) = getLocationAndParamsForCity(selectedCity, attempt, hostname)
             when (config.protocol) {
                 PROTO_IKev2 -> {
                     return vpnProfileCreator.createIkEV2Profile(

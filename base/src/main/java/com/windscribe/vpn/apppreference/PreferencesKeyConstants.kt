@@ -176,4 +176,8 @@ object PreferencesKeyConstants {
     const val EXTRA_TLS_PADDING = "extra_tls_padding"
     const val TLS_SERVER_NAME = "tlsServerName"
     const val ENCRYPTION_WARNING_ACKNOWLEDGED = "encryption_warning_acknowledged"
+
+    const val DOUBLE_HOP_ENABLED = "double_hop_enabled"
+    const val DOUBLE_HOP_FIRST_HOP_ID = "double_hop_first_hop_id"
+    const val DOUBLE_HOP_SECOND_HOP_ID = "double_hop_second_hop_id"
 }

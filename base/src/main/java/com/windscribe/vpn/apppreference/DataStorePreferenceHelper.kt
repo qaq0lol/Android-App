@@ -95,6 +95,13 @@ class DataStorePreferenceHelper(
                     preferences[DataStoreKeys.SELECTION_KEY] ?: PreferencesKeyConstants.DEFAULT_LIST_SELECTION_MODE
                 }.distinctUntilChanged()
 
+    override val isDoubleHopEnabledFlow: Flow<Boolean>
+        get() =
+            dataStore.data
+                .map { preferences ->
+                    preferences[DataStoreKeys.DOUBLE_HOP_ENABLED] ?: false
+                }.distinctUntilChanged()
+
     // ============================================================================
     // DATASTORE HELPER FUNCTIONS
     // ============================================================================
@@ -1192,4 +1199,16 @@ class DataStorePreferenceHelper(
         set(value) {
             setStringSync(DataStoreKeys.TLS_SERVER_NAME, value)
         }
+
+    override var isDoubleHopEnabled: Boolean
+        get() = runBlocking { getBoolean(DataStoreKeys.DOUBLE_HOP_ENABLED, false) }
+        set(value) = setBooleanSync(DataStoreKeys.DOUBLE_HOP_ENABLED, value)
+
+    override var doubleHopFirstHopId: Int
+        get() = runBlocking { getInt(DataStoreKeys.DOUBLE_HOP_FIRST_HOP_ID, -1) }
+        set(value) = setIntSync(DataStoreKeys.DOUBLE_HOP_FIRST_HOP_ID, value)
+
+    override var doubleHopSecondHopId: Int
+        get() = runBlocking { getInt(DataStoreKeys.DOUBLE_HOP_SECOND_HOP_ID, -1) }
+        set(value) = setIntSync(DataStoreKeys.DOUBLE_HOP_SECOND_HOP_ID, value)
 }

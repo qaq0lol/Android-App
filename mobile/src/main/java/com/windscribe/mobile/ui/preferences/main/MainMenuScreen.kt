@@ -90,6 +90,13 @@ fun MainMenuContent(
             )
             Spacer(modifier = Modifier.height(16.dp))
             MainMenuItem(
+                R.string.double_hop_title,
+                com.windscribe.mobile.R.drawable.ic_anti_censorship_icon,
+                Screen.DoubleHop.route,
+                hapticFeedbackEnabled,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            MainMenuItem(
                 R.string.my_account,
                 com.windscribe.mobile.R.drawable.ic_myaccount_icon,
                 Screen.Account.route,

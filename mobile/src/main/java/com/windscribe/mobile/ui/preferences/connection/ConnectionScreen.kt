@@ -262,6 +262,11 @@ fun ConnectionContent(
                     Screen.AntiCensorship,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+                ConnectionItem(
+                    R.string.double_hop_title,
+                    Screen.DoubleHop,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
                 AlwaysOnVPN()
                 Spacer(modifier = Modifier.height(16.dp))
                 SwitchItemView(

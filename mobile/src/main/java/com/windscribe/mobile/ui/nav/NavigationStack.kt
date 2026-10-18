@@ -48,6 +48,7 @@ import com.windscribe.mobile.ui.preferences.account.AccountScreen
 import com.windscribe.mobile.ui.preferences.advance.AdvanceScreen
 import com.windscribe.mobile.ui.preferences.anticensorship.AntiCensorshipScreen
 import com.windscribe.mobile.ui.preferences.connection.ConnectionScreen
+import com.windscribe.mobile.ui.preferences.doublehop.DoubleHopScreen
 import com.windscribe.mobile.ui.preferences.debug.DebugScreen
 import com.windscribe.mobile.ui.preferences.email.AddEmailScreen
 import com.windscribe.mobile.ui.preferences.email.ConfirmEmailScreen
@@ -150,6 +151,9 @@ private fun NavGraphBuilder.addNavigationScreens() {
     }
     slidingComposable(route = Screen.AntiCensorship.route) {
         AntiCensorshipScreen()
+    }
+    slidingComposable(route = Screen.DoubleHop.route) {
+        DoubleHopScreen()
     }
     slidingComposable(route = Screen.Robert.route) {
         RobertScreen()

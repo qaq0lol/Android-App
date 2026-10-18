@@ -18,3 +18,8 @@ data class DropDownStringItem(
     val label: String? = key,
     val description: String? = null,
 )
+
+data class DropDownIntItem(
+    val key: Int,
+    val label: String,
+)

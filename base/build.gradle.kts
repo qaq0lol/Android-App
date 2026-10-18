@@ -7,7 +7,7 @@ apply(from = "$rootDir/config/config.gradle")
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
