@@ -152,6 +152,7 @@ abstract class ConnectionViewmodel : ViewModel() {
     abstract val isProtocolTweaksEnabled: StateFlow<Boolean>
     abstract val isPreferredProtocolEnabled: StateFlow<Boolean>
     abstract val isDecoyTrafficEnabled: StateFlow<Boolean>
+    abstract val isDoubleHopActive: StateFlow<Boolean>
     abstract val aspectRatio: StateFlow<Int>
     abstract val goto: SharedFlow<HomeGoto>
     abstract val newFeedCount: StateFlow<Int>
@@ -224,6 +225,10 @@ class ConnectionViewmodelImpl
         override val isPreferredProtocolEnabled: StateFlow<Boolean> = _isPreferredProtocolEnabled
         private val _isDecoyTrafficEnabled = MutableStateFlow(false)
         override val isDecoyTrafficEnabled: StateFlow<Boolean> = _isDecoyTrafficEnabled
+        private val _isDoubleHopActive = MutableStateFlow(
+            preferences.isDoubleHopEnabled && preferences.selectedProtocol == com.windscribe.vpn.apppreference.PreferencesKeyConstants.PROTO_WIRE_GUARD
+        )
+        override val isDoubleHopActive: StateFlow<Boolean> = _isDoubleHopActive
         private val _goto = MutableSharedFlow<HomeGoto>(replay = 0)
         override val goto: SharedFlow<HomeGoto> = _goto
         private val _newFeedCount = MutableStateFlow(0)
@@ -280,6 +285,11 @@ class ConnectionViewmodelImpl
             viewModelScope.launch(Dispatchers.IO) {
                 preferences.backgroundAspectRatioOptionFlow.collectLatest { ratio ->
                     _aspectRatio.value = ratio
+                }
+            }
+            viewModelScope.launch(Dispatchers.IO) {
+                preferences.isDoubleHopEnabledFlow.collectLatest { enabled ->
+                    _isDoubleHopActive.value = enabled && preferences.selectedProtocol == com.windscribe.vpn.apppreference.PreferencesKeyConstants.PROTO_WIRE_GUARD
                 }
             }
         }

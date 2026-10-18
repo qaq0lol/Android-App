@@ -371,11 +371,13 @@ private fun CompactUI(
 private fun ConnectionStatusSheet(connectionViewmodel: ConnectionViewmodel) {
     val state by connectionViewmodel.connectionUIState.collectAsState()
     val isDecoyTrafficEnabled by connectionViewmodel.isDecoyTrafficEnabled.collectAsState()
+    val isDoubleHopActive by connectionViewmodel.isDoubleHopActive.collectAsState()
     val protocolTweaksEnabled by connectionViewmodel.isProtocolTweaksEnabled.collectAsState()
     val preferredProtocolEnabled by connectionViewmodel.isPreferredProtocolEnabled.collectAsState()
     ConnectionStatusSheetContent(
         state = state,
         isDecoyTrafficEnabled = isDecoyTrafficEnabled,
+        isDoubleHopActive = isDoubleHopActive,
         isProtocolTweaksEnabled = protocolTweaksEnabled,
         isPreferredProtocolEnabled = preferredProtocolEnabled,
         onProtocolChangeClick = { connectionViewmodel.onProtocolChangeClick() },
@@ -387,6 +389,7 @@ private fun ConnectionStatusSheet(connectionViewmodel: ConnectionViewmodel) {
 private fun ConnectionStatusSheetContent(
     state: ConnectionUIState,
     isDecoyTrafficEnabled: Boolean,
+    isDoubleHopActive: Boolean,
     isProtocolTweaksEnabled: Boolean,
     isPreferredProtocolEnabled: Boolean,
     onProtocolChangeClick: () -> Unit,
@@ -422,6 +425,15 @@ private fun ConnectionStatusSheetContent(
                         .size(24.dp),
                 contentScale = ContentScale.Inside,
                 colorFilter = ColorFilter.tint(containerColor),
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+        }
+
+        if (isDoubleHopActive) {
+            Text(
+                stringResource(com.windscribe.vpn.R.string.double_hop_title),
+                style = font12.copy(fontWeight = FontWeight.Bold),
+                color = AppColors.neonGreen,
             )
             Spacer(modifier = Modifier.width(4.dp))
         }
@@ -1064,6 +1076,7 @@ private fun ConnectionStatusSheetContentPreview(
         ConnectionStatusSheetContent(
             state = state,
             isDecoyTrafficEnabled = true,
+            isDoubleHopActive = true,
             isProtocolTweaksEnabled = true,
             isPreferredProtocolEnabled = true,
             onProtocolChangeClick = {},

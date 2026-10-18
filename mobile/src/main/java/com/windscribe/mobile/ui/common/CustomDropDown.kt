@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.windscribe.mobile.ui.model.DropDownIntItem
 import com.windscribe.mobile.ui.model.DropDownStringItem
 import com.windscribe.mobile.ui.theme.backgroundColor
 import com.windscribe.mobile.ui.theme.font16
@@ -111,6 +112,94 @@ fun CustomDropDown(
                             text = {
                                 Text(
                                     text = it.label ?: "",
+                                    color = MaterialTheme.colorScheme.backgroundColor,
+                                    style = font16,
+                                    textAlign = textAlign,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+        }
+        if (description != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Description(stringResource(description))
+        }
+    }
+}
+
+@Composable
+fun CustomDropDownInt(
+    @StringRes title: Int,
+    items: List<DropDownIntItem>,
+    selectedItemKey: Int,
+    shape: RoundedCornerShape = RoundedCornerShape(12.dp),
+    @StringRes description: Int? = null,
+    textAlign: TextAlign = TextAlign.Start,
+    onSelect: (DropDownIntItem) -> Unit,
+) {
+    val expanded = remember { mutableStateOf(false) }
+    var selected by remember(selectedItemKey, items) {
+        mutableStateOf(items.find { it.key == selectedItemKey })
+    }
+    Column(
+        modifier =
+            Modifier
+                .background(
+                    MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    shape = shape,
+                ).padding(14.dp)
+                .fillMaxWidth(),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = stringResource(title),
+                style = font16.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.primaryTextColor,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+
+            Box(
+                modifier =
+                    Modifier
+                        .testTag("dropdown_int_selector")
+                        .clickable { expanded.value = !expanded.value },
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = selected?.label ?: "Select",
+                        style = font16,
+                        color = MaterialTheme.colorScheme.preferencesSubtitleColor,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        painter = painterResource(id = com.windscribe.mobile.R.drawable.ic_cm_icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primaryTextColor,
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = expanded.value,
+                    onDismissRequest = { expanded.value = false },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.primaryTextColor),
+                ) {
+                    items.forEach {
+                        DropdownMenuItem(
+                            onClick = {
+                                expanded.value = false
+                                selected = it
+                                onSelect(it)
+                            },
+                            text = {
+                                Text(
+                                    text = it.label,
                                     color = MaterialTheme.colorScheme.backgroundColor,
                                     style = font16,
                                     textAlign = textAlign,

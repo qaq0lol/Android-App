@@ -21,6 +21,7 @@ interface PreferencesHelper {
     val extraTlsPaddingEnabledFlow: kotlinx.coroutines.flow.Flow<Boolean>
     val backgroundAspectRatioOptionFlow: kotlinx.coroutines.flow.Flow<Int>
     val selectionFlow: kotlinx.coroutines.flow.Flow<String>
+    val isDoubleHopEnabledFlow: kotlinx.coroutines.flow.Flow<Boolean>
 
     fun clearAllData()
 
@@ -188,6 +189,10 @@ interface PreferencesHelper {
     val secureStorageEncryptionFlow: StateFlow<Boolean?>
     var hasAcknowledgedEncryptionWarning: Boolean
     var tlsServerName: String
+
+    var isDoubleHopEnabled: Boolean
+    var doubleHopFirstHopId: Int
+    var doubleHopSecondHopId: Int
 }
 
 /**

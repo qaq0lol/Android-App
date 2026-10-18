@@ -209,6 +209,11 @@ object DataStoreKeys {
     val ENCRYPTION_WARNING_ACKNOWLEDGED =
         booleanPreferencesKey(PreferencesKeyConstants.ENCRYPTION_WARNING_ACKNOWLEDGED)
 
+    // Double Hop
+    val DOUBLE_HOP_ENABLED = booleanPreferencesKey(PreferencesKeyConstants.DOUBLE_HOP_ENABLED)
+    val DOUBLE_HOP_FIRST_HOP_ID = intPreferencesKey(PreferencesKeyConstants.DOUBLE_HOP_FIRST_HOP_ID)
+    val DOUBLE_HOP_SECOND_HOP_ID = intPreferencesKey(PreferencesKeyConstants.DOUBLE_HOP_SECOND_HOP_ID)
+
     // OpenVPN Server Config (base64 encoded config)
     val OPEN_VPN_SERVER_CONFIG =
         stringPreferencesKey(PreferencesKeyConstants.OPEN_VPN_SERVER_CONFIG)

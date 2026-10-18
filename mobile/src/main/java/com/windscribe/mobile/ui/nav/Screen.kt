@@ -53,6 +53,8 @@ sealed class Screen(
 
     object AntiCensorship : Screen("anti_censorship")
 
+    object DoubleHop : Screen("double_hop")
+
     object Robert : Screen("robert")
 
     object LookAndFeel : Screen("look_and_feel")

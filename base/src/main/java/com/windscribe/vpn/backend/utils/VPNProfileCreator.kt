@@ -626,6 +626,76 @@ class VPNProfileCreator
                         line.startsWith("PublicKey")
                 }.joinToString(" ") { it.trim() }
 
+        suspend fun createDoubleHopWireGuardProfile(
+            entryLocation: LastSelectedLocation,
+            entryParams: VPNParameters,
+            exitLocation: LastSelectedLocation,
+            exitParams: VPNParameters,
+            config: ProtocolInformation,
+        ): String {
+            val builder = Config.Builder()
+            val entryRemoteParams = when (
+                val result = wgConfigRepository.getWgParams(
+                    entryParams.hostName,
+                    entryParams.publicKey,
+                    wgForceInit.getAndSet(false),
+                    supportsV6 = entryParams.supportsV6
+                )
+            ) {
+                is CallResult.Success -> result.data
+                is CallResult.Error -> throw InvalidVPNConfigException(result)
+            }
+
+            val exitRemoteParams = when (
+                val result = wgConfigRepository.getWgParams(
+                    exitParams.hostName,
+                    exitParams.publicKey,
+                    forceInit = false,
+                    supportsV6 = exitParams.supportsV6
+                )
+            ) {
+                is CallResult.Success -> result.data
+                is CallResult.Error -> throw InvalidVPNConfigException(result)
+            }
+
+            val anInterface = createWireGuardInterface(entryRemoteParams)
+            builder.setInterface(anInterface)
+
+            // First Hop Peer (Entry)
+            val entryPeer = createWireGuardPeer(
+                entryRemoteParams,
+                entryParams.stealthIp,
+                config.port
+            )
+            builder.addPeer(entryPeer)
+
+            // Second Hop Peer (Exit)
+            val exitPeer = createWireGuardPeer(
+                exitRemoteParams,
+                exitParams.stealthIp,
+                config.port
+            )
+            builder.addPeer(exitPeer)
+
+            val combinedLocationName = "${entryLocation.nodeName} ➔ ${exitLocation.nodeName}"
+            val combinedNickName = "${entryLocation.nickName} ➔ ${exitLocation.nickName}"
+            val combinedLocation = LastSelectedLocation(
+                exitLocation.cityId,
+                combinedLocationName,
+                combinedNickName,
+                exitLocation.countryCode,
+                exitLocation.lat,
+                exitLocation.lang
+            )
+
+            val content = builder.build().toWgQuickString()
+            preferencesHelper.selectedIp = exitParams.hostName
+            logger.debug("Double Hop WG Config created: ${content.withoutWgSecrets()}")
+            saveSelectedLocation(combinedLocation)
+            saveProfile(WireGuardVpnProfile(content))
+            return "$combinedLocation"
+        }
+
         suspend fun createVpnProfileFromWireGuardProfile(
             lastSelectedLocation: LastSelectedLocation,
             vpnParameters: VPNParameters,

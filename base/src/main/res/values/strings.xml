@@ -669,4 +669,9 @@ last chosen location.</string>
     <string name="force_upgrade_message_with_version">This version of Windscribe is no longer supported. Please update to %s to continue using the app.</string>
     <string name="security_notice">Security Notice</string>
     <string name="encryption_unavailable_warning">Your device does not support encrypted credential storage. Session tokens and VPN keys will be stored with reduced security.\n\nFor maximum security, avoid using this device on untrusted networks or if rooted.</string>
+    <string name="double_hop_title">Double Hop</string>
+    <string name="double_hop_description">Route your traffic through two WireGuard VPN locations for maximum privacy.</string>
+    <string name="first_hop_entry">First Hop (Entry Location)</string>
+    <string name="second_hop_exit">Second Hop (Exit Location)</string>
+    <string name="double_hop_wireguard_only">Double Hop is active for WireGuard protocol.</string>
 </resources>
