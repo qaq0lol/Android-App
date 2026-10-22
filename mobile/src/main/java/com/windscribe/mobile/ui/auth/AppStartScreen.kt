@@ -358,7 +358,7 @@ fun EmergencyConnectButton(isConnected: Boolean) {
     Text(
         text = if (isConnected) "Emergency Connect On" else "Can’t Connect?",
         style = font18.copy(fontWeight = FontWeight.Medium),
-        color = if (isConnected) Color(0xFF61FF8A) else Color(0xFF838D9B),
+        color = if (isConnected) Color(0xFF4FF0C0) else Color(0xFF838D9B),
         modifier =
             Modifier.clickable {
                 if (com.windscribe.mobile.BuildConfig.FLAVOR == "google") {

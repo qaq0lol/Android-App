@@ -3,7 +3,9 @@ package com.windscribe.mobile.ui.preferences.help
 import PreferencesNavBar
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +46,7 @@ import com.windscribe.mobile.ui.nav.LocalNavController
 import com.windscribe.mobile.ui.nav.Route
 import com.windscribe.mobile.ui.nav.Screen
 import com.windscribe.mobile.ui.theme.font14
+import com.windscribe.mobile.ui.theme.font12
 import com.windscribe.mobile.ui.theme.font16
 import com.windscribe.mobile.ui.theme.preferencesSubtitleColor
 import com.windscribe.mobile.ui.theme.primaryTextColor
@@ -128,7 +131,7 @@ fun HelpContent(
 private fun CommunitySupport() {
     val activity = LocalActivity.current as? AppStartActivity
 
-    val backgroundColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f)
+    val backgroundColor = androidx.compose.ui.graphics.Color(0xB30D1218)
     val textColor = MaterialTheme.colorScheme.primaryTextColor
 
     Column {
@@ -255,10 +258,7 @@ private fun DebugView() {
         modifier =
             Modifier
                 .background(
-                    color =
-                        MaterialTheme.colorScheme.primaryTextColor.copy(
-                            alpha = 0.05f,
-                        ),
+                    color = Color(0xB30D1218),
                     shape = RoundedCornerShape(size = 12.dp),
                 ).hapticClickable {
                     navController.navigate(Screen.Debug.route)
@@ -307,10 +307,7 @@ private fun DebugSend(
         modifier =
             Modifier
                 .background(
-                    color =
-                        MaterialTheme.colorScheme.primaryTextColor.copy(
-                            alpha = 0.05f,
-                        ),
+                    color = Color(0xB30D1218),
                     shape = RoundedCornerShape(size = 12.dp),
                 ).hapticClickable {
                     if (state is SendLogState.Idle) {
@@ -377,55 +374,66 @@ private fun HelpItem(
 ) {
     val navController = LocalNavController.current
     val activity = LocalActivity.current as? AppStartActivity
-    Column(
+    Row(
         modifier =
             Modifier
+                .fillMaxWidth()
                 .background(
-                    color =
-                        MaterialTheme.colorScheme.primaryTextColor.copy(
-                            alpha = 0.05f,
-                        ),
-                    shape = RoundedCornerShape(size = 12.dp),
-                ).hapticClickable {
+                    color = Color(0xB30D1218),
+                    shape = RoundedCornerShape(size = 16.dp),
+                )
+                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(size = 16.dp))
+                .hapticClickable {
                     if (route is Route.Nav) {
-                        val route = route.screen.route
-                        navController.navigate(route)
+                        val target = route.screen.route
+                        navController.navigate(target)
                     } else {
                         val link = (route as Route.Web).url
                         activity?.openUrl(link)
                     }
-                }.padding(vertical = 14.dp, horizontal = 14.dp),
+                }
+                .padding(vertical = 13.dp, horizontal = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier =
+                Modifier
+                    .size(34.dp)
+                    .background(Color(0x1FFFFFFF), RoundedCornerShape(size = 10.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
                 modifier = Modifier.size(16.dp),
                 painter = painterResource(icon),
                 contentDescription = "",
                 tint = MaterialTheme.colorScheme.primaryTextColor,
             )
-            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 stringResource(title),
                 style =
                     font16.copy(
-                        fontWeight = FontWeight.Medium,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primaryTextColor,
                     ),
             )
-            Spacer(modifier = Modifier.weight(1f))
-            Icon(
-                modifier = Modifier.size(16.dp),
-                painter = painterResource(com.windscribe.mobile.R.drawable.arrow_right),
-                contentDescription = "",
-                tint = MaterialTheme.colorScheme.primaryTextColor,
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                stringResource(description),
+                style =
+                    font12.copy(
+                        color = MaterialTheme.colorScheme.preferencesSubtitleColor,
+                    ),
             )
         }
-        Spacer(modifier = Modifier.height(13.5.dp))
-        Text(
-            text = stringResource(description),
-            style = font14.copy(fontWeight = FontWeight.Normal),
-            color = MaterialTheme.colorScheme.preferencesSubtitleColor,
-            textAlign = TextAlign.Start,
+        Spacer(modifier = Modifier.width(8.dp))
+        Icon(
+            modifier = Modifier.size(14.dp),
+            painter = painterResource(com.windscribe.mobile.R.drawable.arrow_right),
+            contentDescription = "",
+            tint = MaterialTheme.colorScheme.preferencesSubtitleColor,
         )
     }
 }
@@ -433,9 +441,8 @@ private fun HelpItem(
 private class HelpStateProvider : PreviewParameterProvider<Pair<Boolean, SendLogState>> {
     override val values =
         sequenceOf(
-            false to SendLogState.Idle,
-            true to SendLogState.Loading,
-            true to SendLogState.Success,
+            true to SendLogState.Idle,
+            false to SendLogState.Success,
         )
 }
 

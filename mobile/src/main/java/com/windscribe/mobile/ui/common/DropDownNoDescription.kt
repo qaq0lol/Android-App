@@ -53,7 +53,7 @@ fun DropDownNoDescription(
         modifier =
             Modifier
                 .background(
-                    MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    androidx.compose.ui.graphics.Color(0xB30D1218),
                     shape = RoundedCornerShape(12.dp),
                 ).padding(14.dp)
                 .fillMaxWidth(),

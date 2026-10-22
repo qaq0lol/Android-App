@@ -3,10 +3,12 @@ package com.windscribe.mobile.ui.preferences.advance
 import PreferencesNavBar
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,6 +38,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.windscribe.mobile.ui.common.NextButton
 import com.windscribe.mobile.ui.common.PreferenceBackground
+import com.windscribe.mobile.ui.common.TextSecondary
+import com.windscribe.mobile.ui.common.NeonGreen
+import com.windscribe.mobile.ui.common.CyberButton
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
 import com.windscribe.mobile.ui.nav.LocalNavController
@@ -118,12 +123,10 @@ fun AdvanceContent(
                             Modifier
                                 .height(250.dp)
                                 .fillMaxWidth()
+                                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(14.dp))
                                 .background(
-                                    color =
-                                        MaterialTheme.colorScheme.primaryTextColor.copy(
-                                            alpha = 0.05f,
-                                        ),
-                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xB30D1218),
+                                    shape = RoundedCornerShape(14.dp),
                                 ),
                         singleLine = false,
                         maxLines = Int.MAX_VALUE,
@@ -137,12 +140,12 @@ fun AdvanceContent(
                         colors =
                             OutlinedTextFieldDefaults.colors(
                                 disabledTextColor = MaterialTheme.colorScheme.primaryTextColor,
-                                disabledContainerColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                                disabledContainerColor = androidx.compose.ui.graphics.Color(0xB30D1218),
                                 disabledBorderColor = Color.Transparent,
                                 disabledLabelColor = MaterialTheme.colorScheme.primaryTextColor,
                                 disabledPlaceholderColor = MaterialTheme.colorScheme.primaryTextColor,
                                 errorBorderColor = Color.Transparent,
-                                errorContainerColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                                errorContainerColor = androidx.compose.ui.graphics.Color(0xB30D1218),
                                 errorCursorColor = MaterialTheme.colorScheme.primaryTextColor,
                                 errorLabelColor = MaterialTheme.colorScheme.primaryTextColor,
                                 errorLeadingIconColor = MaterialTheme.colorScheme.primaryTextColor,
@@ -165,30 +168,28 @@ fun AdvanceContent(
                             ),
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Column(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        NextButton(
-                            text = stringResource(R.string.save),
-                            enabled = true,
-                            onClick = {
-                                focusManager.clearFocus()
-                                actions.onSaveClick(params)
-                            },
-                        )
-                        TextButton(
+                        CyberButton(
+                            text = stringResource(R.string.clear),
                             onClick = {
                                 focusManager.clearFocus()
                                 actions.onClearClick()
                             },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.clear),
-                                color = MaterialTheme.colorScheme.primaryTextColor,
-                            )
-                        }
+                            modifier = Modifier.weight(1f),
+                            color = TextSecondary,
+                        )
+                        CyberButton(
+                            text = stringResource(R.string.save),
+                            onClick = {
+                                focusManager.clearFocus()
+                                actions.onSaveClick(params)
+                            },
+                            modifier = Modifier.weight(1f),
+                            color = NeonGreen,
+                        )
                     }
                 }
             }

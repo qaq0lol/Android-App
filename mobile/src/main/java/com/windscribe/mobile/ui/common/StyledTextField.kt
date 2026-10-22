@@ -112,7 +112,7 @@ fun StyledTextField(
                 modifier
                     .fillMaxWidth()
                     .background(
-                        color = AppColors.white.copy(alpha = 0.05f),
+                        color = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
                         shape = RoundedCornerShape(9.dp),
                     ).border(
                         width = 1.dp,

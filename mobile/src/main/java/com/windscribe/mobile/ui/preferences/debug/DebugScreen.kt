@@ -1,39 +1,60 @@
 package com.windscribe.mobile.ui.preferences.debug
 
-import PreferencesNavBar
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.combinedClickable
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.windscribe.mobile.ui.common.PreferenceBackground
-import com.windscribe.mobile.ui.common.PreferenceProgressBar
-import com.windscribe.mobile.ui.helper.MultiDevicePreview
-import com.windscribe.mobile.ui.helper.PreviewWithNav
+import com.windscribe.mobile.R
+import com.windscribe.mobile.ui.common.CyberBackground
+import com.windscribe.mobile.ui.common.CyberBadge
+import com.windscribe.mobile.ui.common.CyberButton
+import com.windscribe.mobile.ui.common.CyberTopAppBar
+import com.windscribe.mobile.ui.common.GlassSurface
+import com.windscribe.mobile.ui.common.NeonCyan
+import com.windscribe.mobile.ui.common.NeonGreen
+import com.windscribe.mobile.ui.common.TextMuted
+import com.windscribe.mobile.ui.common.TextPrimary
 import com.windscribe.mobile.ui.nav.LocalNavController
-import com.windscribe.mobile.ui.theme.font12
-import com.windscribe.mobile.ui.theme.primaryTextColor
-import com.windscribe.vpn.R
+import com.windscribe.mobile.ui.nav.Screen
 import com.windscribe.vpn.Windscribe.Companion.appContext
 import com.windscribe.vpn.apppreference.PreferencesKeyConstants
 import java.io.File
@@ -55,40 +76,131 @@ fun DebugContent(
 ) {
     val navController = LocalNavController.current
     val context = LocalContext.current
+    val listState = rememberLazyListState()
 
-    PreferenceBackground {
-        Column(modifier = Modifier.padding(vertical = 16.dp, horizontal = 16.dp)) {
-            PreferencesNavBar(stringResource(R.string.view_log)) {
-                navController.popBackStack()
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            val listState = rememberLazyListState()
-            LaunchedEffect(debugLog.size) {
-                if (debugLog.isNotEmpty()) {
-                    listState.scrollToItem(debugLog.size - 1)
-                }
-            }
-            LazyColumn(
-                state = listState,
-                modifier =
-                    Modifier.combinedClickable(
-                        onClick = {},
-                        onLongClick = {
-                            exportLog(context)
-                        },
-                    ),
-            ) {
-                items(debugLog.size) {
-                    Text(
-                        debugLog[it],
-                        style = font12,
-                        color = MaterialTheme.colorScheme.primaryTextColor,
-                        textAlign = TextAlign.Start,
+    LaunchedEffect(debugLog.size) {
+        if (debugLog.isNotEmpty()) {
+            listState.scrollToItem(debugLog.size - 1)
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CyberBackground)
+            .navigationBarsPadding()
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            CyberTopAppBar(
+                title = "运行日志",
+                subtitle = "REAL-TIME ENGINE DIAGNOSTIC LOG",
+                onBack = { navController.popBackStack() },
+                trailingContent = {
+                    CyberBadge(
+                        text = "${debugLog.size} 条记录",
+                        color = NeonGreen
                     )
                 }
+            )
+
+            // Terminal View Box
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xF0080D17))
+                    .border(1.dp, Color(0x1FFFFFFF), RoundedCornerShape(20.dp))
+                    .padding(12.dp)
+            ) {
+                if (debugLog.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        if (showProgress) {
+                            CircularProgressIndicator(color = NeonCyan)
+                        } else {
+                            Text(
+                                text = "暂无运行日志",
+                                color = TextMuted,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        itemsIndexed(debugLog) { index, line ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = String.format("%03d ", index + 1),
+                                    color = Color(0x40FFFFFF),
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Text(
+                                    text = line,
+                                    color = if (line.contains("error", ignoreCase = true) || line.contains("fail", ignoreCase = true)) {
+                                        Color(0xFFFF5252)
+                                    } else if (line.contains("warn", ignoreCase = true)) {
+                                        Color(0xFFFFD54F)
+                                    } else if (line.contains("connected", ignoreCase = true) || line.contains("success", ignoreCase = true)) {
+                                        NeonGreen
+                                    } else {
+                                        Color(0xEE81E6D9)
+                                    },
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    lineHeight = 15.sp
+                                )
+                            }
+                        }
+                    }
+                }
             }
+
+            // Bottom Actions Bar
+            GlassSurface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                cornerRadius = 20.dp,
+                borderColor = Color(0x14FFFFFF)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CyberButton(
+                        text = "复制完整日志",
+                        onClick = {
+                            val fullLog = debugLog.joinToString("\n")
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("DebugLog", fullLog))
+                            Toast.makeText(context, "已复制 ${debugLog.size} 行日志到剪贴板", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f),
+                        color = NeonCyan
+                    )
+
+                    CyberButton(
+                        text = "导出文件",
+                        onClick = { exportLog(context) },
+                        modifier = Modifier.weight(1f),
+                        color = NeonGreen
+                    )
+
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
         }
-        PreferenceProgressBar(showProgress)
     }
 }
 
@@ -111,26 +223,7 @@ private fun exportLog(context: Context) {
         if (shareIntent.resolveActivity(context.packageManager) != null) {
             context.startActivity(chooser)
         }
-    }
-}
-
-private class DebugStateProvider : PreviewParameterProvider<Pair<List<String>, Boolean>> {
-    override val values =
-        sequenceOf(
-            emptyList<String>() to true,
-            listOf("Log line 1", "Log line 2", "Log line 3") to false,
-        )
-}
-
-@Composable
-@MultiDevicePreview
-private fun DebugContentPreview(
-    @PreviewParameter(DebugStateProvider::class) state: Pair<List<String>, Boolean>,
-) {
-    PreviewWithNav {
-        DebugContent(
-            debugLog = state.first,
-            showProgress = state.second,
-        )
+    } else {
+        Toast.makeText(context, "日志文件尚未生成", Toast.LENGTH_SHORT).show()
     }
 }

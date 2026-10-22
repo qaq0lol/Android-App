@@ -161,7 +161,7 @@ private fun MainMenuItem(
             .fillMaxWidth()
             .height(44.dp)
             .background(
-                color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                color = androidx.compose.ui.graphics.Color(0xB30D1218),
                 shape = RoundedCornerShape(size = 12.dp),
             ).clickable {
                 if (hapticFeedbackEnabled) {

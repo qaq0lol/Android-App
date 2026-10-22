@@ -127,7 +127,7 @@ fun HashedSignupForm(
                 Modifier
                     .fillMaxWidth()
                     .background(
-                        color = AppColors.white.copy(alpha = 0.05f),
+                        color = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
                         shape = RoundedCornerShape(8.dp),
                     ).drawBehind {
                         val stroke =
@@ -227,7 +227,7 @@ fun HashedSignupForm(
                 Modifier
                     .fillMaxWidth()
                     .background(
-                        color = AppColors.white.copy(alpha = 0.05f),
+                        color = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
                         shape = RoundedCornerShape(8.dp),
                     ).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -351,7 +351,7 @@ private fun ActionButton(
                             colors =
                                 listOf(
                                     AppColors.white.copy(alpha = 0.1f),
-                                    AppColors.white.copy(alpha = 0.05f),
+                                    androidx.compose.ui.graphics.Color(0x1AFFFFFF),
                                 ),
                         ),
                     shape = RoundedCornerShape(100.dp),

@@ -155,8 +155,11 @@ abstract class ConnectionViewmodel : ViewModel() {
     abstract val aspectRatio: StateFlow<Int>
     abstract val goto: SharedFlow<HomeGoto>
     abstract val newFeedCount: StateFlow<Int>
+    abstract val selectedCityId: StateFlow<Int>
 
     abstract fun onConnectButtonClick()
+
+    abstract fun selectCity(city: Datacenter)
 
     abstract fun onCityClick(
         city: Datacenter,
@@ -228,6 +231,7 @@ class ConnectionViewmodelImpl
         override val goto: SharedFlow<HomeGoto> = _goto
         private val _newFeedCount = MutableStateFlow(0)
         override val newFeedCount: StateFlow<Int> = _newFeedCount
+        override val selectedCityId: StateFlow<Int> = locationRepository.selectedCity
 
         private val lastLocationState: MutableStateFlow<LastSelectedLocation?> = MutableStateFlow(null)
         private val _aspectRatio = MutableStateFlow(1)
@@ -691,6 +695,17 @@ class ConnectionViewmodelImpl
                         }
                     }
                 }
+            }
+        }
+
+        override fun selectCity(city: Datacenter) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val datacenterAndLocation = localdb.getDatacenterAndLocation(city.id) ?: return@launch
+                preferences.globalUserConnectionPreference = true
+                preferences.isConnectingToStaticIp = false
+                preferences.isConnectingToConfigured = false
+                saveLastLocation(datacenterAndLocation)
+                fetchConnectionState()
             }
         }
 

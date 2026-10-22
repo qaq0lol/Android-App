@@ -57,7 +57,7 @@ fun CustomDropDown(
         modifier =
             Modifier
                 .background(
-                    MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    androidx.compose.ui.graphics.Color(0xB30D1218),
                     shape = shape,
                 ).padding(14.dp)
                 .fillMaxWidth(),

@@ -2,6 +2,8 @@ package com.windscribe.mobile.ui.preferences.network_options
 
 import PreferencesNavBar
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -138,8 +140,9 @@ private fun Network(networkInfo: NetworkInfo) {
         modifier =
             Modifier
                 .height(48.dp)
+                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(12.dp))
                 .background(
-                    color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    color = Color(0xB30D1218),
                     shape = RoundedCornerShape(12.dp),
                 ).hapticClickable {
                     navController.currentBackStackEntry?.savedStateHandle?.set(

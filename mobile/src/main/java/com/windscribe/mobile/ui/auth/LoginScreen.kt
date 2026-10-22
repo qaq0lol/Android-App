@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -224,6 +228,43 @@ fun LoginCompactLayout(
         verticalArrangement = Arrangement.Top,
     ) {
         Spacer(modifier = Modifier.height(16.dp))
+
+        // 品牌区
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color(0xFF4FF0C0)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "W",
+                    color = Color(0xFF04120C),
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Text(
+                text = "WINDSCRIBE",
+                color = AppColors.white,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 3.sp,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "加密隧道 · 你的网络，你做主",
+                color = Color(0xFF8A98A6),
+                fontSize = 11.sp,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(26.dp))
 
         // Header with title and tabs
         Row(

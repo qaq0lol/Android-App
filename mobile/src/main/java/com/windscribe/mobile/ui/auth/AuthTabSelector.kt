@@ -37,7 +37,7 @@ fun AuthTabSelector(
         modifier =
             modifier
                 .background(
-                    color = AppColors.white.copy(alpha = 0.05f),
+                    color = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
                     shape = RoundedCornerShape(100.dp),
                 ).padding(6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),

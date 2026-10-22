@@ -79,7 +79,7 @@ fun AccessibleCaptchaDialog(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .semantics { paneTitle = title },
-            border = BorderStroke(1.dp, AppColors.white.copy(alpha = 0.05f)),
+            border = BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x1AFFFFFF)),
             tonalElevation = 8.dp,
         ) {
             AccessibleCaptchaContent(request, error, refreshing, onCancel, onRefresh, onSolutionSubmit)
@@ -237,7 +237,7 @@ private fun AsciiArt(
             modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
-                .background(AppColors.white.copy(alpha = 0.05f))
+                .background(androidx.compose.ui.graphics.Color(0x1AFFFFFF))
                 .padding(horizontal = 12.dp, vertical = 16.dp)
                 .clearAndSetSemantics { contentDescription = description },
         contentAlignment = Alignment.Center,

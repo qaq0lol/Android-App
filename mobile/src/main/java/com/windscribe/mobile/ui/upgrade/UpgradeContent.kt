@@ -303,7 +303,22 @@ private fun PlanTileView(
     Box(
         modifier =
             modifier
-                .height(142.dp)
+                .height(if (selected) 156.dp else 132.dp)
+                .then(
+                    if (selected) {
+                        Modifier.border(
+                            width = 1.dp,
+                            color = Color(0xFF4FF0C0).copy(alpha = 0.55f),
+                            shape = RoundedCornerShape(16.dp),
+                        )
+                    } else {
+                        Modifier.border(
+                            width = 1.dp,
+                            color = Color(0x1AFFFFFF),
+                            shape = RoundedCornerShape(16.dp),
+                        )
+                    }
+                )
                 .hapticClickable { onClick() },
     ) {
         AndroidView(

@@ -32,7 +32,6 @@ abstract class SplitTunnelViewModel : ViewModel() {
     abstract val searchKeyword: StateFlow<String>
     abstract val showSystemApps: StateFlow<Boolean>
     abstract val appIconCache: AppIconCache
-    abstract val isAndroid13Plus: Boolean
     abstract val excludedIpsCount: StateFlow<Int>
 
     open fun onModeSelected(mode: DropDownStringItem) {}
@@ -54,7 +53,6 @@ class SplitTunnelViewModelImpl
         override val appIconCache: AppIconCache,
         private val localDbInterface: LocalDbInterface,
     ) : SplitTunnelViewModel() {
-        override val isAndroid13Plus: Boolean = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU
         private val _showProgress = MutableStateFlow(false)
         override val showProgress: StateFlow<Boolean> = _showProgress
         override val excludedIpsCount: StateFlow<Int> =

@@ -28,11 +28,8 @@ class BootWorker
             if (vpnConnectionStateManager.state.value.status != VPNState.Status.Disconnected) {
                 return Result.success()
             }
-            // Check if this is a boot or app upgrade reconnection
-            if (preferencesHelper.autoStartOnBoot) {
-                logger.debug("Device rebooted and Auto start on boot is true, attempting to connect.")
-                shortcutStateManager.connect()
-            } else if (preferencesHelper.globalUserConnectionPreference) {
+            // 开机自启能力已移除，仅保留应用升级后的自动重连
+            if (preferencesHelper.globalUserConnectionPreference) {
                 logger.debug("App updated and user was connected, attempting to reconnect.")
                 shortcutStateManager.connect()
             }

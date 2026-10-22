@@ -50,8 +50,8 @@ fun PrimaryButton(
         Brush.verticalGradient(
             colors =
                 listOf(
-                    Color.White,
-                    Color(0xFFA5B1C6),
+                    Color(0xFF5BF3C6),
+                    Color(0xFF2FDCAC),
                 ),
         )
 
@@ -59,18 +59,19 @@ fun PrimaryButton(
         if (enabled) {
             modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .height(52.dp)
+                .softGlow(Color(0xFF5BF3C6), true, 15.dp)
                 .background(
                     brush = gradientBrush,
-                    shape = RoundedCornerShape(46.dp),
+                    shape = RoundedCornerShape(15.dp),
                 )
         } else {
             modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .height(52.dp)
                 .background(
-                    color = AppColors.white.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(46.dp),
+                    color = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
+                    shape = RoundedCornerShape(15.dp),
                 )
         }
 
@@ -86,14 +87,14 @@ fun PrimaryButton(
                 disabledContentColor = AppColors.white.copy(alpha = 0.25f), // Light gray text (25% opacity)
             ),
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(46.dp), // Fully rounded (height is 48dp)
+        shape = RoundedCornerShape(15.dp), // Fully rounded (height is 48dp)
     ) {
         Text(
             text = text,
             style =
                 font18.copy(
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 18.sp,
+                    fontSize = 15.sp,
                 ),
         )
     }

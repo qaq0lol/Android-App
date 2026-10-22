@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -43,16 +45,18 @@ fun SwitchItemView(
     @StringRes description: Int,
     enabled: Boolean,
     explainer: String? = null,
-    shape: RoundedCornerShape = RoundedCornerShape(12.dp),
+    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
     onSelect: (Boolean) -> Unit,
 ) {
     Column(
         modifier =
             Modifier
                 .background(
-                    MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    Color(0xB30D1218),
                     shape = shape,
-                ).padding(14.dp)
+                )
+                .border(1.dp, Color(0x1AFFFFFF), shape)
+                .padding(14.dp)
                 .fillMaxWidth(),
     ) {
         Row(

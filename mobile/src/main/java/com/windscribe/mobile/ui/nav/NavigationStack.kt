@@ -28,6 +28,7 @@ import com.windscribe.mobile.ui.connection.ConnectionChangeScreen
 import com.windscribe.mobile.ui.connection.DebugLogSentScreen
 import com.windscribe.mobile.ui.connection.ManualModeFailedScreen
 import com.windscribe.mobile.ui.connection.SetupPreferredProtocolScreen
+import com.windscribe.mobile.ui.dashboard.ConsoleDashboardScreen
 import com.windscribe.mobile.ui.home.HomeScreen
 import com.windscribe.mobile.ui.model.AccountStatusDialogData
 import com.windscribe.mobile.ui.popup.AccountStatusScreen
@@ -124,7 +125,7 @@ private fun NavGraphBuilder.addNavigationScreens() {
         EmergencyConnectScreen()
     }
     composable(route = Screen.Home.route) {
-        HomeScreen()
+        ConsoleDashboardScreen()
     }
     composable(route = Screen.NoEmailAttention.route) {
         NoEmailAttentionScreen(false) {}

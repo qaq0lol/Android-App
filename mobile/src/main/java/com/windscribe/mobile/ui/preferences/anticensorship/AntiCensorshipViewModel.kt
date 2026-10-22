@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.windscribe.mobile.ui.model.DropDownStringItem
 import com.windscribe.vpn.apppreference.PreferencesHelper
 import com.windscribe.vpn.apppreference.PreferencesKeyConstants
+import com.windscribe.vpn.decoytraffic.DecoyTrafficController
+import com.windscribe.vpn.decoytraffic.FakeTrafficVolume
 import com.windscribe.vpn.repository.UnblockWgParamsRepository
+import com.windscribe.vpn.state.VPNConnectionStateManager
 import com.windscribe.vpn.workers.WindScribeWorkManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +26,9 @@ abstract class AntiCensorshipViewModel : ViewModel() {
     abstract val serverRoutingModes: StateFlow<List<DropDownStringItem>>
     abstract val selectedServerRouting: StateFlow<String>
     abstract val tlsServerName: StateFlow<String>
+    abstract val decoyTraffic: StateFlow<Boolean>
+    abstract val trafficMultiplier: StateFlow<String>
+    abstract val trafficMultipliers: StateFlow<List<DropDownStringItem>>
 
     abstract fun onProtocolTweaksModeSelected(mode: String)
 
@@ -34,6 +40,10 @@ abstract class AntiCensorshipViewModel : ViewModel() {
 
     abstract fun onTlsServerNameChanged(value: String)
 
+    abstract fun onDecoyTrafficToggled()
+
+    abstract fun onFakeTrafficVolumeSelected(volume: DropDownStringItem)
+
     abstract fun refreshPreferences()
 }
 
@@ -44,6 +54,8 @@ class AntiCensorshipViewModelImpl
         private val preferencesHelper: PreferencesHelper,
         private val unblockWgParamsRepository: UnblockWgParamsRepository,
         private val workManager: WindScribeWorkManager,
+        private val decoyTrafficController: DecoyTrafficController,
+        private val vpnConnectionStateManager: VPNConnectionStateManager,
     ) : AntiCensorshipViewModel() {
         private val _protocolTweaksModes =
             MutableStateFlow(
@@ -85,6 +97,17 @@ class AntiCensorshipViewModelImpl
 
         private val _tlsServerName = MutableStateFlow(preferencesHelper.tlsServerName)
         override val tlsServerName: StateFlow<String> = _tlsServerName
+
+        private val _decoyTraffic = MutableStateFlow(preferencesHelper.isDecoyTrafficOn)
+        override val decoyTraffic: StateFlow<Boolean> = _decoyTraffic
+
+        private val _trafficMultiplier = MutableStateFlow(preferencesHelper.fakeTrafficVolume.name)
+        override val trafficMultiplier: StateFlow<String> = _trafficMultiplier
+
+        private val _trafficMultipliers = MutableStateFlow(
+            FakeTrafficVolume.entries.map { DropDownStringItem(it.name, it.name) }
+        )
+        override val trafficMultipliers: StateFlow<List<DropDownStringItem>> = _trafficMultipliers
 
         init {
             loadAmneziaPresets()
@@ -159,12 +182,37 @@ class AntiCensorshipViewModelImpl
             }
         }
 
+        override fun onDecoyTrafficToggled() {
+            viewModelScope.launch {
+                val newValue = !_decoyTraffic.value
+                _decoyTraffic.emit(newValue)
+                preferencesHelper.isDecoyTrafficOn = newValue
+                if (newValue && vpnConnectionStateManager.isVPNConnected()) {
+                    decoyTrafficController.load()
+                    decoyTrafficController.start()
+                }
+            }
+        }
+
+        override fun onFakeTrafficVolumeSelected(volume: DropDownStringItem) {
+            viewModelScope.launch {
+                _trafficMultiplier.emit(volume.key)
+                preferencesHelper.fakeTrafficVolume = FakeTrafficVolume.valueOf(volume.key)
+                if (_decoyTraffic.value && vpnConnectionStateManager.isVPNConnected()) {
+                    decoyTrafficController.load()
+                    decoyTrafficController.start()
+                }
+            }
+        }
+
         override fun refreshPreferences() {
             viewModelScope.launch {
                 _selectedProtocolTweaksMode.emit(preferencesHelper.protocolTweaksMode)
                 _extraTlsPaddingEnabled.emit(preferencesHelper.extraTlsPaddingEnabled)
                 _selectedServerRouting.emit(preferencesHelper.serverRoutingMode)
                 _tlsServerName.emit(preferencesHelper.tlsServerName)
+                _decoyTraffic.emit(preferencesHelper.isDecoyTrafficOn)
+                _trafficMultiplier.emit(preferencesHelper.fakeTrafficVolume.name)
             }
         }
     }

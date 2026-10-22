@@ -1,45 +1,58 @@
 package com.windscribe.mobile.ui.preferences.general
 
-import PreferencesNavBar
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.AppStartActivity
-import com.windscribe.mobile.ui.common.DropDownItemView
-import com.windscribe.mobile.ui.common.PreferenceBackground
-import com.windscribe.mobile.ui.common.SwitchItemView
-import com.windscribe.mobile.ui.helper.MultiDevicePreview
-import com.windscribe.mobile.ui.helper.PreviewWithNav
+import com.windscribe.mobile.ui.common.CyberBackground
+import com.windscribe.mobile.ui.common.CyberBadge
+import com.windscribe.mobile.ui.common.CyberDropdown
+import com.windscribe.mobile.ui.common.CyberSectionHeader
+import com.windscribe.mobile.ui.common.CyberSegmented
+import com.windscribe.mobile.ui.common.CyberSwitch
+import com.windscribe.mobile.ui.common.CyberTopAppBar
+import com.windscribe.mobile.ui.common.GlassSurface
+import com.windscribe.mobile.ui.common.NeonCyan
+import com.windscribe.mobile.ui.common.NeonGreen
+import com.windscribe.mobile.ui.common.NeonPurple
+import com.windscribe.mobile.ui.common.NeonYellow
+import com.windscribe.mobile.ui.common.TextMuted
+import com.windscribe.mobile.ui.common.TextPrimary
+import com.windscribe.mobile.ui.common.TextSecondary
 import com.windscribe.mobile.ui.model.DropDownStringItem
 import com.windscribe.mobile.ui.nav.LocalNavController
-import com.windscribe.mobile.ui.theme.font16
-import com.windscribe.mobile.ui.theme.preferencesSubtitleColor
-import com.windscribe.mobile.ui.theme.primaryTextColor
 
-/**
- * Callbacks the general-preferences UI can raise. Hoisted out of the composables so the
- * stateless [GeneralContent] never needs to know about [GeneralViewModel] — previews supply
- * no-op lambdas.
- */
 class GeneralActions(
     val onOrderBySelected: (DropDownStringItem) -> Unit = {},
     val onLanguageSelected: (DropDownStringItem) -> Unit = {},
@@ -48,10 +61,6 @@ class GeneralActions(
     val onHapticToggleClick: () -> Unit = {},
 )
 
-/**
- * Stateful entry point. Owns the [GeneralViewModel], collects its flows and wires the
- * reload-app side effect, then delegates rendering to [GeneralContent].
- */
 @Composable
 fun GeneralScreen(viewModel: GeneralViewModel = hiltViewModel<GeneralViewModelImpl>()) {
     val activity = LocalActivity.current as? AppStartActivity
@@ -59,11 +68,13 @@ fun GeneralScreen(viewModel: GeneralViewModel = hiltViewModel<GeneralViewModelIm
     val isHapticEnabled by viewModel.isHapticEnabled.collectAsState()
     val isNotificationStatEnabled by viewModel.isNotificationStatEnabled.collectAsState()
     val isLocationLoadEnabled by viewModel.isLocationLoadEnabled.collectAsState()
+
     LaunchedEffect(reloadAppState.value) {
         if (reloadAppState.value) {
             activity?.recreate()
         }
     }
+
     GeneralContent(
         orderByItems = viewModel.orderByItems,
         selectedOrderBy = viewModel.selectedOrderBy,
@@ -73,21 +84,16 @@ fun GeneralScreen(viewModel: GeneralViewModel = hiltViewModel<GeneralViewModelIm
         isNotificationStatEnabled = isNotificationStatEnabled,
         isHapticEnabled = isHapticEnabled,
         versionName = viewModel.versionName,
-        actions =
-            GeneralActions(
-                onOrderBySelected = viewModel::onOrderByItemSelected,
-                onLanguageSelected = viewModel::onLanguageItemSelected,
-                onLocationLoadClick = viewModel::onLocationLoadItemClicked,
-                onNotificationStatClick = viewModel::onNotificationStatEnabledClick,
-                onHapticToggleClick = viewModel::onHapticToggleButtonClicked,
-            ),
+        actions = GeneralActions(
+            onOrderBySelected = viewModel::onOrderByItemSelected,
+            onLanguageSelected = viewModel::onLanguageItemSelected,
+            onLocationLoadClick = viewModel::onLocationLoadItemClicked,
+            onNotificationStatClick = viewModel::onNotificationStatEnabledClick,
+            onHapticToggleClick = viewModel::onHapticToggleButtonClicked,
+        ),
     )
 }
 
-/**
- * Stateless general-preferences UI. Everything it needs is passed in, so it renders identically
- * in the app and in `@Preview`. This is the composable previews target.
- */
 @Composable
 fun GeneralContent(
     orderByItems: List<DropDownStringItem>,
@@ -101,111 +107,222 @@ fun GeneralContent(
     actions: GeneralActions,
 ) {
     val navController = LocalNavController.current
-    PreferenceBackground {
-        Column(modifier = Modifier.padding(vertical = 16.dp, horizontal = 16.dp)) {
-            PreferencesNavBar(title = stringResource(com.windscribe.vpn.R.string.general)) {
-                navController.popBackStack()
-            }
-            Spacer(modifier = Modifier.height(20.dp))
+    val scrollState = rememberScrollState()
 
-            DropDownItemView(
-                title = com.windscribe.vpn.R.string.sort_by,
-                icon = R.drawable.ic_sort_location,
-                description = com.windscribe.vpn.R.string.location_order_description,
-                items = orderByItems,
-                selectedItemKey = selectedOrderBy,
-                onSelect = actions.onOrderBySelected,
-            )
+    val currentOrderItem = orderByItems.firstOrNull { it.key == selectedOrderBy }
+        ?: orderByItems.firstOrNull() ?: DropDownStringItem(selectedOrderBy)
 
-            Spacer(modifier = Modifier.height(14.dp))
+    val currentLangItem = languageItems.firstOrNull { it.key == selectedLanguage }
+        ?: languageItems.firstOrNull() ?: DropDownStringItem(selectedLanguage)
 
-            DropDownItemView(
-                title = com.windscribe.vpn.R.string.preferred_language,
-                icon = R.drawable.ic_language,
-                description = com.windscribe.vpn.R.string.language_description,
-                items = languageItems,
-                selectedItemKey = selectedLanguage,
-                onSelect = actions.onLanguageSelected,
-            )
-            Spacer(modifier = Modifier.height(14.dp))
-            SwitchItemView(
-                com.windscribe.vpn.R.string.show_location_health,
-                R.drawable.ic_location_load,
-                com.windscribe.vpn.R.string.location_load_description,
-                isLocationLoadEnabled,
-            ) {
-                actions.onLocationLoadClick()
-            }
-            Spacer(modifier = Modifier.height(14.dp))
-            SwitchItemView(
-                title = com.windscribe.vpn.R.string.notifications,
-                icon = R.drawable.ic_notification_stats,
-                description = com.windscribe.vpn.R.string.notification_stats_description,
-                isNotificationStatEnabled,
-                onSelect = { actions.onNotificationStatClick() },
-            )
-            Spacer(modifier = Modifier.height(14.dp))
-            SwitchItemView(
-                title = com.windscribe.vpn.R.string.haptic_setting_label,
-                icon = R.drawable.ic_haptic,
-                description = com.windscribe.vpn.R.string.haptic_feedback_description,
-                isHapticEnabled,
-                onSelect = { actions.onHapticToggleClick() },
-            )
-            Spacer(modifier = Modifier.height(14.dp))
-            VersionName(versionName)
-        }
-    }
-}
-
-@Composable
-private fun VersionName(versionName: String) {
-    Row(
-        Modifier
-            .background(
-                color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                shape = RoundedCornerShape(size = 12.dp),
-            ).padding(start = 14.dp, top = 14.dp, end = 14.dp, bottom = 14.dp),
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CyberBackground)
+            .navigationBarsPadding()
     ) {
-        Text(
-            text = stringResource(com.windscribe.vpn.R.string.version),
-            style =
-                font16.copy(
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primaryTextColor,
-                ),
-        )
-        Spacer(modifier = Modifier.weight(1.0f))
-        Text(
-            text = versionName,
-            style = font16.copy(color = MaterialTheme.colorScheme.preferencesSubtitleColor),
-        )
-    }
-}
+        Column(modifier = Modifier.fillMaxSize()) {
+            CyberTopAppBar(
+                title = "常规",
+                subtitle = "SORTING, TELEMETRY & FEEDBACK",
+                onBack = { navController.popBackStack() }
+            )
 
-/**
- * Feeds representative state into the preview so the renderer draws [GeneralContent] without a VM.
- */
-private class GeneralStateProvider : PreviewParameterProvider<Boolean> {
-    override val values = sequenceOf(false, true)
-}
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            ) {
+                // Section 1: Order By
+                CyberSectionHeader(title = "节点位置排序")
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 20.dp,
+                    borderColor = Color(0x14FFFFFF)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0x1FFFFFFF)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_sort_location),
+                                    contentDescription = null,
+                                    tint = NeonCyan,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "位置顺序",
+                                    color = TextPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "按地理位置、字母或实测延迟排序节点列表",
+                                    color = TextMuted,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
 
-@Composable
-@MultiDevicePreview
-private fun GeneralContentPreview(
-    @PreviewParameter(GeneralStateProvider::class) toggled: Boolean,
-) {
-    PreviewWithNav {
-        GeneralContent(
-            orderByItems = emptyList(),
-            selectedOrderBy = "",
-            languageItems = emptyList(),
-            selectedLanguage = "",
-            isLocationLoadEnabled = toggled,
-            isNotificationStatEnabled = toggled,
-            isHapticEnabled = toggled,
-            versionName = "v3.0.0",
-            actions = GeneralActions(),
-        )
+                        if (orderByItems.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            CyberSegmented(
+                                options = orderByItems.map { it.label ?: it.key },
+                                selectedIndex = orderByItems
+                                    .indexOfFirst { it.key == selectedOrderBy }
+                                    .coerceAtLeast(0),
+                                onSelect = { index -> actions.onOrderBySelected(orderByItems[index]) }
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "按实测延迟升序排列，无数据的节点排在末尾。",
+                                color = TextMuted,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Section 3: Telemetry & Feedback Toggles
+                CyberSectionHeader(title = "体验与反馈特性")
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 20.dp,
+                    borderColor = Color(0x14FFFFFF)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        // Location Health Load
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "显示节点健康与负载状态",
+                                    color = TextPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "在节点列表中展示服务器实时承载负荷与延迟弧线",
+                                    color = TextMuted,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            CyberSwitch(
+                                checked = isLocationLoadEnabled,
+                                onCheckedChange = { actions.onLocationLoadClick() }
+                            )
+                        }
+
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+
+                        // Notification Stats
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "通知栏实时流量统计",
+                                    color = TextPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "在系统通知栏持续更新显示实时上下行传输数据",
+                                    color = TextMuted,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            CyberSwitch(
+                                checked = isNotificationStatEnabled,
+                                onCheckedChange = { actions.onNotificationStatClick() }
+                            )
+                        }
+
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+
+                        // Haptic Feedback
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "触觉震动物理反馈 (Haptics)",
+                                    color = TextPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "开关切换、节点点击与握手成功时的微震动反馈",
+                                    color = TextMuted,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            CyberSwitch(
+                                checked = isHapticEnabled,
+                                onCheckedChange = { actions.onHapticToggleClick() }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Section 4: Version Card
+                CyberSectionHeader(title = "构建与核心版本")
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 20.dp,
+                    borderColor = Color(0x14FFFFFF)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "Windscribe Native Client",
+                                color = TextPrimary,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Target: Android 16 (API 36+) · aarch64",
+                                color = TextMuted,
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        CyberBadge(
+                            text = versionName,
+                            color = NeonCyan
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
     }
 }

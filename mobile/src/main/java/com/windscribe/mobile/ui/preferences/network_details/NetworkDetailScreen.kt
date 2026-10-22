@@ -199,7 +199,7 @@ private fun Header(
             Modifier
                 .fillMaxWidth()
                 .background(
-                    color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    color = androidx.compose.ui.graphics.Color(0xB30D1218),
                     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                 ).padding(16.dp),
     ) {
@@ -248,7 +248,7 @@ private fun ForgetNetwork(onForgetNetwork: () -> Unit) {
         modifier =
             Modifier
                 .background(
-                    color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    color = androidx.compose.ui.graphics.Color(0xB30D1218),
                     shape = RoundedCornerShape(size = 12.dp),
                 ).clickable {
                     onForgetNetwork()

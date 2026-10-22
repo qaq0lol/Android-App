@@ -1,0 +1,1868 @@
+﻿<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WINDSCRIBE · 全界面重构预览 v3</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#04060A; --bg2:#070A0F;
+  --surface:rgba(255,255,255,.045);
+  --surface2:rgba(255,255,255,.075);
+  --line:rgba(255,255,255,.08);
+  --line2:rgba(255,255,255,.15);
+  --txt:#EAF0F5; --txt2:#94A3B1; --txt3:#5E6C7A;
+  --mint:#4FF0C0; --violet:#A78BFA; --amber:#FFC46B; --red:#FF7189; --blue:#63C7FF;
+  --r:20px;
+  --mono:'JetBrains Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
+  --sans:'PingFang SC','HarmonyOS Sans SC','Microsoft YaHei UI','Noto Sans SC',-apple-system,'Segoe UI',sans-serif;
+}
+[data-theme="light"]{
+  --bg:#EDF1F4; --bg2:#F8FAFB;
+  --surface:rgba(255,255,255,.8);
+  --surface2:#ffffff;
+  --line:rgba(9,20,30,.08);
+  --line2:rgba(9,20,30,.16);
+  --txt:#0A1219; --txt2:#5A6A78; --txt3:#8A98A6;
+  --mint:#00A47B; --violet:#7C5CE0; --amber:#B36B00; --red:#D6304A; --blue:#0B7FC4;
+}
+body{
+  margin:0;font-family:var(--sans);background:var(--bg);color:var(--txt);
+  -webkit-font-smoothing:antialiased;line-height:1.4;
+  transition:background .35s ease,color .35s ease;
+}
+.aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.aurora::before,.aurora::after{content:"";position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+.aurora::before{width:900px;height:900px;left:-260px;top:-380px;background:radial-gradient(circle,rgba(79,240,192,.16),transparent 62%)}
+.aurora::after{width:820px;height:820px;right:-240px;top:-260px;background:radial-gradient(circle,rgba(167,139,250,.14),transparent 62%)}
+[data-theme="light"] .aurora::before{background:radial-gradient(circle,rgba(0,164,123,.14),transparent 62%)}
+[data-theme="light"] .aurora::after{background:radial-gradient(circle,rgba(124,92,224,.10),transparent 62%)}
+
+/* ---------- 页面外壳 ---------- */
+.topbar{
+  position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;
+  gap:24px;padding:38px 44px 18px;max-width:1680px;margin:0 auto;
+}
+.brandline{display:flex;align-items:center;gap:12px}
+.logomark{
+  width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  background:linear-gradient(150deg,rgba(79,240,192,.9),rgba(99,199,255,.65));
+  color:#03120D;font-weight:800;font-size:15px;letter-spacing:-.04em;
+  box-shadow:0 0 24px rgba(79,240,192,.35),inset 0 1px 0 rgba(255,255,255,.6);
+}
+h1.title{font-size:23px;margin:0;letter-spacing:-.01em;font-weight:650}
+.subtitle{color:var(--txt2);font-size:13px;margin-top:7px;max-width:640px}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.tbtn{
+  border:1px solid var(--line);background:var(--surface);color:var(--txt2);
+  padding:9px 14px;border-radius:12px;font-size:12.5px;cursor:pointer;font-family:inherit;
+  transition:.2s;display:inline-flex;align-items:center;gap:7px;
+}
+.tbtn:hover{border-color:var(--line2);color:var(--txt);background:var(--surface2)}
+.tbtn[aria-pressed="true"]{border-color:rgba(79,240,192,.45);color:var(--mint);background:rgba(79,240,192,.10)}
+
+.toc{
+  position:sticky;top:0;z-index:20;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;
+  padding:12px 44px;max-width:1680px;margin:0 auto;
+  background:linear-gradient(to bottom,var(--bg) 60%,transparent);
+  backdrop-filter:blur(14px);
+}
+.toc::-webkit-scrollbar{display:none}
+.toc a{
+  white-space:nowrap;color:var(--txt3);text-decoration:none;font-size:12px;padding:6px 11px;
+  border-radius:9px;border:1px solid transparent;transition:.18s;font-family:var(--mono);letter-spacing:.02em;
+}
+.toc a:hover{color:var(--txt);background:var(--surface);border-color:var(--line)}
+
+main{position:relative;z-index:1;max-width:1680px;margin:0 auto;padding:10px 44px 90px}
+
+/* ---------- 设计系统区 ---------- */
+.ds{padding:26px 0 8px;border-top:1px solid var(--line);margin-top:14px}
+.ds h2,.sec-title{font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);
+  font-family:var(--mono);font-weight:600;margin:0 0 18px}
+.dsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.dscard{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:16px}
+.dscard h3{margin:0 0 12px;font-size:12px;color:var(--txt2);font-weight:600;letter-spacing:.06em}
+.swatches{display:flex;flex-wrap:wrap;gap:10px}
+.swatch{display:flex;flex-direction:column;gap:6px;font-size:10.5px;color:var(--txt3);font-family:var(--mono)}
+.swatch i{width:52px;height:36px;border-radius:9px;display:block;border:1px solid var(--line)}
+.tstack{display:flex;flex-direction:column;gap:9px}
+.tstack b{font-weight:650;letter-spacing:-.01em}
+.demo{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* ---------- 手机框 ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(414px,1fr));gap:40px 22px;padding-top:34px;align-items:start}
+.phone{
+  position:relative;width:390px;height:844px;margin:0 auto;border-radius:52px;
+  background:linear-gradient(160deg,#20262E,#0A0D12 55%,#161B22);
+  padding:11px;box-shadow:0 50px 90px -40px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.09),
+    inset 0 0 0 2px rgba(0,0,0,.6);
+  transition:transform .3s ease,box-shadow .3s ease;
+}
+.phone:hover{transform:translateY(-4px);box-shadow:0 60px 100px -40px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.14),
+  0 0 60px -20px rgba(79,240,192,.16)}
+[data-theme="light"] .phone{background:linear-gradient(160deg,#DDE3E8,#F2F5F7 55%,#D6DDE3);
+  box-shadow:0 40px 70px -40px rgba(20,40,60,.5),0 0 0 1px rgba(9,20,30,.12)}
+.scr{
+  position:relative;width:100%;height:100%;border-radius:42px;overflow:hidden;
+  display:flex;flex-direction:column;background:var(--bg);color:var(--txt);
+}
+.notch{
+  position:absolute;top:11px;left:50%;transform:translateX(-50%);width:104px;height:27px;
+  background:#000;border-radius:16px;z-index:30;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+}
+[data-theme="light"] .notch{background:#0B1116}
+
+.sb{display:flex;justify-content:space-between;align-items:center;padding:15px 26px 4px;height:46px;
+  font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--txt);flex:none;z-index:25}
+.sb .icons{display:flex;gap:5px;align-items:center;opacity:.9}
+.sb svg{display:block}
+.app{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 18px;overflow:hidden}
+.homebar{height:22px;display:grid;place-items:center;flex:none}
+.homebar i{width:126px;height:4.5px;border-radius:3px;background:currentColor;opacity:.22}
+
+/* ---------- 通用组件 ---------- */
+.eyebrow{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--txt3)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+[data-theme="light"] .card{box-shadow:0 8px 24px -18px rgba(10,25,40,.35)}
+.pad{padding:15px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.col{display:flex;flex-direction:column}
+.gap6{gap:6px}.gap10{gap:10px}.gap14{gap:14px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.muted{color:var(--txt2);font-size:12px;line-height:1.5}
+.tiny{font-size:10.5px;color:var(--txt3);line-height:1.45}
+.h-sm{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.h-md{font-size:17px;font-weight:650;letter-spacing:-.015em}
+
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;
+  font-size:11px;font-weight:600;border:1px solid var(--line2);background:rgba(255,255,255,.04);white-space:nowrap}
+.pill.mint{color:var(--mint);border-color:rgba(79,240,192,.35);background:rgba(79,240,192,.10)}
+.pill.violet{color:var(--violet);border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.12)}
+.pill.amber{color:var(--amber);border-color:rgba(255,196,107,.32);background:rgba(255,196,107,.10)}
+.pill.red{color:var(--red);border-color:rgba(255,113,137,.32);background:rgba(255,113,137,.10)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+.dot.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(79,240,192,.5)}50%{opacity:.55;box-shadow:0 0 0 5px rgba(79,240,192,0)}}
+
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;
+  background:rgba(255,255,255,.05);border:1px solid var(--line)}
+[data-theme="light"] .seg{background:rgba(9,20,30,.045)}
+.seg span{text-align:center;padding:8px 4px;border-radius:10px;font-size:12px;color:var(--txt2);font-weight:500}
+.seg span.on{background:rgba(79,240,192,.14);color:var(--mint);font-weight:650;
+  box-shadow:inset 0 0 0 1px rgba(79,240,192,.28)}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:15px;
+  font-size:14px;font-weight:650;letter-spacing:.01em;border:1px solid transparent}
+.btn.primary{background:linear-gradient(160deg,#5BF3C6,#2FDCAC);color:#04120C;
+  box-shadow:0 10px 26px -14px rgba(79,240,192,.9),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn.ghost{border-color:var(--line2);color:var(--txt);background:var(--surface)}
+.btn.danger{border-color:rgba(255,113,137,.3);color:var(--red);background:rgba(255,113,137,.07)}
+.btn.sm{height:38px;font-size:12.5px;border-radius:12px}
+
+.sw{position:relative;width:46px;height:27px;border-radius:999px;background:rgba(255,255,255,.12);
+  border:1px solid var(--line);flex:none;transition:.25s;cursor:pointer}
+.sw::after{content:"";position:absolute;top:2.5px;left:2.5px;width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:.25s cubic-bezier(.4,1.4,.6,1);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.sw.on{background:rgba(79,240,192,.28);border-color:rgba(79,240,192,.4)}
+.sw.on::after{left:23px;background:var(--mint);box-shadow:0 0 12px rgba(79,240,192,.7)}
+[data-theme="light"] .sw{background:rgba(9,20,30,.12)}
+[data-theme="light"] .sw.on{background:rgba(0,164,123,.22)}
+[data-theme="light"] .sw.on::after{background:#00A47B}
+
+.lb{height:5px;border-radius:3px;background:rgba(255,255,255,.09);overflow:hidden;flex:1}
+.lb i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--blue))}
+[data-theme="light"] .lb{background:rgba(9,20,30,.09)}
+
+.list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;
+  border-bottom:1px solid var(--line)}
+.list-row:last-child{border-bottom:0}
+.ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;flex:none;
+  background:rgba(255,255,255,.06);border:1px solid var(--line);font-size:15px}
+.ic.mint{background:rgba(79,240,192,.12);border-color:rgba(79,240,192,.22)}
+.ic.violet{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.22)}
+.chev{color:var(--txt3);font-size:15px;line-height:1}
+.flagbox{width:24px;height:18px;border-radius:4px;overflow:hidden;flex:none;display:block;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);background:#fff}
+.flagbox svg{display:block;width:100%;height:100%}
+[data-theme="light"] .flagbox{box-shadow:inset 0 0 0 1px rgba(9,20,30,.15)}
+.meta-strip{display:flex;justify-content:center;align-items:center;gap:9px;margin-top:11px}
+.meta-strip span{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--txt3)}
+
+/* 顶栏 / 导航栏 */
+.nav{display:flex;align-items:center;gap:12px;height:52px;flex:none}
+.back{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;border:1px solid var(--line);
+  background:var(--surface);font-size:15px;color:var(--txt2)}
+.nav .ttl{font-size:16px;font-weight:650;letter-spacing:-.01em}
+.nav .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+.tabbar{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 14px 6px;flex:none;
+  border-top:1px solid var(--line);background:linear-gradient(to top,rgba(6,9,13,.92),rgba(6,9,13,.4));
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+[data-theme="light"] .tabbar{background:linear-gradient(to top,rgba(248,250,251,.95),rgba(248,250,251,.5))}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 0;border-radius:12px;
+  color:var(--txt3);font-size:10.5px;font-weight:600;letter-spacing:.02em}
+.tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--mint);background:radial-gradient(60% 120% at 50% 0%,rgba(79,240,192,.14),transparent)}
+
+/* 仪表盘圆球 */
+.gauge{position:relative;width:260px;height:260px;margin:0 auto;flex:none;display:grid;place-items:center}
+.gauge .field{position:absolute;inset:0;width:100%;height:100%;overflow:visible;
+  transition:opacity .6s ease}
+.gauge[data-state="off"] .field{opacity:.32}
+
+.gauge::before{content:"";position:absolute;width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle,rgba(167,139,250,.38),rgba(167,139,250,.06) 62%,transparent 74%);
+  filter:blur(14px);transform:translate(34px,-30px);pointer-events:none;opacity:0;transition:opacity .8s}
+.gauge[data-state="on"]::before,.gauge[data-state="connecting"]::before{opacity:.9}
+
+.waves{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.waves i{position:absolute;width:112px;height:112px;border-radius:50%;opacity:0;
+  border:1px solid rgba(178,153,255,.8);box-shadow:0 0 24px rgba(167,139,250,.28)}
+.gauge[data-state="off"] .waves{display:none}
+.gauge[data-state="connecting"] .waves i{animation:wave 2.1s cubic-bezier(.25,.6,.3,1) infinite}
+.gauge[data-state="connecting"] .waves i:nth-child(2){animation-delay:.7s}
+.gauge[data-state="connecting"] .waves i:nth-child(3){animation-delay:1.4s}
+.gauge[data-state="on"] .waves i{animation:wave 4.6s cubic-bezier(.25,.6,.3,1) infinite}
+.gauge[data-state="on"] .waves i:nth-child(2){animation-delay:1.53s}
+.gauge[data-state="on"] .waves i:nth-child(3){animation-delay:3.06s}
+@keyframes wave{
+  0%{transform:scale(1);opacity:.7}
+  55%{opacity:.22}
+  100%{transform:scale(2.22);opacity:0}
+}
+
+.orb{position:relative;width:112px;height:112px;border-radius:50%;display:grid;place-items:center;
+  color:#8E9BA8;border:0;
+  background:radial-gradient(circle at 34% 26%,#3C444D 0%,#252C34 42%,#131920 100%);
+  box-shadow:0 22px 40px -22px #000,inset 0 1px 0 rgba(255,255,255,.10);
+  transition:background .55s ease,box-shadow .55s ease,color .55s ease,transform .55s ease}
+.orb svg{position:static;width:34px;height:34px;display:block;inset:auto}
+.orb::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 32% 22%,rgba(255,255,255,.55),rgba(255,255,255,0) 46%);
+  opacity:.16;transition:opacity .55s}
+[data-theme="light"] .orb{color:#5C6B79;
+  background:radial-gradient(circle at 34% 26%,#FFFFFF 0%,#E8EDF2 46%,#CDD6DF 100%);
+  box-shadow:0 20px 34px -22px rgba(10,25,40,.5),inset 0 1px 0 #fff}
+
+.gauge[data-state="connecting"] .orb{color:#063B44;
+  background:radial-gradient(circle at 34% 26%,#BDFFF4 0%,#6FEBDC 22%,#2BCBD1 56%,#0C91A9 100%);
+  box-shadow:0 0 60px -8px rgba(45,214,214,.55),0 18px 34px -20px #000,inset -10px -12px 26px rgba(0,70,95,.35),inset 6px 8px 20px rgba(255,255,255,.35);
+  animation:orbPulse 1.6s ease-in-out infinite}
+.gauge[data-state="on"] .orb{color:#04323B;
+  background:radial-gradient(circle at 34% 26%,#C9FFF6 0%,#74F0E2 20%,#27CFD6 55%,#0A8CA6 100%);
+  box-shadow:0 0 90px -4px rgba(45,214,214,.55),0 22px 40px -22px #000,inset -12px -14px 30px rgba(0,60,85,.38),inset 4px 6px 16px rgba(255,255,255,.22)}
+.gauge[data-state="on"] .orb::after,.gauge[data-state="connecting"] .orb::after{opacity:.34}
+@keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+
+[data-theme="light"] .gauge[data-state="on"] .orb,
+[data-theme="light"] .gauge[data-state="connecting"] .orb{
+  box-shadow:0 0 50px -10px rgba(20,180,190,.45),0 18px 30px -20px rgba(10,25,40,.45),
+    inset -8px -10px 22px rgba(0,80,100,.22),inset 5px 6px 16px rgba(255,255,255,.5)}
+
+.state-cap{text-align:center;margin-top:16px}
+.state-cap b{display:block;font-size:15px;font-weight:650;letter-spacing:.02em;line-height:1}
+.state-cap span{display:block;font-size:10.5px;color:var(--txt3);margin-top:6px;line-height:1}
+
+.ripple-off .orb{transform:scale(1)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes load{0%{stroke-dashoffset:603}45%{stroke-dashoffset:170}55%{stroke-dashoffset:170}100%{stroke-dashoffset:603}}
+
+/* 指标条 */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:18px;
+  background:var(--surface);overflow:hidden}
+.metrics > div{padding:11px 8px;text-align:center;border-left:1px solid var(--line)}
+.metrics > div:first-child{border-left:0}
+.metrics .v{font-family:var(--mono);font-size:16px;font-weight:600;letter-spacing:-.03em}
+.metrics .k{font-size:9.5px;color:var(--txt3);margin-top:4px;letter-spacing:.06em}
+
+/* 国家 / 机房行 */
+.country{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden}
+.country .head{display:flex;align-items:center;gap:11px;padding:12px 13px}
+.flag{font-size:20px;line-height:1;filter:saturate(.9)}
+.dc{display:flex;align-items:center;gap:11px;padding:10px 13px 10px 22px;border-top:1px solid var(--line);
+  background:rgba(255,255,255,.018);position:relative}
+.dc.sel{background:rgba(79,240,192,.07);box-shadow:inset 0 0 0 1px rgba(79,240,192,.35);border-radius:10px;margin:3px 8px}
+.dc.sel::before{content:"";position:absolute;left:0;top:12%;height:76%;width:2px;border-radius:2px;
+  background:var(--mint);box-shadow:0 0 8px var(--mint)}
+
+/* 日志 */
+.logline{font-family:var(--mono);font-size:10px;line-height:1.65;color:var(--txt2);white-space:pre-wrap;
+  word-break:break-all;padding:2.5px 0;border-bottom:1px dashed rgba(255,255,255,.05)}
+.logline .t{color:var(--txt3)}
+.logline .lv{font-weight:700}
+
+/* 皮肤写真 / 壁纸缩略 */
+.thumb{width:100%;height:100px;border-radius:13px;border:1px solid var(--line);overflow:hidden;position:relative}
+.thumb.g1{background:radial-gradient(120% 120% at 20% 10%,#123 0%,#071019 55%,#04070B 100%)}
+.thumb.g2{background:radial-gradient(120% 120% at 80% 0%,#2a1740 0%,#160f26 50%,#07060B 100%)}
+
+/* 说明卡 */
+figcaption{margin-top:15px;text-align:center}
+figcaption .n{font-family:var(--mono);font-size:10px;color:var(--mint);letter-spacing:.16em}
+figcaption .t{font-size:13.5px;font-weight:600;margin-top:5px;letter-spacing:-.01em}
+figcaption .d{font-size:11.5px;color:var(--txt3);margin-top:4px;line-height:1.5;max-width:340px;margin-inline:auto}
+
+footer{border-top:1px solid var(--line);margin-top:60px;padding:26px 44px 50px;text-align:center;color:var(--txt3);font-size:11.5px}
+
+@media (max-width:900px){
+  .topbar{padding:24px 20px 12px;flex-direction:column}
+  .toc{padding:10px 20px}
+  main{padding:0 20px 60px}
+  .grid{grid-template-columns:1fr}
+  .phone{transform:scale(.92);transform-origin:top center;margin-bottom:-60px}
+}
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+
+<header class="topbar">
+  <div>
+    <div class="brandline">
+      <div class="logomark">W</div>
+      <h1 class="title">WINDSCRIBE · 全界面重构预览</h1>
+      <span class="pill mint" style="margin-left:4px">v3 · 黑曜仪表</span>
+    </div>
+    <p class="subtitle">
+      依据现有全部功能绘制的 20 屏高保真原型。设计与旧版「霓虹赛博玻璃」刻意拉开距离：以精密仪器为隐喻，
+      薄荷青作为唯一信号色，紫罗兰仅用于 PRO 身份，等宽数字承担全部遥测信息。所有交互状态均已区分，
+      点击灰色开关/分段控件可直接试玩。
+    </p>
+  </div>
+  <div class="toolbar">
+    <button class="tbtn" id="themeBtn" aria-pressed="false">◐ 浅色主题</button>
+    <button class="tbtn" id="animBtn" aria-pressed="true">▶ 暂停动效</button>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#ds">设计系统</a>
+  <a href="#s-console">01 控制台</a>
+  <a href="#s-connecting">02 连接中</a>
+  <a href="#s-connected">03 已连接</a>
+  <a href="#s-nodes">04 节点矩阵</a>
+  <a href="#s-prefs">05 偏好设置</a>
+  <a href="#s-account">06 账户</a>
+  <a href="#s-conn">07 连接</a>
+  <a href="#s-robert">08 R.O.B.E.R.T.</a>
+  <a href="#s-split">09 拆分隧道</a>
+  <a href="#s-anti">10 反审查</a>
+  <a href="#s-look">11 界面外观</a>
+  <a href="#s-general">12 常规</a>
+  <a href="#s-advance">13 高级参数</a>
+  <a href="#s-network">14 网络详情</a>
+  <a href="#s-log">15 运行日志</a>
+  <a href="#s-about">16 关于</a>
+  <a href="#s-help">17 帮助与工单</a>
+  <a href="#s-upgrade">18 升级 PRO</a>
+  <a href="#s-login">19 登录</a>
+  <a href="#s-light">20 浅色主题</a>
+</nav>
+
+<main>
+
+<!-- ============ 设计系统 ============ -->
+<section class="ds" id="ds">
+  <h2>00 · 设计系统 / Design Tokens</h2>
+  <div class="dsgrid">
+    <div class="dscard">
+      <h3>色彩 · 一个信号色，其余全部降噪</h3>
+      <div class="swatches">
+        <div class="swatch"><i style="background:#04060A"></i>底 #04060A</div>
+        <div class="swatch"><i style="background:#4FF0C0"></i>信号 #4FF0C0</div>
+        <div class="swatch"><i style="background:#A78BFA"></i>PRO #A78BFA</div>
+        <div class="swatch"><i style="background:#FFC46B"></i>警示 #FFC46B</div>
+        <div class="swatch"><i style="background:#FF7189"></i>危险 #FF7189</div>
+        <div class="swatch"><i style="background:#63C7FF"></i>数据 #63C7FF</div>
+      </div>
+      <p class="tiny" style="margin:12px 0 0">除信号色外，界面不使用任何饱和色块。绿色代表"隧道已建立"，仅此一处。</p>
+    </div>
+    <div class="dscard">
+      <h3>字体 · 中文无衬线 + 等宽遥测</h3>
+      <div class="tstack">
+        <b style="font-size:22px">节点矩阵 / 260ms</b>
+        <b style="font-size:16px">控制台 · 安全隧道</b>
+        <span class="muted">正文：思源黑 / 苹方，15px 起，行高 1.55</span>
+        <span class="num" style="font-size:18px;color:var(--mint)">148.2 ↓ · 32.6 ↑</span>
+        <span class="tiny">所有数字使用等宽字体 + 表格数字，避免跳动</span>
+      </div>
+    </div>
+    <div class="dscard">
+      <h3>组件 · 胶囊 / 分段 / 开关</h3>
+      <div class="demo">
+        <span class="pill mint"><span class="dot"></span>已连接</span>
+        <span class="pill violet">PRO</span>
+        <span class="pill amber">维护中</span>
+        <span class="pill red">已阻断</span>
+      </div>
+      <div class="seg" style="margin-top:12px;width:210px"><span class="on">全部</span><span>收藏</span></div>
+      <div class="demo" style="margin-top:12px">
+        <span class="sw on"></span><span class="sw"></span>
+        <span class="tiny" style="margin-left:4px">开关 27px 高，开启态带微光</span>
+      </div>
+    </div>
+    <div class="dscard">
+      <h3>信息密度 · 每屏只回答一个问题</h3>
+      <p class="muted" style="margin:0 0 10px">控制台回答"我现在安全吗"；节点矩阵回答"我要去哪"；偏好设置回答"我要改什么"。三者互不越界。</p>
+      <p class="tiny" style="margin:0">旧版把连接按钮、节点选择、测速、协议全部塞在同一屏，新版将其收敛为单一主行为。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 屏幕 ============ -->
+<section class="grid" id="screens">
+<!-- ================= 01 控制台 · 未连接 ================= -->
+<figure class="phone" id="s-console">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="row" style="height:46px;flex:none">
+        <div class="row" style="gap:8px">
+          <div class="logomark" style="width:23px;height:23px;border-radius:8px;font-size:10px">W</div>
+          <span style="font-size:10.5px;letter-spacing:.22em;font-weight:700">WINDSCRIBE</span>
+          <span class="pill violet" style="padding:2px 6px;font-size:8.5px;letter-spacing:.06em">PRO</span>
+        </div>
+        <span class="pill" style="padding:6px 11px">🇯🇵 日本 · 东京 <span class="chev" style="font-size:12px">›</span></span>
+      </div>
+
+      <div class="row" style="flex:none;margin-bottom:14px">
+        <span class="eyebrow">SECURE TUNNEL</span>
+        <span class="tiny"><span class="dot" style="color:var(--txt3);margin-right:5px"></span>未保护</span>
+      </div>
+
+      <div class="card pad row" style="flex:none;margin-bottom:20px;border-radius:16px">
+        <div class="row" style="gap:11px">
+          <span class="flagbox"><svg viewBox="0 0 24 18"><rect width="24" height="18" fill="#fff"/><circle cx="12" cy="9" r="4.7" fill="#BC002D"/></svg></span>
+          <div class="col gap6">
+            <span class="eyebrow" style="font-size:8.5px">目标节点 · 已就绪</span>
+            <b style="font-size:14.5px;letter-spacing:-.01em">东京 · 新宿 #04</b>
+          </div>
+        </div>
+        <div class="col" style="align-items:flex-end;gap:5px">
+          <span class="num" style="font-size:12px;color:var(--mint)">26 ms</span>
+          <span class="tiny">负载 18%</span>
+        </div>
+      </div>
+
+                  <div class="gauge" data-state="off">
+        <svg class="field" viewBox="0 0 260 260">
+          <circle cx="130" cy="130" r="52" fill="none" stroke="rgba(178,153,255,.46)" stroke-width=".9"/>
+          <circle cx="130" cy="130" r="64" fill="none" stroke="rgba(178,153,255,.40)" stroke-width=".9" stroke-dasharray="300 14 80 10"/>
+          <circle cx="130" cy="130" r="76" fill="none" stroke="rgba(178,153,255,.34)" stroke-width=".9" stroke-dasharray="380 18 120 12" stroke-dashoffset="42"/>
+          <circle cx="130" cy="130" r="88" fill="none" stroke="rgba(178,153,255,.28)" stroke-width=".9" stroke-dasharray="460 20 140 14" stroke-dashoffset="88"/>
+          <circle cx="130" cy="130" r="100" fill="none" stroke="rgba(178,153,255,.22)" stroke-width=".9" stroke-dasharray="520 22 160 16" stroke-dashoffset="132"/>
+          <circle cx="130" cy="130" r="112" fill="none" stroke="rgba(178,153,255,.16)" stroke-width=".9" stroke-dasharray="600 26 180 18" stroke-dashoffset="176"/>
+          <circle cx="130" cy="130" r="123" fill="none" stroke="rgba(178,153,255,.11)" stroke-width=".9" stroke-dasharray="680 30" stroke-dashoffset="220"/>
+        </svg>
+        <div class="waves"><i></i><i></i><i></i></div>
+        <button class="orb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.4v8"/><path d="M7.9 6.3a7 7 0 1 0 8.2 0"/></svg></button>
+      </div>
+
+      <div class="state-cap">
+        <b style="color:#C6D0DA">未连接</b>
+        <span>点击中央按钮手动启动隧道</span>
+      </div>
+      <div class="meta-strip"><span>WIREGUARD</span><span>·</span><span>UDP 443</span><span>·</span><span>AES-256-GCM</span></div>
+
+      <div style="flex:1"></div>
+
+      <div class="metrics" style="flex:none">
+        <div><div class="v" style="color:var(--txt3)">—</div><div class="k">实测延迟</div></div>
+        <div><div class="v" style="color:var(--txt3)">—</div><div class="k">实时下行</div></div>
+        <div><div class="v" style="color:var(--txt3)">—</div><div class="k">实时上行</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 14px;flex:none">
+        <div class="card row" style="padding:11px 13px;border-radius:14px">
+          <span style="font-size:12.5px;font-weight:600">应用分流</span><span class="chev">›</span>
+        </div>
+        <div class="card row" style="padding:11px 13px;border-radius:14px">
+          <span style="font-size:12.5px;font-weight:600">反审查</span><span class="chev">›</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab on"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8.2-7 9.5-4-1.3-7-5.1-7-9.5V6l7-3z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>控制台</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></svg>节点</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h10M18 17h2"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="17" r="2"/></svg>偏好设置</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">01</div><div class="t">控制台 · 未连接</div><div class="d">刻度环完全静止、无任何发光；三个指标显示占位符而非假数据；目标节点可随时切换但不触发连接。</div></figcaption>
+</figure>
+
+<!-- ================= 02 控制台 · 连接中 ================= -->
+<figure class="phone" id="s-connecting">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="row" style="height:46px;flex:none">
+        <div class="row" style="gap:8px">
+          <div class="logomark" style="width:23px;height:23px;border-radius:8px;font-size:10px">W</div>
+          <span style="font-size:10.5px;letter-spacing:.22em;font-weight:700">WINDSCRIBE</span>
+          <span class="pill violet" style="padding:2px 6px;font-size:8.5px;letter-spacing:.06em">PRO</span>
+        </div>
+        <span class="pill" style="padding:6px 11px">🇯🇵 日本 · 东京 <span class="chev" style="font-size:12px">›</span></span>
+      </div>
+      <div class="row" style="flex:none;margin-bottom:14px">
+        <span class="eyebrow">SECURE TUNNEL</span>
+        <span class="tiny" style="color:var(--mint)"><span class="dot pulse" style="margin-right:5px"></span>正在协商</span>
+      </div>
+
+      <div class="card pad row" style="flex:none;margin-bottom:20px;border-radius:16px;border-color:rgba(79,240,192,.28)">
+        <div class="row" style="gap:11px">
+          <span class="flagbox"><svg viewBox="0 0 24 18"><rect width="24" height="18" fill="#fff"/><circle cx="12" cy="9" r="4.7" fill="#BC002D"/></svg></span>
+          <div class="col gap6">
+            <span class="eyebrow" style="font-size:8.5px;color:var(--mint)">目标节点 · 握手中</span>
+            <b style="font-size:14.5px;letter-spacing:-.01em">东京 · 新宿 #04</b>
+          </div>
+        </div>
+        <div class="col" style="align-items:flex-end;gap:5px">
+          <span class="num" style="font-size:12px;color:var(--mint)">WIREGUARD</span>
+          <span class="tiny">UDP 443</span>
+        </div>
+      </div>
+
+                  <div class="gauge" data-state="connecting">
+        <svg class="field" viewBox="0 0 260 260">
+          <circle cx="130" cy="130" r="52" fill="none" stroke="rgba(178,153,255,.46)" stroke-width=".9"/>
+          <circle cx="130" cy="130" r="64" fill="none" stroke="rgba(178,153,255,.40)" stroke-width=".9" stroke-dasharray="300 14 80 10"/>
+          <circle cx="130" cy="130" r="76" fill="none" stroke="rgba(178,153,255,.34)" stroke-width=".9" stroke-dasharray="380 18 120 12" stroke-dashoffset="42"/>
+          <circle cx="130" cy="130" r="88" fill="none" stroke="rgba(178,153,255,.28)" stroke-width=".9" stroke-dasharray="460 20 140 14" stroke-dashoffset="88"/>
+          <circle cx="130" cy="130" r="100" fill="none" stroke="rgba(178,153,255,.22)" stroke-width=".9" stroke-dasharray="520 22 160 16" stroke-dashoffset="132"/>
+          <circle cx="130" cy="130" r="112" fill="none" stroke="rgba(178,153,255,.16)" stroke-width=".9" stroke-dasharray="600 26 180 18" stroke-dashoffset="176"/>
+          <circle cx="130" cy="130" r="123" fill="none" stroke="rgba(178,153,255,.11)" stroke-width=".9" stroke-dasharray="680 30" stroke-dashoffset="220"/>
+        </svg>
+        <div class="waves"><i></i><i></i><i></i></div>
+        <button class="orb"><svg viewBox="0 0 24 24"><rect x="7.7" y="7.7" width="8.6" height="8.6" rx="2.3" fill="currentColor"/></svg></button>
+      </div>
+
+      <div class="state-cap">
+        <b style="color:var(--mint)">正在连接</b>
+        <span>握手 · 1.4 秒 · 再次点击可中止</span>
+      </div>
+
+      <div style="flex:1"></div>
+
+      <div class="metrics" style="flex:none">
+        <div><div class="v" style="color:var(--txt3)">…</div><div class="k">实测延迟</div></div>
+        <div><div class="v" style="color:var(--txt3)">…</div><div class="k">实时下行</div></div>
+        <div><div class="v" style="color:var(--txt3)">…</div><div class="k">实时上行</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 14px;flex:none">
+        <div class="card row" style="padding:11px 13px;border-radius:14px;opacity:.6">
+          <span style="font-size:12.5px;font-weight:600">应用分流</span><span class="chev">›</span>
+        </div>
+        <div class="card row" style="padding:11px 13px;border-radius:14px;opacity:.6">
+          <span style="font-size:12.5px;font-weight:600">反审查</span><span class="chev">›</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab on"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8.2-7 9.5-4-1.3-7-5.1-7-9.5V6l7-3z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>控制台</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></svg>节点</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h10M18 17h2"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="17" r="2"/></svg>偏好设置</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">02</div><div class="t">控制台 · 连接中</div><div class="d">唯一会动的状态：虚线环旋转 + 进度弧呼吸。中央按钮变为中止符号，避免用户误以为需要再点一次确认。</div></figcaption>
+</figure>
+
+<!-- ================= 03 控制台 · 已连接 ================= -->
+<figure class="phone" id="s-connected">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="row" style="height:46px;flex:none">
+        <div class="row" style="gap:8px">
+          <div class="logomark" style="width:23px;height:23px;border-radius:8px;font-size:10px">W</div>
+          <span style="font-size:10.5px;letter-spacing:.22em;font-weight:700">WINDSCRIBE</span>
+          <span class="pill violet" style="padding:2px 6px;font-size:8.5px;letter-spacing:.06em">PRO</span>
+        </div>
+        <span class="pill" style="padding:6px 11px">🇯🇵 日本 · 东京 <span class="chev" style="font-size:12px">›</span></span>
+      </div>
+      <div class="row" style="flex:none;margin-bottom:14px">
+        <span class="eyebrow">SECURE TUNNEL</span>
+        <span class="tiny" style="color:var(--mint)"><span class="dot" style="margin-right:5px"></span>已保护 · 01:24:36</span>
+      </div>
+
+      <div class="card pad row" style="flex:none;margin-bottom:20px;border-radius:16px;border-color:rgba(79,240,192,.22);background:rgba(79,240,192,.06)">
+        <div class="row" style="gap:11px">
+          <span class="flagbox"><svg viewBox="0 0 24 18"><rect width="24" height="18" fill="#fff"/><circle cx="12" cy="9" r="4.7" fill="#BC002D"/></svg></span>
+          <div class="col gap6">
+            <span class="eyebrow" style="font-size:8.5px;color:var(--mint)">目标节点 · 已连接</span>
+            <b style="font-size:14.5px;letter-spacing:-.01em">东京 · 新宿 #04</b>
+          </div>
+        </div>
+        <div class="col" style="align-items:flex-end;gap:5px">
+          <span class="num" style="font-size:12px;color:var(--mint)">26 ms</span>
+          <span class="tiny">负载 18%</span>
+        </div>
+      </div>
+
+                  <div class="gauge" data-state="on">
+        <svg class="field" viewBox="0 0 260 260">
+          <circle cx="130" cy="130" r="52" fill="none" stroke="rgba(178,153,255,.46)" stroke-width=".9"/>
+          <circle cx="130" cy="130" r="64" fill="none" stroke="rgba(178,153,255,.40)" stroke-width=".9" stroke-dasharray="300 14 80 10"/>
+          <circle cx="130" cy="130" r="76" fill="none" stroke="rgba(178,153,255,.34)" stroke-width=".9" stroke-dasharray="380 18 120 12" stroke-dashoffset="42"/>
+          <circle cx="130" cy="130" r="88" fill="none" stroke="rgba(178,153,255,.28)" stroke-width=".9" stroke-dasharray="460 20 140 14" stroke-dashoffset="88"/>
+          <circle cx="130" cy="130" r="100" fill="none" stroke="rgba(178,153,255,.22)" stroke-width=".9" stroke-dasharray="520 22 160 16" stroke-dashoffset="132"/>
+          <circle cx="130" cy="130" r="112" fill="none" stroke="rgba(178,153,255,.16)" stroke-width=".9" stroke-dasharray="600 26 180 18" stroke-dashoffset="176"/>
+          <circle cx="130" cy="130" r="123" fill="none" stroke="rgba(178,153,255,.11)" stroke-width=".9" stroke-dasharray="680 30" stroke-dashoffset="220"/>
+        </svg>
+        <div class="waves"><i></i><i></i><i></i></div>
+        <button class="orb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.4v8"/><path d="M7.9 6.3a7 7 0 1 0 8.2 0"/></svg></button>
+      </div>
+
+      <div class="state-cap">
+        <b style="color:var(--mint)">已连接</b>
+        <span>隧道已激活 · 点击中央按钮断开</span>
+      </div>
+
+      <div style="flex:1"></div>
+
+      <div class="metrics" style="flex:none">
+        <div><div class="v" style="color:var(--mint)">26<span style="font-size:10px;color:var(--txt3)"> ms</span></div><div class="k">实测延迟</div></div>
+        <div><div class="v">1.42<span style="font-size:10px;color:var(--txt3)"> MB/s</span></div><div class="k">实时下行</div></div>
+        <div><div class="v">312<span style="font-size:10px;color:var(--txt3)"> KB/s</span></div><div class="k">实时上行</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 14px;flex:none">
+        <div class="card row" style="padding:11px 13px;border-radius:14px">
+          <span style="font-size:12.5px;font-weight:600">应用分流</span><span class="chev">›</span>
+        </div>
+        <div class="card row" style="padding:11px 13px;border-radius:14px">
+          <span style="font-size:12.5px;font-weight:600">反审查</span><span class="chev">›</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab on"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8.2-7 9.5-4-1.3-7-5.1-7-9.5V6l7-3z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>控制台</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></svg>节点</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h10M18 17h2"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="17" r="2"/></svg>偏好设置</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">03</div><div class="t">控制台 · 已连接</div><div class="d">整圈常亮薄荷青、不呼吸、不旋转；指标切换为等宽实时数值；节点卡整体染上安全色，一眼可辨"已保护"。</div></figcaption>
+</figure>
+
+<!-- ================= 04 节点矩阵 ================= -->
+<figure class="phone" id="s-nodes">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div style="flex:none;padding-top:6px">
+        <div class="row">
+          <div class="col gap6">
+            <span class="h-md">节点矩阵</span>
+            <span class="tiny">62 个地区 · 1,204 个机房</span>
+          </div>
+          <span class="pill mint" style="padding:7px 12px">◈ 一键测速</span>
+        </div>
+      </div>
+
+      <div class="card row" style="height:44px;padding:0 13px;margin-top:14px;border-radius:14px;flex:none">
+        <div class="row" style="gap:9px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--txt3)"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6" stroke-linecap="round"/></svg>
+        </div>
+        <span style="flex:1"></span>
+      </div>
+
+      <div class="seg" style="margin-top:11px;flex:none"><span class="on">全部</span><span>收藏 4</span></div>
+
+      <div class="col gap10" style="margin-top:14px;overflow:hidden;flex:1;position:relative">
+        <div class="country" style="flex:none">
+          <div class="head">
+            <span class="flagbox"><svg viewBox="0 0 24 18"><rect width="24" height="18" fill="#fff"/><circle cx="12" cy="9" r="4.7" fill="#BC002D"/></svg></span>
+            <div class="col" style="flex:1;gap:2px"><b style="font-size:13.5px">日本</b><span class="tiny">12 个机房 · 平均 31 ms</span></div>
+            <span class="pill" style="padding:3px 8px;font-size:10px">26 ms</span>
+            <span class="chev" style="transform:rotate(180deg)">⌄</span>
+          </div>
+          <div class="dc sel">
+            <div class="col" style="flex:1;gap:5px">
+              <div class="row" style="justify-content:flex-start;gap:7px">
+                <span style="font-size:12.5px;font-weight:650">新宿 #04</span>
+                <span class="pill mint" style="padding:1px 6px;font-size:8px;letter-spacing:.04em">已选中</span>
+              </div>
+              <div class="row" style="justify-content:flex-start;gap:8px">
+                <div class="lb" style="width:78px;flex:none"><i style="width:18%"></i></div>
+                <span class="tiny">负载 18%</span>
+              </div>
+            </div>
+            <span class="num" style="font-size:12px;color:var(--mint)">26<small style="font-size:9px;color:var(--txt3)">ms</small></span>
+            <span style="color:var(--amber);font-size:12px">★</span>
+          </div>
+          <div class="dc">
+            <div class="col" style="flex:1;gap:5px">
+              <span style="font-size:12.5px;font-weight:600">东京 #01</span>
+              <div class="row" style="justify-content:flex-start;gap:8px">
+                <div class="lb" style="width:78px;flex:none"><i style="width:42%"></i></div>
+                <span class="tiny">负载 42%</span>
+              </div>
+            </div>
+            <span class="num" style="font-size:12px">34<small style="font-size:9px;color:var(--txt3)">ms</small></span>
+            <span style="color:var(--txt3);font-size:12px">☆</span>
+          </div>
+          <div class="dc">
+            <div class="col" style="flex:1;gap:5px">
+              <span style="font-size:12.5px;font-weight:600">大阪 #02</span>
+              <div class="row" style="justify-content:flex-start;gap:8px">
+                <div class="lb" style="width:78px;flex:none"><i style="width:76%;background:linear-gradient(90deg,var(--amber),var(--red))"></i></div>
+                <span class="tiny" style="color:var(--amber)">负载 76% · 繁忙</span>
+              </div>
+            </div>
+            <span class="num" style="font-size:12px;color:var(--amber)">58<small style="font-size:9px;color:var(--txt3)">ms</small></span>
+            <span style="color:var(--txt3);font-size:12px">☆</span>
+          </div>
+        </div>
+
+        <div class="country" style="flex:none">
+          <div class="head">
+            <span class="flagbox"><svg viewBox="0 0 24 18"><rect width="24" height="18" fill="#DE2910"/><circle cx="12" cy="9" r="4.2" fill="#fff"/><path d="M12 5.3l1.05 2.25 2.45.23-1.87 1.6.57 2.4L12 10.5l-2.2 1.28.57-2.4-1.87-1.6 2.45-.23z" fill="#DE2910"/></svg></span>
+            <div class="col" style="flex:1;gap:2px"><b style="font-size:13.5px">香港</b><span class="tiny">3 个机房 · 平均 19 ms</span></div>
+            <span class="pill" style="padding:3px 8px;font-size:10px">19 ms</span>
+            <span class="chev">⌄</span>
+          </div>
+        </div>
+
+        <div class="country" style="flex:none">
+          <div class="head">
+            <span class="flagbox"><svg viewBox="0 0 24 18"><rect width="24" height="9" fill="#ED2939"/><rect y="9" width="24" height="9" fill="#fff"/><circle cx="6" cy="4.6" r="2.9" fill="#fff"/><circle cx="7.5" cy="4.6" r="2.45" fill="#ED2939"/><circle cx="11.2" cy="2.7" r=".62" fill="#fff"/><circle cx="12.5" cy="4.7" r=".62" fill="#fff"/><circle cx="11.2" cy="6.7" r=".62" fill="#fff"/></svg></span>
+            <div class="col" style="flex:1;gap:2px"><b style="font-size:13.5px">新加坡</b><span class="tiny">5 个机房 · 平均 48 ms</span></div>
+            <span class="pill" style="padding:3px 8px;font-size:10px">48 ms</span>
+            <span class="chev">⌄</span>
+          </div>
+        </div>
+
+        <div class="country" style="flex:none">
+          <div class="head">
+            <span class="flagbox"><svg viewBox="0 0 24 18"><rect width="24" height="18" fill="#fff"/><g fill="#B22234"><rect width="24" height="1.4"/><rect y="2.77" width="24" height="1.4"/><rect y="5.54" width="24" height="1.4"/><rect y="8.31" width="24" height="1.4"/><rect y="11.08" width="24" height="1.4"/><rect y="13.85" width="24" height="1.4"/><rect y="16.6" width="24" height="1.4"/></g><rect width="10" height="9.2" fill="#3C3B6E"/><g fill="#fff"><circle cx="2.1" cy="2.1" r=".62"/><circle cx="5" cy="2.1" r=".62"/><circle cx="7.9" cy="2.1" r=".62"/><circle cx="3.55" cy="4.6" r=".62"/><circle cx="6.45" cy="4.6" r=".62"/><circle cx="2.1" cy="7.1" r=".62"/><circle cx="5" cy="7.1" r=".62"/><circle cx="7.9" cy="7.1" r=".62"/></g></svg></span>
+            <div class="col" style="flex:1;gap:2px"><b style="font-size:13.5px">美国</b><span class="tiny">38 个机房 · 平均 168 ms</span></div>
+            <span class="pill" style="padding:3px 8px;font-size:10px">168 ms</span>
+            <span class="chev">⌄</span>
+          </div>
+        </div>
+
+        <div style="position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none"></div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8.2-7 9.5-4-1.3-7-5.1-7-9.5V6l7-3z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>控制台</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></svg>节点</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h10M18 17h2"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="17" r="2"/></svg>偏好设置</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">04</div><div class="t">节点矩阵</div><div class="d">所有国家卡一律"点击即折叠/展开"，绝不拨号；机房行点击只打上"已选中"青色徽章并刷新控制台。负载用条形而非百分比色块，繁忙节点自动转琥珀。</div></figcaption>
+</figure>
+
+<!-- ================= 05 偏好设置 ================= -->
+<figure class="phone" id="s-prefs">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div style="flex:none;padding-top:8px">
+        <span class="eyebrow">PREFERENCES</span>
+        <div class="row" style="margin-top:8px">
+          <div class="col gap6">
+            <span style="font-size:24px;font-weight:700;letter-spacing:-.03em">系统偏好</span>
+            <span class="tiny">所有设置均实时生效</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card row" style="margin-top:13px;padding:11px 13px;border-radius:16px;flex:none">
+        <div class="row" style="gap:10px">
+          <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(150deg,rgba(167,139,250,.35),rgba(79,240,192,.2));display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,.12)">7F</div>
+          <div class="col gap6">
+            <b style="font-size:13px">7f3a · 无限流量</b>
+            <span class="tiny">账户有效期至 2027-04-18</span>
+          </div>
+        </div>
+        <span class="pill violet" style="padding:3px 8px;font-size:9px">PRO</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px;flex:1;align-content:start;overflow:hidden">
+        <div class="card" style="padding:11px 12px;border-radius:16px">
+          <div class="ic mint" style="margin-bottom:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h9M17 17h3"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="17" r="2"/></svg></div>
+          <b style="font-size:12.5px;display:block">常规</b>
+          <span class="tiny">排序 · 反馈 · 版本</span>
+        </div>
+        <div class="card" style="padding:11px 12px;border-radius:16px">
+          <div class="ic violet" style="margin-bottom:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></div>
+          <b style="font-size:12.5px;display:block">账户</b>
+          <span class="tiny">订阅 · 邮箱 · 礼券</span>
+        </div>
+        <div class="card" style="padding:11px 12px;border-radius:16px">
+          <div class="ic mint" style="margin-bottom:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11l-1 8.5L19 10.5h-6.5L13 2z"/></svg></div>
+          <b style="font-size:12.5px;display:block">连接</b>
+          <span class="tiny">协议 · MTU · DNS</span>
+        </div>
+        <div class="card" style="padding:11px 12px;border-radius:16px">
+          <div class="ic mint" style="margin-bottom:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.4-3 8.2-7 9.5-4-1.3-7-5.1-7-9.5V6l7-3z"/></svg></div>
+          <b style="font-size:12.5px;display:block">R.O.B.E.R.T.</b>
+          <span class="tiny">DNS 级威胁拦截</span>
+        </div>
+        <div class="card" style="padding:11px 12px;border-radius:16px">
+          <div class="ic mint" style="margin-bottom:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M8.5 6H12a3 3 0 0 1 3 3v1.5M8.5 18H12a3 3 0 0 0 3-3v-1.5"/></svg></div>
+          <b style="font-size:12.5px;display:block">拆分隧道</b>
+          <span class="tiny">按应用绕过 VPN</span>
+        </div>
+        <div class="card" style="padding:11px 12px;border-radius:16px">
+          <div class="ic mint" style="margin-bottom:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><path d="M4 4l16 16"/></svg></div>
+          <b style="font-size:12.5px;display:block">反审查</b>
+          <span class="tiny">混淆 · 诱饵流量</span>
+        </div>
+        <div class="card" style="padding:11px 12px;border-radius:16px">
+          <div class="ic mint" style="margin-bottom:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2"/></svg></div>
+          <b style="font-size:12.5px;display:block">界面外观</b>
+          <span class="tiny">主题 · 图标 · 壁纸</span>
+        </div>
+        <div class="card" style="padding:11px 12px;border-radius:16px">
+          <div class="ic mint" style="margin-bottom:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9l2.5 2.5L7 14M12.5 15h4"/></svg></div>
+          <b style="font-size:12.5px;display:block">运行日志</b>
+          <span class="tiny">诊断 · 导出 · 上报</span>
+        </div>
+      </div>
+
+      <div class="btn danger" style="margin:9px 0 12px;flex:none">退出登录</div>
+    </div>
+    <div class="tabbar">
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8.2-7 9.5-4-1.3-7-5.1-7-9.5V6l7-3z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>控制台</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></svg>节点</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h10M18 17h2"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="17" r="2"/></svg>偏好设置</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">05</div><div class="t">偏好设置</div><div class="d">8 个分类改为双列卡片网格，拇指可达区域更短；每张卡片带一句功能副标题，不再只有干巴巴的名词。</div></figcaption>
+</figure>
+
+<!-- ================= 06 账户 ================= -->
+<figure class="phone" id="s-account">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">账户</span><div class="right"><span class="pill">在网页端管理 ›</span></div></div>
+
+      <div class="card" style="padding:16px;border-radius:20px;flex:none;background:linear-gradient(155deg,rgba(167,139,250,.18),rgba(79,240,192,.05));border-color:rgba(167,139,250,.3)">
+        <div class="row" style="align-items:flex-start">
+          <div class="col gap6">
+            <span class="pill violet" style="align-self:flex-start;padding:3px 9px;font-size:9px;letter-spacing:.08em">PRO 专业版</span>
+            <b style="font-size:17px;letter-spacing:-.02em;margin-top:4px">无限流量专线</b>
+            <span class="tiny">7f3a9c21 · 已绑定 1 台设备</span>
+          </div>
+          <div class="col" style="align-items:flex-end;gap:5px">
+            <span class="tiny">有效期至</span>
+            <span class="num" style="font-size:12.5px">2027-04-18</span>
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <div class="row"><span class="tiny">本月已用 42.6 GB</span><span class="tiny" style="color:var(--mint)">不限量</span></div>
+          <div class="lb" style="margin-top:8px;height:6px"><i style="width:34%"></i></div>
+          <div class="row" style="margin-top:7px"><span class="tiny">流量重置日 · 每月 1 日</span><span class="tiny">周期结算</span></div>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="list-row" style="padding-top:2px">
+          <div class="row" style="gap:11px"><div class="ic">✉</div><div class="col gap6"><b style="font-size:13px">绑定邮箱</b><span class="tiny">未绑定 · 绑定后可找回账户</span></div></div>
+          <span class="pill mint" style="padding:3px 8px;font-size:9px">+ 领取 10GB</span>
+        </div>
+        <div class="list-row">
+          <div class="row" style="gap:11px"><div class="ic">🎟</div><div class="col gap6"><b style="font-size:13px">礼券兑换码</b><span class="tiny">应用礼券或升级代码</span></div></div>
+          <span class="chev">›</span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <div class="row" style="gap:11px"><div class="ic">📺</div><div class="col gap6"><b style="font-size:13px">快速配对登录</b><span class="tiny">登录 TV 端或输入 8 位配对码</span></div></div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="list-row" style="padding-top:2px">
+          <div class="row" style="gap:11px"><div class="ic">🔑</div><div class="col gap6"><b style="font-size:13px">重置密码</b><span class="tiny">向已绑定邮箱发送重置链接</span></div></div>
+          <span class="chev">›</span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <div class="row" style="gap:11px"><div class="ic">🎁</div><div class="col gap6"><b style="font-size:13px">推荐好友</b><span class="tiny">邀请成功后双方各得 1 GB</span></div></div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none;border-color:rgba(255,196,107,.24);background:rgba(255,196,107,.05)">
+        <div class="row" style="gap:10px">
+          <div class="ic" style="background:rgba(255,196,107,.12);border-color:rgba(255,196,107,.22);color:var(--amber)">⚠</div>
+          <div class="col gap6" style="flex:1">
+            <b style="font-size:12.5px;color:var(--amber)">当前为临时匿名账户</b>
+            <span class="tiny">清除应用数据将永久丢失此账户与订阅</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px">
+          <div class="btn ghost sm">登录已有账户</div>
+          <div class="btn primary sm">转为正式账户</div>
+        </div>
+      </div>
+
+      <div style="flex:1"></div>
+      <div class="tiny" style="text-align:center;margin-bottom:14px">账户 ID 7f3a9c21-d4e8… · 点击可复制 Hash</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">06</div><div class="t">账户</div><div class="d">订阅卡改用紫罗兰微光区分身份；临时账户风险用琥珀警示条单独承担，不与主卡混淆。</div></figcaption>
+</figure>
+
+<!-- ================= 07 连接 ================= -->
+<figure class="phone" id="s-conn">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">连接</span></div>
+
+      <span class="eyebrow" style="flex:none;margin-top:2px">连接模式</span>
+      <div class="seg" style="margin-top:9px;flex:none"><span class="on">自动</span><span>手动</span></div>
+      <p class="tiny" style="margin:9px 0 0;flex:none">自动模式下由客户端按延迟与连通性协商最快的隧道协议。</p>
+
+      <div class="card pad" style="margin-top:14px;flex:none">
+        <div class="row">
+          <div class="col gap6"><b style="font-size:13px">通讯协议</b><span class="tiny">根据网络环境自动协商</span></div>
+          <span class="pill mint" style="padding:4px 9px;font-size:10px">WIREGUARD</span>
+        </div>
+        <div style="height:1px;background:var(--line);margin:10px 0"></div>
+        <div class="row">
+          <div class="col gap6"><b style="font-size:13px">传输端口</b><span class="tiny">UDP · 自动选择</span></div>
+          <span class="num" style="font-size:13px">443</span>
+        </div>
+        <div style="height:1px;background:var(--line);margin:10px 0"></div>
+        <div class="row">
+          <div class="col gap6"><b style="font-size:13px">数据包大小</b><span class="tiny">自动侦测最优 MTU</span></div>
+          <span class="num" style="font-size:13px">1420 B</span>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="row">
+          <div class="row" style="gap:11px"><div class="ic mint">◈</div><div class="col gap6"><b style="font-size:13px">已连线 DNS</b><span class="tiny">R.O.B.E.R.T. 云端过滤</span></div></div>
+          <span class="chev">›</span>
+        </div>
+        <div style="height:1px;background:var(--line);margin:10px 0"></div>
+        <div class="row">
+          <div class="row" style="gap:11px"><div class="ic">◱</div><div class="col gap6"><b style="font-size:13px">IP 堆叠</b><span class="tiny">IPv4 + IPv6 双栈出口</span></div></div>
+          <span class="pill" style="padding:3px 8px;font-size:9px">双栈</span>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="list-row" style="padding-top:2px">
+          <div class="col gap6"><b style="font-size:12.5px">允许局域网流量</b><span class="tiny">连接 VPN 时仍可访问打印机与 NAS</span></div>
+          <span class="sw"></span>
+        </div>
+        <div class="list-row">
+          <div class="col gap6"><b style="font-size:12.5px">设备开机时启动</b><span class="tiny">开机后自动连回上次节点</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="col gap6"><b style="font-size:12.5px">GPS 坐标欺骗</b><span class="tiny">使定位与所选服务器地理位置一致</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <div class="col gap6"><b style="font-size:12.5px">诱饵流量</b><span class="tiny">生成拟态握手掩盖真实协议特征</span></div>
+          <span class="sw"></span>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">07</div><div class="t">连接</div><div class="d">把"协议 / 端口 / MTU"收进一张卡，减少设置项之间的视觉跳跃；开关区独立成卡，避免误触。</div></figcaption>
+</figure>
+
+<!-- ================= 08 R.O.B.E.R.T. ================= -->
+<figure class="phone" id="s-robert">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">R.O.B.E.R.T.</span><div class="right"><span class="pill">网页端管理 ›</span></div></div>
+
+      <div class="card" style="padding:14px 15px;border-radius:20px;flex:none;background:linear-gradient(155deg,rgba(79,240,192,.12),rgba(255,255,255,.02))">
+        <div class="row">
+          <div class="col gap6">
+            <span class="eyebrow" style="font-size:8.5px;color:var(--mint)">TODAY</span>
+            <b class="num" style="font-size:30px;letter-spacing:-.04em;line-height:1.1">12,480</b>
+            <span class="tiny">今日已拦截的威胁请求</span>
+          </div>
+          <div style="width:72px;height:72px;position:relative">
+            <svg viewBox="0 0 84 84" style="width:100%;height:100%;transform:rotate(-90deg)">
+              <circle cx="42" cy="42" r="34" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/>
+              <circle cx="42" cy="42" r="34" fill="none" stroke="var(--mint)" stroke-width="6" stroke-linecap="round"
+                stroke-dasharray="213" stroke-dashoffset="43" style="filter:drop-shadow(0 0 6px rgba(79,240,192,.5))"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:12px;color:var(--mint)">80%</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+          <div class="col gap6"><b style="font-size:13px">防御引擎总开关</b><span class="tiny">关闭后所有分类规则同时失效</span></div>
+          <span class="sw on"></span>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:16px;flex:none">
+        <span class="eyebrow">拦截矩阵</span>
+        <span class="tiny">8 类 · 已启用 6 类</span>
+      </div>
+
+      <div class="card pad" style="margin-top:9px;flex:1;overflow:hidden">
+        <div class="list-row" style="padding-top:2px">
+          <div class="row" style="gap:11px"><div class="ic mint">⛔</div><div class="col gap6"><b style="font-size:12.5px">广告与弹窗</b><span class="tiny">4,218 次</span></div></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="row" style="gap:11px"><div class="ic mint">👁</div><div class="col gap6"><b style="font-size:12.5px">跨站追踪器</b><span class="tiny">3,104 次</span></div></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="row" style="gap:11px"><div class="ic mint">🦠</div><div class="col gap6"><b style="font-size:12.5px">恶意软件域名</b><span class="tiny">2,730 次</span></div></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="row" style="gap:11px"><div class="ic mint">🎣</div><div class="col gap6"><b style="font-size:12.5px">钓鱼站点</b><span class="tiny">1,502 次</span></div></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="row" style="gap:11px"><div class="ic mint">⛏</div><div class="col gap6"><b style="font-size:12.5px">挖矿脚本</b><span class="tiny">926 次</span></div></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="row" style="gap:11px"><div class="ic">🎲</div><div class="col gap6"><b style="font-size:12.5px">赌博与诈骗</b><span class="tiny">未启用</span></div></div>
+          <span class="sw"></span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <div class="row" style="gap:11px"><div class="ic">🔞</div><div class="col gap6"><b style="font-size:12.5px">成人内容</b><span class="tiny">未启用</span></div></div>
+          <span class="sw"></span>
+        </div>
+      </div>
+      <div class="tiny" style="text-align:center;margin:9px 0 12px">规则在服务端生效，切换节点后依然有效</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">08</div><div class="t">R.O.B.E.R.T.</div><div class="d">把"今日拦截量"做成数据英雄区，配合环形占比；分类不再是裸开关列表，而是带命中次数的证据链。</div></figcaption>
+</figure>
+
+<!-- ================= 09 拆分隧道 ================= -->
+<figure class="phone" id="s-split">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">拆分隧道</span></div>
+
+      <div class="card pad" style="flex:none;border-color:rgba(79,240,192,.25);background:rgba(79,240,192,.05)">
+        <div class="row">
+          <div class="col gap6"><b style="font-size:13px">拆分隧道总开关</b><span class="tiny" style="color:var(--mint)">已启用分流</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="seg" style="margin-top:13px"><span class="on">排除模式</span><span>包容模式</span></div>
+        <p class="tiny" style="margin:9px 0 0">勾选的应用将绕过 VPN 直连，其余全部走隧道。</p>
+      </div>
+
+      <div class="card row" style="margin-top:12px;padding:14px;flex:none">
+        <div class="row" style="gap:11px">
+          <div class="ic">◫</div>
+          <div class="col gap6"><b style="font-size:12.5px">IP 与主机名排除列表</b><span class="tiny">127 项规则 · 域名与网段</span></div>
+        </div>
+        <span class="chev">›</span>
+      </div>
+
+      <div class="row" style="margin-top:16px;flex:none">
+        <span class="eyebrow">本地应用</span>
+        <span class="tiny">显示系统应用 · 关</span>
+      </div>
+
+      <div class="card row" style="margin-top:9px;padding:0 13px;height:38px;flex:none;border-radius:12px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--txt3)"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6" stroke-linecap="round"/></svg>
+        <span class="tiny" style="margin-left:9px">搜索应用名称或包名</span>
+      </div>
+
+      <div class="card pad" style="margin-top:10px;flex:1;overflow:hidden">
+        <div class="list-row" style="padding-top:2px">
+          <div class="row" style="gap:11px">
+            <div class="ic" style="background:rgba(7,193,96,.16);border-color:rgba(7,193,96,.3);color:#4ADE80;font-weight:700;font-size:13px">微</div>
+            <div class="col gap6"><b style="font-size:12.5px">微信</b><span class="tiny">com.tencent.mm</span></div>
+          </div>
+          <span class="sw"></span>
+        </div>
+        <div class="list-row">
+          <div class="row" style="gap:11px">
+            <div class="ic" style="background:rgba(234,67,53,.14);border-color:rgba(234,67,53,.28);color:#FF8A80;font-weight:700;font-size:13px">C</div>
+            <div class="col gap6"><b style="font-size:12.5px">Chrome</b><span class="tiny">com.android.chrome</span></div>
+          </div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="row" style="gap:11px">
+            <div class="ic" style="background:rgba(30,215,96,.14);border-color:rgba(30,215,96,.28);color:#4ADE80;font-weight:700;font-size:13px">♪</div>
+            <div class="col gap6"><b style="font-size:12.5px">Spotify</b><span class="tiny">com.spotify.music</span></div>
+          </div>
+          <span class="sw"></span>
+        </div>
+        <div class="list-row">
+          <div class="row" style="gap:11px">
+            <div class="ic" style="background:rgba(20,120,255,.14);border-color:rgba(20,120,255,.28);color:#74B9FF;font-weight:700;font-size:13px">支</div>
+            <div class="col gap6"><b style="font-size:12.5px">支付宝</b><span class="tiny">com.eg.android.AlipayGphone</span></div>
+          </div>
+          <span class="sw"></span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <div class="row" style="gap:11px">
+            <div class="ic" style="background:rgba(41,171,226,.14);border-color:rgba(41,171,226,.28);color:#67C3F0;font-weight:700;font-size:13px">T</div>
+            <div class="col gap6"><b style="font-size:12.5px">Telegram</b><span class="tiny">org.telegram.messenger</span></div>
+          </div>
+          <span class="sw on"></span>
+        </div>
+      </div>
+      <div class="tiny" style="text-align:center;margin:10px 0 14px">已排除 2 个应用 · 点击开关即时生效</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">09</div><div class="t">拆分隧道</div><div class="d">模式选择紧贴总开关，因为二者语义耦合；应用行用品牌色首字方块替代千篇一律的灰色图标。</div></figcaption>
+</figure>
+
+<!-- ================= 10 反审查 ================= -->
+<figure class="phone" id="s-anti">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">反审查</span><div class="right"><span class="pill amber" style="padding:4px 9px;font-size:9px">+18 ms</span></div></div>
+
+      <div class="card pad" style="flex:none;border-color:rgba(255,196,107,.24);background:rgba(255,196,107,.05)">
+        <div class="row" style="gap:10px">
+          <div class="ic" style="background:rgba(255,196,107,.12);border-color:rgba(255,196,107,.22);color:var(--amber)">⚡</div>
+          <p class="tiny" style="margin:0;color:var(--txt2);flex:1">以下特性会小幅增加延迟与开销，仅在常规连接被严格阻断时开启。</p>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="list-row" style="padding-top:2px">
+          <div class="col gap6"><b style="font-size:12.5px">协议级混淆</b><span class="tiny">变形 WireGuard / OpenVPN 报文头部</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="col gap6"><b style="font-size:12.5px">伺服器路由通道</b><span class="tiny">多路径中继握手，提高连通率</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="col gap6"><b style="font-size:12.5px">TLS 封包填充</b><span class="tiny">规避针对 ClientHello 的深度特征规则</span></div>
+          <span class="sw"></span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <div class="col gap6"><b style="font-size:12.5px">自定义 SNI 域名</b><span class="tiny">仅 Stealth 与 Wstunnel 生效</span></div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="row">
+          <div class="col gap6"><b style="font-size:12.5px">诱饵流量混淆</b><span class="tiny">持续生成随机拟态数据包</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <span class="tiny">流量倍增量</span>
+          <span class="num" style="font-size:12px;color:var(--mint)">2.5×</span>
+        </div>
+        <div class="lb" style="height:4px;margin-top:10px;position:relative">
+          <i style="width:56%"></i>
+          <span style="position:absolute;left:56%;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(79,240,192,.16)"></span>
+        </div>
+        <div class="row" style="margin-top:8px"><span class="tiny">1×</span><span class="tiny">5×</span></div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="row">
+          <div class="col gap6"><b style="font-size:12.5px">底层协议特征修改</b><span class="tiny">变形报文头部，规避协议指纹识别</span></div>
+          <span class="sw"></span>
+        </div>
+        <div class="seg" style="margin-top:12px"><span class="on">标准</span><span>变形</span><span>随机</span></div>
+      </div>
+
+      <div class="card row" style="margin-top:12px;padding:14px;flex:none">
+        <div class="row" style="gap:11px">
+          <div class="ic violet">◈</div>
+          <div class="col gap6"><b style="font-size:12.5px">Amnezia 预设参数</b><span class="tiny">一键载入针对特定网络的调优组合</span></div>
+        </div>
+        <span class="chev">›</span>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">10</div><div class="t">反审查</div><div class="d">顶部直接标出"+18 ms"代价，让用户在开启前就知道要付出什么；诱饵倍率用滑块而非输入框。</div></figcaption>
+</figure>
+
+<!-- ================= 11 界面外观 ================= -->
+<figure class="phone" id="s-look">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">界面外观</span></div>
+
+      <span class="eyebrow" style="flex:none">主题</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:9px;flex:none">
+        <div style="border-radius:15px;border:1px solid rgba(79,240,192,.45);background:#06090D;padding:9px;box-shadow:0 0 0 3px rgba(79,240,192,.08)">
+          <div style="height:62px;border-radius:9px;background:radial-gradient(circle at 50% 120%,#0d2a25,#06090D 70%);position:relative;overflow:hidden">
+            <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;border:1.5px solid #4FF0C0"></div>
+          </div>
+          <div class="row" style="margin-top:8px"><span style="font-size:11.5px;font-weight:600;color:#EAF0F5">深色</span><span class="dot" style="color:#4FF0C0"></span></div>
+        </div>
+        <div style="border-radius:15px;border:1px solid var(--line);background:#EEF2F5;padding:9px">
+          <div style="height:62px;border-radius:9px;background:radial-gradient(circle at 50% 120%,#cdebe1,#F8FAFB 70%);position:relative;overflow:hidden">
+            <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;border:1.5px solid #00A47B"></div>
+          </div>
+          <div class="row" style="margin-top:8px"><span style="font-size:11.5px;font-weight:600;color:#0A1219">浅色</span><span class="dot" style="color:#00A47B;opacity:.35"></span></div>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:14px;flex:none">
+        <div class="row">
+          <div class="col gap6"><b style="font-size:12.5px">伪装图标</b><span class="tiny">在桌面显示为计算器 / 时钟等</span></div>
+          <span class="pill" style="padding:3px 8px;font-size:9px">切换 ›</span>
+        </div>
+        <div class="row" style="margin-top:12px;gap:8px;justify-content:flex-start">
+          <div class="ic" style="width:40px;height:40px;border-radius:13px">🧮</div>
+          <div class="ic" style="width:40px;height:40px;border-radius:13px">🕐</div>
+          <div class="ic" style="width:40px;height:40px;border-radius:13px">📈</div>
+          <div class="ic" style="width:40px;height:40px;border-radius:13px">🎛</div>
+          <div class="ic" style="width:40px;height:40px;border-radius:13px;border-style:dashed;color:var(--txt3)">+</div>
+        </div>
+      </div>
+
+      <span class="eyebrow" style="flex:none;margin-top:16px">背景壁纸</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:9px;flex:none">
+        <div>
+          <div class="thumb g1"><div class="pill" style="position:absolute;left:8px;bottom:8px;padding:2px 7px;font-size:8.5px">未连接</div></div>
+        </div>
+        <div>
+          <div class="thumb g2"><div class="pill mint" style="position:absolute;left:8px;bottom:8px;padding:2px 7px;font-size:8.5px">已连接</div></div>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="row"><span class="tiny">壁纸缩放</span><span class="num" style="font-size:12px">112%</span></div>
+        <div class="lb" style="height:4px;margin-top:9px;position:relative">
+          <i style="width:42%"></i>
+          <span style="position:absolute;left:42%;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(79,240,192,.16)"></span>
+        </div>
+        <div style="height:1px;background:var(--line);margin:14px 0 12px"></div>
+        <div class="list-row" style="padding-top:0">
+          <b style="font-size:12.5px">连接成功音效</b><span class="sw on"></span>
+        </div>
+        <div class="list-row" style="padding-bottom:0;border-bottom:0">
+          <b style="font-size:12.5px">断开连接音效</b><span class="sw"></span>
+        </div>
+      </div>
+
+      <div class="card row" style="margin-top:12px;padding:12px 14px;flex:none">
+        <span class="tiny">主题与壁纸切换后立即生效</span>
+        <span class="pill mint" style="padding:3px 8px;font-size:9px">实时</span>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">11</div><div class="t">界面外观</div><div class="d">主题用真实迷你预览而非文字单选框；伪装图标直接展示桌面上的样子，减少"点了会变成什么"的不确定性。</div></figcaption>
+</figure>
+
+<!-- ================= 12 常规 ================= -->
+<figure class="phone" id="s-general">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">常规</span></div>
+
+      <span class="eyebrow" style="flex:none">节点位置排序</span>
+      <div class="seg" style="margin-top:9px;flex:none"><span>地理</span><span class="on">延迟</span><span>字母</span></div>
+      <p class="tiny" style="margin:9px 0 0;flex:none">按实测延迟升序排列，无数据的节点排在末尾。</p>
+
+      <div class="card pad" style="margin-top:16px;flex:none">
+        <div class="list-row" style="padding-top:2px">
+          <div class="col gap6"><b style="font-size:12.5px">显示负载与延迟</b><span class="tiny">在节点列表中显示实时弧线与健康度</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row">
+          <div class="col gap6"><b style="font-size:12.5px">通知栏实时流量</b><span class="tiny">驻留通知持续显示上下行速率</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <div class="col gap6"><b style="font-size:12.5px">触觉反馈</b><span class="tiny">切换与握手成功时的微震动</span></div>
+          <span class="sw"></span>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="list-row" style="padding-top:2px">
+          <div class="col gap6"><b style="font-size:12.5px">自动重连</b><span class="tiny">网络切换后自动恢复隧道</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <div class="col gap6"><b style="font-size:12.5px">后台保活</b><span class="tiny">锁定进程，避免被系统回收</span></div>
+          <span class="sw on"></span>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="row"><span class="tiny">应用版本</span><span class="num" style="font-size:12px">4.3 · 2401</span></div>
+        <div class="row" style="margin-top:10px"><span class="tiny">构建渠道</span><span class="num" style="font-size:12px">google / debug</span></div>
+        <div class="row" style="margin-top:10px"><span class="tiny">编译目标</span><span class="num" style="font-size:12px">Android 16（API 36）</span></div>
+        <div class="row" style="margin-top:10px"><span class="tiny">核心架构</span><span class="num" style="font-size:12px">arm64-v8a</span></div>
+        <div class="row" style="margin-top:10px"><span class="tiny">上次检查更新</span><span class="num" style="font-size:12px">今天 20:41</span></div>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">12</div><div class="t">常规</div><div class="d">排序方式改为三档分段控件，比原来点击循环切换少一半操作；版本信息表用等宽字对齐，便于截图排障。</div></figcaption>
+</figure>
+
+<!-- ================= 13 高级参数 ================= -->
+<figure class="phone" id="s-advance">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">高级参数</span><div class="right"><span class="pill" style="padding:4px 9px;font-size:9px">危险</span></div></div>
+
+      <p class="muted" style="flex:none;margin:2px 0 0">以命令行形式向 VPN 核心注入额外参数。格式错误会导致隧道无法建立，不确定时请留空。</p>
+
+      <div class="card" style="margin-top:14px;padding:14px;flex:none;font-family:var(--mono);font-size:10.5px;line-height:1.8;color:var(--txt2);min-height:250px">
+        <div style="color:var(--txt3)"># 每行一个参数，例如：</div>
+        <div><span style="color:var(--violet)">--mtu</span> 1380</div>
+        <div><span style="color:var(--violet)">--persistent-keepalive</span> 25</div>
+        <div><span style="color:var(--violet)">--tun-mtu</span> 1420</div>
+        <div><span style="color:var(--violet)">--bind-interface</span> wlan0</div>
+        <div style="margin-top:10px;color:var(--mint);border-left:2px solid var(--mint);padding-left:8px">最后编辑于 2026-10-18 21:04</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px;flex:none">
+        <div class="btn ghost">清除</div>
+        <div class="btn primary">保存参数</div>
+      </div>
+
+      <div class="card pad" style="margin-top:14px;flex:none">
+        <div class="row" style="gap:10px">
+          <div class="ic">↺</div>
+          <div class="col gap6" style="flex:1"><b style="font-size:12px">恢复默认</b><span class="tiny">清空所有注入参数并回到出厂配置</span></div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">13</div><div class="t">高级参数</div><div class="d">危险操作页统一加"危险"标；示例参数采用可读的等宽注释样式，降低误填概率。</div></figcaption>
+</figure>
+
+<!-- ================= 14 网络详情 ================= -->
+<figure class="phone" id="s-network">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">网络详情</span><div class="right"><span class="pill mint" style="padding:4px 9px;font-size:9px">◉ 在线</span></div></div>
+
+      <div class="card" style="padding:16px;border-radius:18px;flex:none;background:linear-gradient(155deg,rgba(99,199,255,.10),rgba(255,255,255,.02))">
+        <div class="row">
+          <div class="col gap6">
+            <span class="eyebrow" style="font-size:8.5px">当前网络</span>
+            <b style="font-size:17px;letter-spacing:-.02em">CMCC-5G</b>
+          </div>
+          <div class="ic" style="width:42px;height:42px;border-radius:14px;font-size:18px">📶</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+          <div><div class="tiny">本机地址</div><div class="num" style="font-size:12px;margin-top:4px">192.168.31.104</div></div>
+          <div><div class="tiny">网关</div><div class="num" style="font-size:12px;margin-top:4px">192.168.31.1</div></div>
+          <div><div class="tiny">DNS</div><div class="num" style="font-size:12px;margin-top:4px">10.255.255.1</div></div>
+          <div><div class="tiny">隧道入口</div><div class="num" style="font-size:12px;margin-top:4px">103.86.xx.xx</div></div>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="list-row" style="padding-top:2px">
+          <span class="tiny">连接类型</span><span class="num" style="font-size:12px">Wi-Fi · 5 GHz</span>
+        </div>
+        <div class="list-row">
+          <span class="tiny">信号强度</span><span class="num" style="font-size:12px;color:var(--mint)">-46 dBm</span>
+        </div>
+        <div class="list-row">
+          <span class="tiny">下行 / 上行</span><span class="num" style="font-size:12px">1.42 MB/s · 312 KB/s</span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <span class="tiny">已用流量</span><span class="num" style="font-size:12px">42.6 GB</span>
+        </div>
+      </div>
+
+      <span class="eyebrow" style="flex:none;margin-top:16px">网络选项</span>
+      <div class="card pad" style="margin-top:9px;flex:none">
+        <div class="list-row" style="padding-top:2px">
+          <div class="col gap6"><b style="font-size:12.5px">仅信任 Wi-Fi 自动连接</b><span class="tiny">在未知热点下不自动建立隧道</span></div>
+          <span class="sw on"></span>
+        </div>
+        <div class="list-row" style="padding-bottom:2px">
+          <div class="col gap6"><b style="font-size:12.5px">蜂窝网络下降低重连频率</b><span class="tiny">减少移动数据消耗</span></div>
+          <span class="sw"></span>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">14</div><div class="t">网络详情</div><div class="d">把原来散落各处的 IP / DNS / 网关收进一张"体检卡"，排障时一屏读完。</div></figcaption>
+</figure>
+
+<!-- ================= 15 运行日志 ================= -->
+<figure class="phone" id="s-log">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">运行日志</span><div class="right"><span class="pill" style="padding:4px 9px;font-size:9px">1,284 条</span></div></div>
+
+      <div class="seg" style="flex:none"><span class="on">全部</span><span>警告</span><span>错误</span></div>
+
+      <div class="card" style="margin-top:12px;padding:12px 13px;flex:1;overflow:hidden">
+        <div class="logline"><span class="t">09:41:02.114</span> <span class="lv" style="color:var(--mint)">INFO </span> [conn] state=DISCONNECTED</div>
+        <div class="logline"><span class="t">09:41:02.118</span> <span class="lv" style="color:var(--mint)">INFO </span> [dns] resolver initialized, 10.255.255.1</div>
+        <div class="logline"><span class="t">09:41:02.190</span> <span class="lv" style="color:var(--mint)">INFO </span> [api] session restored, user=7f3a9c21</div>
+        <div class="logline"><span class="t">09:41:04.502</span> <span class="lv" style="color:var(--mint)">INFO </span> [conn] request connect → jp-tok-04</div>
+        <div class="logline"><span class="t">09:41:04.517</span> <span class="lv" style="color:var(--blue)">DEBUG</span> [wg] handshake init 0x8f2a…</div>
+        <div class="logline"><span class="t">09:41:04.980</span> <span class="lv" style="color:var(--blue)">DEBUG</span> [wg] handshake response ok, rtt=26ms</div>
+        <div class="logline"><span class="t">09:41:05.011</span> <span class="lv" style="color:var(--mint)">INFO </span> [conn] tunnel UP, if=wgtun0, mtu=1420</div>
+        <div class="logline"><span class="t">09:41:05.014</span> <span class="lv" style="color:var(--mint)">INFO </span> [route] default via tunnel, lan bypass=off</div>
+        <div class="logline"><span class="t">09:41:07.338</span> <span class="lv" style="color:var(--amber)">WARN </span> [dns] upstream timeout, retry 1/3</div>
+        <div class="logline"><span class="t">09:41:07.912</span> <span class="lv" style="color:var(--mint)">INFO </span> [dns] upstream recovered, 18ms</div>
+        <div class="logline"><span class="t">09:42:19.004</span> <span class="lv" style="color:var(--red)">ERROR</span> [robert] rule sync failed: 503</div>
+        <div class="logline"><span class="t">09:42:21.771</span> <span class="lv" style="color:var(--mint)">INFO </span> [robert] rule sync ok, 8 categories</div>
+        <div class="logline"><span class="t">09:45:00.002</span> <span class="lv" style="color:var(--blue)">DEBUG</span> [stat] rx=18.4MB tx=2.1MB</div>
+        <div class="logline" style="border-bottom:0"><span class="t">09:46:11.990</span> <span class="lv" style="color:var(--blue)">DEBUG</span> [stat] rx=42.6MB tx=4.8MB</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 14px;flex:none">
+        <div class="btn ghost sm">复制</div>
+        <div class="btn ghost sm">导出</div>
+        <div class="btn primary sm">发送</div>
+      </div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">15</div><div class="t">运行日志</div><div class="d">日志等级用颜色编码，时间戳弱化，正文等宽可读；顶部增加"警告/错误"过滤，长日志不再需要人眼扫描。</div></figcaption>
+</figure>
+
+<!-- ================= 16 关于 ================= -->
+<figure class="phone" id="s-about">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">关于</span></div>
+
+      <div class="col" style="align-items:center;margin-top:34px;flex:none;gap:14px">
+        <div class="logomark" style="width:72px;height:72px;border-radius:24px;font-size:30px;box-shadow:0 0 60px rgba(79,240,192,.4)">W</div>
+        <div class="col" style="align-items:center;gap:6px">
+          <b style="font-size:19px;letter-spacing:-.01em">WINDSCRIBE</b>
+          <span class="num" style="font-size:11px;color:var(--txt3)">4.3 · 2401 · Google</span>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:32px;flex:none">
+        <div class="list-row" style="padding-top:2px"><span style="font-size:12.5px">服务条款</span><span class="chev">›</span></div>
+        <div class="list-row"><span style="font-size:12.5px">隐私政策</span><span class="chev">›</span></div>
+        <div class="list-row"><span style="font-size:12.5px">开源许可</span><span class="chev">›</span></div>
+        <div class="list-row"><span style="font-size:12.5px">官网与文档</span><span class="chev">›</span></div>
+        <div class="list-row" style="padding-bottom:2px"><span style="font-size:12.5px">推荐好友 · 各得 1 GB</span><span class="chev">›</span></div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="row"><span class="tiny">构建时间</span><span class="num" style="font-size:11.5px">2026-10-21 20:50</span></div>
+        <div class="row" style="margin-top:10px"><span class="tiny">签名指纹</span><span class="num" style="font-size:11.5px">9F:2C:…:A1</span></div>
+      </div>
+
+      <div class="btn ghost" style="margin-top:14px;flex:none">检查更新</div>
+      <div style="flex:1"></div>
+      <div class="tiny" style="text-align:center;margin-bottom:18px">为本机个人使用构建 · 无遥测 · 无广告</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">16</div><div class="t">关于</div><div class="d">版本信息从列表项提升为可读的等宽元数据，构建时间对自建包尤其重要。</div></figcaption>
+</figure>
+
+<!-- ================= 17 帮助与工单 ================= -->
+<figure class="phone" id="s-help">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">帮助与支持</span></div>
+
+      <div class="card pad" style="flex:none">
+        <div class="row" style="margin-bottom:12px">
+          <b style="font-size:13px">快速诊断</b>
+          <span class="pill mint" style="padding:3px 8px;font-size:9px">● 全部正常</span>
+        </div>
+        <div class="row" style="padding:7px 0"><span class="tiny">网络连通性</span><span class="tiny" style="color:var(--mint)">34 ms · 正常</span></div>
+        <div class="row" style="padding:7px 0;border-top:1px solid var(--line)"><span class="tiny">VPN 协议栈</span><span class="tiny" style="color:var(--mint)">WireGuard 已就绪</span></div>
+        <div class="row" style="padding:7px 0;border-top:1px solid var(--line)"><span class="tiny">节点健康度</span><span class="tiny" style="color:var(--mint)">1,204 / 1,204 可用</span></div>
+      </div>
+
+      <span class="eyebrow" style="flex:none;margin-top:16px">常见问题</span>
+      <div class="card pad" style="margin-top:9px;flex:none">
+        <div class="list-row" style="padding-top:2px"><span style="font-size:12.5px">连接一直卡在"握手中"</span><span class="chev">›</span></div>
+        <div class="list-row"><span style="font-size:12.5px">连接成功但网页打不开</span><span class="chev">›</span></div>
+        <div class="list-row"><span style="font-size:12.5px">速度明显慢于直连</span><span class="chev">›</span></div>
+        <div class="list-row" style="padding-bottom:2px"><span style="font-size:12.5px">如何切换协议与端口</span><span class="chev">›</span></div>
+      </div>
+
+      <div class="card pad" style="margin-top:12px;flex:none">
+        <div class="row" style="gap:11px">
+          <div class="ic mint" style="border-radius:14px;font-size:17px">✎</div>
+          <div class="col gap6" style="flex:1"><b style="font-size:12.5px">提交工单</b><span class="tiny">附运行日志与设备信息</span></div>
+          <span class="chev">›</span>
+        </div>
+        <div style="height:1px;background:var(--line);margin:10px 0"></div>
+        <div class="row" style="gap:11px">
+          <div class="ic" style="border-radius:14px;font-size:17px">☰</div>
+          <div class="col gap6" style="flex:1"><b style="font-size:12.5px">我的工单</b><span class="tiny">1 条进行中 · 最近回复 2 小时前</span></div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">17</div><div class="t">帮助与支持</div><div class="d">把"先诊断再提问"做成第一屏，减少无效工单；诊断项直接复用实时数据，不写死。</div></figcaption>
+</figure>
+
+<!-- ================= 18 升级 PRO ================= -->
+<figure class="phone" id="s-upgrade">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="nav"><div class="back">‹</div><span class="ttl">升级 PRO</span></div>
+
+      <div class="col" style="align-items:center;flex:none;margin-top:14px;gap:8px">
+        <span class="pill violet" style="letter-spacing:.1em;font-size:9px">WINDSCRIBE PRO</span>
+        <b style="font-size:22px;letter-spacing:-.03em;margin-top:4px">无限流量，无限设备</b>
+        <span class="tiny">当前免费账户已达 10 GB 上限</span>
+      </div>
+
+      <div class="card" style="margin-top:20px;padding:0;flex:none;overflow:hidden;border-color:rgba(167,139,250,.3)">
+        <div style="padding:15px 16px;background:linear-gradient(155deg,rgba(167,139,250,.16),transparent)">
+          <div class="row">
+            <div class="col gap6">
+              <span class="tiny" style="color:var(--violet)">最超值 · 省 45%</span>
+              <b style="font-size:16px">三年计划</b>
+            </div>
+            <div class="col" style="align-items:flex-end;gap:3px">
+              <b class="num" style="font-size:22px;letter-spacing:-.03em">¥ 468</b>
+              <span class="tiny">≈ ¥ 13 / 月</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:18px">
+          <span class="tiny">✓ 无限流量</span><span class="tiny">✓ 10 台设备</span><span class="tiny">✓ 全部节点</span>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;flex:none">
+        <div class="card" style="padding:13px 14px">
+          <div class="tiny">一年计划</div>
+          <div class="num" style="font-size:17px;margin-top:6px">¥ 198</div>
+          <div class="tiny" style="margin-top:3px">≈ ¥ 16.5 / 月</div>
+        </div>
+        <div class="card" style="padding:13px 14px">
+          <div class="tiny">一月计划</div>
+          <div class="num" style="font-size:17px;margin-top:6px">¥ 28</div>
+          <div class="tiny" style="margin-top:3px">随时可取消</div>
+        </div>
+      </div>
+
+      <div class="card pad" style="margin-top:14px;flex:none">
+        <div class="row" style="padding:5px 0"><span class="tiny">全球 62 个地区 / 1,204 个机房</span><span class="tiny" style="color:var(--mint)">✓</span></div>
+        <div class="row" style="padding:5px 0"><span class="tiny">R.O.B.E.R.T. 全部拦截分类</span><span class="tiny" style="color:var(--mint)">✓</span></div>
+        <div class="row" style="padding:5px 0"><span class="tiny">端口转发与静态 IP</span><span class="tiny" style="color:var(--mint)">✓</span></div>
+        <div class="row" style="padding:5px 0"><span class="tiny">无限同时在线设备</span><span class="tiny" style="color:var(--mint)">✓</span></div>
+      </div>
+
+      <div style="flex:1"></div>
+      <div class="btn primary" style="margin-bottom:9px">立即升级</div>
+      <div class="tiny" style="text-align:center;margin-bottom:14px">恢复购买 · 订阅条款</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">18</div><div class="t">升级 PRO</div><div class="d">主推档位单独放大并占据视觉第一落点，其余档位降为并排小卡，避免三张价格卡互相打架。</div></figcaption>
+</figure>
+
+<!-- ================= 19 登录 ================= -->
+<figure class="phone" id="s-login">
+  <div class="notch"></div>
+  <div class="scr">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app" style="position:relative">
+      <div style="position:absolute;left:-40px;right:-40px;top:-60px;height:340px;background:radial-gradient(60% 60% at 50% 30%,rgba(79,240,192,.16),transparent 70%);pointer-events:none"></div>
+
+      <div class="col" style="align-items:center;margin-top:54px;flex:none;gap:16px;position:relative">
+        <div class="logomark" style="width:66px;height:66px;border-radius:22px;font-size:28px;box-shadow:0 0 70px rgba(79,240,192,.45)">W</div>
+        <div class="col" style="align-items:center;gap:7px">
+          <b style="font-size:22px;letter-spacing:.06em">WINDSCRIBE</b>
+          <span class="tiny">加密隧道 · 你的网络，你做主</span>
+        </div>
+      </div>
+
+      <div style="margin-top:42px;flex:none">
+        <span class="eyebrow">用户名</span>
+        <div class="card row" style="height:52px;padding:0 15px;margin-top:8px;border-radius:15px">
+          <span style="font-size:13.5px">7f3a9c21</span>
+          <span class="pill" style="padding:2px 7px;font-size:8.5px">✓</span>
+        </div>
+
+        <span class="eyebrow" style="display:block;margin-top:16px">密码</span>
+        <div class="card row" style="height:52px;padding:0 15px;margin-top:8px;border-radius:15px;border-color:rgba(79,240,192,.35)">
+          <span class="num" style="font-size:14px;letter-spacing:.18em">••••••••••</span>
+          <span class="tiny">显示</span>
+        </div>
+      </div>
+
+      <div class="btn primary" style="margin-top:22px;flex:none">登录</div>
+      <div class="row" style="margin-top:14px;flex:none">
+        <span class="tiny">忘记密码？</span>
+        <span class="tiny" style="color:var(--mint)">注册新账户</span>
+      </div>
+
+      <div class="row" style="margin:24px 0;flex:none;gap:12px">
+        <div style="flex:1;height:1px;background:var(--line)"></div>
+        <span class="tiny">或</span>
+        <div style="flex:1;height:1px;background:var(--line)"></div>
+      </div>
+
+      <div class="btn ghost" style="flex:none">以匿名身份试用</div>
+      <p class="tiny" style="text-align:center;margin-top:12px">匿名账户状态保存在本机，卸载即丢失</p>
+
+      <div style="flex:1"></div>
+      <div class="tiny" style="text-align:center;margin-bottom:16px">继续即表示同意 服务条款 与 隐私政策</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">19</div><div class="t">登录</div><div class="d">去掉插画与营销横幅，仅保留品牌、两个输入框、一个主按钮；匿名入口降级为次按钮但仍可达。</div></figcaption>
+</figure>
+
+<!-- ================= 20 浅色主题 ================= -->
+<figure class="phone" id="s-light">
+  <div class="notch"></div>
+  <div class="scr" data-theme="light">
+    <div class="sb"><span>9:41</span><div class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect y="7" width="3" height="4" rx="1"/><rect x="4.3" y="5" width="3" height="6" rx="1"/><rect x="8.6" y="2.5" width="3" height="8.5" rx="1"/><rect x="12.9" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.4a9.5 9.5 0 0 1 13 0"/><path d="M3.4 6a6 6 0 0 1 8.2 0"/><circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none"><rect x=".5" y=".5" width="20" height="10" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="14" height="7" rx="1.8" fill="currentColor"/><path d="M22 4v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".4"/></svg>
+    </div></div>
+    <div class="app">
+      <div class="row" style="height:46px;flex:none">
+        <div class="row" style="gap:8px">
+          <div class="logomark" style="width:23px;height:23px;border-radius:8px;font-size:10px">W</div>
+          <span style="font-size:10.5px;letter-spacing:.22em;font-weight:700">WINDSCRIBE</span>
+          <span class="pill violet" style="padding:2px 6px;font-size:8.5px">PRO</span>
+        </div>
+        <span class="pill" style="padding:6px 11px">🇭🇰 香港 · 中环 <span class="chev" style="font-size:12px">›</span></span>
+      </div>
+      <div class="row" style="flex:none;margin-bottom:14px">
+        <span class="eyebrow">SECURE TUNNEL</span>
+        <span class="tiny" style="color:var(--mint)"><span class="dot" style="margin-right:5px"></span>已保护 · 00:12:08</span>
+      </div>
+
+      <div class="card pad row" style="flex:none;margin-bottom:20px;border-radius:16px;border-color:rgba(0,164,123,.28);background:rgba(0,164,123,.06)">
+        <div class="row" style="gap:11px">
+          <span class="flagbox"><svg viewBox="0 0 24 18"><rect width="24" height="18" fill="#DE2910"/><circle cx="12" cy="9" r="4.2" fill="#fff"/><path d="M12 5.3l1.05 2.25 2.45.23-1.87 1.6.57 2.4L12 10.5l-2.2 1.28.57-2.4-1.87-1.6 2.45-.23z" fill="#DE2910"/></svg></span>
+          <div class="col gap6">
+            <span class="eyebrow" style="font-size:8.5px;color:var(--mint)">目标节点 · 已连接</span>
+            <b style="font-size:14.5px;letter-spacing:-.01em">香港 · 中环 #02</b>
+          </div>
+        </div>
+        <div class="col" style="align-items:flex-end;gap:5px">
+          <span class="num" style="font-size:12px;color:var(--mint)">19 ms</span>
+          <span class="tiny">负载 24%</span>
+        </div>
+      </div>
+
+                  <div class="gauge" data-state="on">
+        <svg class="field" viewBox="0 0 260 260">
+          <circle cx="130" cy="130" r="52" fill="none" stroke="rgba(178,153,255,.46)" stroke-width=".9"/>
+          <circle cx="130" cy="130" r="64" fill="none" stroke="rgba(178,153,255,.40)" stroke-width=".9" stroke-dasharray="300 14 80 10"/>
+          <circle cx="130" cy="130" r="76" fill="none" stroke="rgba(178,153,255,.34)" stroke-width=".9" stroke-dasharray="380 18 120 12" stroke-dashoffset="42"/>
+          <circle cx="130" cy="130" r="88" fill="none" stroke="rgba(178,153,255,.28)" stroke-width=".9" stroke-dasharray="460 20 140 14" stroke-dashoffset="88"/>
+          <circle cx="130" cy="130" r="100" fill="none" stroke="rgba(178,153,255,.22)" stroke-width=".9" stroke-dasharray="520 22 160 16" stroke-dashoffset="132"/>
+          <circle cx="130" cy="130" r="112" fill="none" stroke="rgba(178,153,255,.16)" stroke-width=".9" stroke-dasharray="600 26 180 18" stroke-dashoffset="176"/>
+          <circle cx="130" cy="130" r="123" fill="none" stroke="rgba(178,153,255,.11)" stroke-width=".9" stroke-dasharray="680 30" stroke-dashoffset="220"/>
+        </svg>
+        <div class="waves"><i></i><i></i><i></i></div>
+        <button class="orb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.4v8"/><path d="M7.9 6.3a7 7 0 1 0 8.2 0"/></svg></button>
+      </div>
+
+      <div class="state-cap">
+        <b style="color:var(--mint)">已连接</b>
+        <span>隧道已激活 · 点击中央按钮断开</span>
+      </div>
+
+      <div style="flex:1"></div>
+
+      <div class="metrics" style="flex:none">
+        <div><div class="v" style="color:var(--mint)">19<span style="font-size:10px;color:var(--txt3)"> ms</span></div><div class="k">实测延迟</div></div>
+        <div><div class="v">2.08<span style="font-size:10px;color:var(--txt3)"> MB/s</span></div><div class="k">实时下行</div></div>
+        <div><div class="v">486<span style="font-size:10px;color:var(--txt3)"> KB/s</span></div><div class="k">实时上行</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 14px;flex:none">
+        <div class="card row" style="padding:11px 13px;border-radius:14px"><span style="font-size:12.5px;font-weight:600">应用分流</span><span class="chev">›</span></div>
+        <div class="card row" style="padding:11px 13px;border-radius:14px"><span style="font-size:12.5px;font-weight:600">反审查</span><span class="chev">›</span></div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab on"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8.2-7 9.5-4-1.3-7-5.1-7-9.5V6l7-3z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>控制台</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></svg>节点</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h10M18 17h2"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="17" r="2"/></svg>偏好设置</div>
+    </div>
+    <div class="homebar"><i></i></div>
+  </div>
+  <figcaption><div class="n">20</div><div class="t">浅色主题</div><div class="d">同一套结构、同一套间距，只换色板与表面材质。点击右上方"浅色主题"可整页切换对比。</div></figcaption>
+</figure>
+
+<!-- INSERT-SCREENS -->
+</section>
+</main>
+
+<footer>
+  WINDSCRIBE 个人版 · 全界面重构预览 v3 · 生成于 2026-10-21<br>
+  本文件为纯静态原型，不含任何外部依赖，可直接用浏览器打开；所有中文均为标准简体。
+</footer>
+
+<script>
+/* 主题切换 */
+const root = document.documentElement;
+document.getElementById('themeBtn').addEventListener('click', e => {
+  const light = root.dataset.theme === 'light';
+  root.dataset.theme = light ? 'dark' : 'light';
+  e.currentTarget.setAttribute('aria-pressed', String(!light));
+  e.currentTarget.textContent = light ? '◐ 浅色主题' : '◑ 深色主题';
+});
+
+/* 暂停动效 */
+document.getElementById('animBtn').addEventListener('click', e => {
+  const paused = root.dataset.anim === 'off';
+  root.dataset.anim = paused ? 'on' : 'off';
+  e.currentTarget.setAttribute('aria-pressed', String(paused));
+  e.currentTarget.textContent = paused ? '▶ 暂停动效' : '⏸ 恢复动效';
+  document.querySelectorAll('.rings i, .dot').forEach(el => {
+    el.style.animationPlayState = paused ? '' : 'paused';
+  });
+});
+
+/* 开关可点 */
+document.addEventListener('click', e => {
+  const sw = e.target.closest('.sw');
+  if (sw) { sw.classList.toggle('on'); e.stopPropagation(); return; }
+  const seg = e.target.closest('.seg span');
+  if (seg) {
+    seg.parentElement.querySelectorAll('span').forEach(s => s.classList.remove('on'));
+    seg.classList.add('on');
+  }
+});
+</script>
+</body>
+</html>

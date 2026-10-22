@@ -1,14 +1,12 @@
 package com.windscribe.mobile.ui.preferences.anticensorship
 
-import PreferencesNavBar
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -19,10 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -32,36 +27,34 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.windscribe.mobile.R
-import com.windscribe.mobile.ui.common.CustomDropDown
-import com.windscribe.mobile.ui.common.PreferenceBackground
-import com.windscribe.mobile.ui.common.SwitchItemView
-import com.windscribe.mobile.ui.helper.MultiDevicePreview
-import com.windscribe.mobile.ui.helper.PreviewWithNav
+import com.windscribe.mobile.ui.common.CyberBackground
+import com.windscribe.mobile.ui.common.CyberBadge
+import com.windscribe.mobile.ui.common.CyberButton
+import com.windscribe.mobile.ui.common.CyberDropdown
+import com.windscribe.mobile.ui.common.CyberSectionHeader
+import com.windscribe.mobile.ui.common.CyberSwitch
+import com.windscribe.mobile.ui.common.CyberTextField
+import com.windscribe.mobile.ui.common.CyberTopAppBar
+import com.windscribe.mobile.ui.common.GlassSurface
+import com.windscribe.mobile.ui.common.NeonCyan
+import com.windscribe.mobile.ui.common.NeonGreen
+import com.windscribe.mobile.ui.common.NeonPurple
+import com.windscribe.mobile.ui.common.TextMuted
+import com.windscribe.mobile.ui.common.TextPrimary
+import com.windscribe.mobile.ui.common.TextSecondary
 import com.windscribe.mobile.ui.model.DropDownStringItem
 import com.windscribe.mobile.ui.nav.LocalNavController
-import com.windscribe.mobile.ui.theme.AppColors
-import com.windscribe.mobile.ui.theme.font14
-import com.windscribe.mobile.ui.theme.font16
-import com.windscribe.mobile.ui.theme.preferencesSubtitleColor
-import com.windscribe.mobile.ui.theme.primaryTextColor
+import com.windscribe.vpn.apppreference.PreferencesKeyConstants
 
-/**
- * Snapshot of the anti-censorship UI state. Hoisted so the stateless [AntiCensorshipContent]
- * never touches [AntiCensorshipViewModel] — previews feed it directly.
- */
 data class AntiCensorshipState(
     val protocolTweaksModes: List<DropDownStringItem> = emptyList(),
     val selectedProtocolTweaksMode: String = "auto",
@@ -71,23 +64,21 @@ data class AntiCensorshipState(
     val selectedPreset: String = "",
     val extraTlsPaddingEnabled: Boolean = true,
     val tlsServerName: String = "",
+    val decoyTraffic: Boolean = false,
+    val trafficMultiplier: String = "",
+    val trafficMultipliers: List<DropDownStringItem> = emptyList(),
 )
 
-/**
- * Callbacks the anti-censorship UI can raise.
- */
 class AntiCensorshipActions(
     val onProtocolTweaksModeSelected: (String) -> Unit = {},
     val onAmneziaPresetSelected: (String) -> Unit = {},
     val onServerRoutingSelected: (String) -> Unit = {},
     val onExtraTlsPaddingToggled: () -> Unit = {},
     val onTlsServerNameChanged: (String) -> Unit = {},
+    val onDecoyTrafficToggled: () -> Unit = {},
+    val onFakeTrafficVolumeSelected: (DropDownStringItem) -> Unit = {},
 )
 
-/**
- * Stateful entry point. Owns the [AntiCensorshipViewModel], collects its flows and wires up
- * side effects, then delegates rendering to [AntiCensorshipContent].
- */
 @Composable
 fun AntiCensorshipScreen(viewModel: AntiCensorshipViewModel = hiltViewModel<AntiCensorshipViewModelImpl>()) {
     val protocolTweaksModes by viewModel.protocolTweaksModes.collectAsState()
@@ -98,38 +89,40 @@ fun AntiCensorshipScreen(viewModel: AntiCensorshipViewModel = hiltViewModel<Anti
     val selectedPreset by viewModel.selectedPreset.collectAsState()
     val extraTlsPaddingEnabled by viewModel.extraTlsPaddingEnabled.collectAsState()
     val tlsServerName by viewModel.tlsServerName.collectAsState()
+    val decoyTraffic by viewModel.decoyTraffic.collectAsState()
+    val trafficMultiplier by viewModel.trafficMultiplier.collectAsState()
+    val trafficMultipliers by viewModel.trafficMultipliers.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.refreshPreferences()
     }
 
     AntiCensorshipContent(
-        state =
-            AntiCensorshipState(
-                protocolTweaksModes = protocolTweaksModes,
-                selectedProtocolTweaksMode = selectedProtocolTweaksMode,
-                serverRoutingModes = serverRoutingModes,
-                selectedServerRouting = selectedServerRouting,
-                amneziaPresets = amneziaPresets,
-                selectedPreset = selectedPreset,
-                extraTlsPaddingEnabled = extraTlsPaddingEnabled,
-                tlsServerName = tlsServerName,
-            ),
-        actions =
-            AntiCensorshipActions(
-                onProtocolTweaksModeSelected = viewModel::onProtocolTweaksModeSelected,
-                onAmneziaPresetSelected = viewModel::onAmneziaPresetSelected,
-                onServerRoutingSelected = viewModel::onServerRoutingSelected,
-                onExtraTlsPaddingToggled = viewModel::onExtraTlsPaddingToggled,
-                onTlsServerNameChanged = viewModel::onTlsServerNameChanged,
-            ),
+        state = AntiCensorshipState(
+            protocolTweaksModes = protocolTweaksModes,
+            selectedProtocolTweaksMode = selectedProtocolTweaksMode,
+            serverRoutingModes = serverRoutingModes,
+            selectedServerRouting = selectedServerRouting,
+            amneziaPresets = amneziaPresets,
+            selectedPreset = selectedPreset,
+            extraTlsPaddingEnabled = extraTlsPaddingEnabled,
+            tlsServerName = tlsServerName,
+            decoyTraffic = decoyTraffic,
+            trafficMultiplier = trafficMultiplier,
+            trafficMultipliers = trafficMultipliers,
+        ),
+        actions = AntiCensorshipActions(
+            onProtocolTweaksModeSelected = viewModel::onProtocolTweaksModeSelected,
+            onAmneziaPresetSelected = viewModel::onAmneziaPresetSelected,
+            onServerRoutingSelected = viewModel::onServerRoutingSelected,
+            onExtraTlsPaddingToggled = viewModel::onExtraTlsPaddingToggled,
+            onTlsServerNameChanged = viewModel::onTlsServerNameChanged,
+            onDecoyTrafficToggled = viewModel::onDecoyTrafficToggled,
+            onFakeTrafficVolumeSelected = viewModel::onFakeTrafficVolumeSelected,
+        ),
     )
 }
 
-/**
- * Stateless anti-censorship UI. Everything it needs is passed in, so it renders identically in
- * the app and in `@Preview`. This is the composable previews target.
- */
 @Composable
 fun AntiCensorshipContent(
     state: AntiCensorshipState,
@@ -138,327 +131,397 @@ fun AntiCensorshipContent(
     val navController = LocalNavController.current
     val scrollState = rememberScrollState()
 
-    PreferenceBackground {
-        Column(modifier = Modifier.padding(vertical = 16.dp, horizontal = 16.dp)) {
-            PreferencesNavBar(stringResource(com.windscribe.vpn.R.string.anti_censorship_screen_title)) {
-                navController.popBackStack()
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            ScreenDescription()
-            Spacer(modifier = Modifier.height(16.dp))
-            Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .navigationBarsPadding()
-                        .verticalScroll(scrollState),
-            ) {
-                // Protocol Tweaks Section
-                ProtocolTweaksSection(
-                    state.protocolTweaksModes,
-                    state.selectedProtocolTweaksMode,
-                    state.amneziaPresets,
-                    state.selectedPreset,
-                    actions.onProtocolTweaksModeSelected,
-                    actions.onAmneziaPresetSelected,
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Server Routing Section
-                ServerRoutingSection(
-                    state.serverRoutingModes,
-                    state.selectedServerRouting,
-                    actions.onServerRoutingSelected,
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Extra TLS Padding Section
-                ExtraTlsPaddingSection(
-                    state.extraTlsPaddingEnabled,
-                    actions.onExtraTlsPaddingToggled,
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-                TlsServerNameSection(
-                    state.tlsServerName,
-                    actions.onTlsServerNameChanged,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ScreenDescription() {
     Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(12.dp),
-                ).padding(12.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CyberBackground)
+            .navigationBarsPadding()
     ) {
-        Text(
-            text = stringResource(com.windscribe.vpn.R.string.anti_censorship_screen_description),
-            style = font14.copy(textAlign = TextAlign.Start),
-            color = MaterialTheme.colorScheme.preferencesSubtitleColor,
-        )
-    }
-}
+        Column(modifier = Modifier.fillMaxSize()) {
+            CyberTopAppBar(
+                title = "反审查",
+                subtitle = "CIRCUMVENT DEEP PACKET INSPECTION & FIREWALLS",
+                onBack = { navController.popBackStack() }
+            )
 
-@Composable
-private fun ProtocolTweaksSection(
-    modes: List<DropDownStringItem>,
-    selectedMode: String,
-    presets: List<DropDownStringItem>,
-    selectedPreset: String,
-    onProtocolTweaksModeSelected: (String) -> Unit,
-    onAmneziaPresetSelected: (String) -> Unit,
-) {
-    val isEnabledMode = selectedMode == "manual"
-
-    Column {
-        // Protocol Tweaks Mode Dropdown
-        CustomDropDown(
-            com.windscribe.vpn.R.string.protocol_tweaks,
-            modes,
-            selectedMode,
-            description = com.windscribe.vpn.R.string.protocol_tweaks_description,
-            textAlign = TextAlign.Start,
-            shape =
-                if (isEnabledMode) {
-                    RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
-                } else {
-                    RoundedCornerShape(12.dp)
-                },
-        ) {
-            onProtocolTweaksModeSelected(it.key)
-        }
-
-        // Amnezia Preset Dropdown (only shown when Enabled mode is selected)
-        if (isEnabledMode && presets.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(1.dp))
-            CustomDropDown(
-                com.windscribe.vpn.R.string.amnezia_preset,
-                presets,
-                selectedPreset,
-                textAlign = TextAlign.Start,
-                shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                onAmneziaPresetSelected(it.key)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ExtraTlsPaddingSection(
-    enabled: Boolean,
-    onExtraTlsPaddingToggled: () -> Unit,
-) {
-    SwitchItemView(
-        title = com.windscribe.vpn.R.string.extra_tls_padding,
-        icon = R.drawable.ic_anti_censorship_icon,
-        description = com.windscribe.vpn.R.string.extra_tls_padding_description,
-        enabled,
-        shape = RoundedCornerShape(12.dp),
-        onSelect = { onExtraTlsPaddingToggled() },
-    )
-}
-
-@Composable
-private fun ServerRoutingSection(
-    modes: List<DropDownStringItem>,
-    selectedMode: String,
-    onServerRoutingSelected: (String) -> Unit,
-) {
-    if (modes.isNotEmpty()) {
-        CustomDropDown(
-            com.windscribe.vpn.R.string.server_routing,
-            modes,
-            selectedMode,
-            description = com.windscribe.vpn.R.string.server_routing_description,
-            textAlign = TextAlign.Start,
-            shape = RoundedCornerShape(12.dp),
-        ) {
-            onServerRoutingSelected(it.key)
-        }
-    }
-}
-
-@Composable
-private fun TlsServerNameSection(
-    value: String,
-    onTlsServerNameChanged: (String) -> Unit,
-) {
-    var enabled by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
-
-    Column {
-        // Header section with title and description
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                    ).padding(12.dp),
-        ) {
-            Text(
-                stringResource(com.windscribe.vpn.R.string.tls_server_name),
-                style = font16,
-                color = MaterialTheme.colorScheme.primaryTextColor,
-            )
-            Spacer(modifier = Modifier.padding(8.dp))
-            Text(
-                stringResource(com.windscribe.vpn.R.string.tls_server_name_description),
-                style = font14.copy(textAlign = TextAlign.Start, fontWeight = FontWeight.Normal),
-                color = MaterialTheme.colorScheme.preferencesSubtitleColor,
-            )
-        }
-
-        Spacer(modifier = Modifier.height(1.dp))
-
-        // Text field section with edit controls
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
-                    ).padding(horizontal = 16.dp, vertical = 0.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TextField(
-                modifier =
-                    Modifier
-                        .weight(1.0f)
-                        .focusRequester(focusRequester),
-                enabled = enabled,
-                value = value,
-                placeholder = {
-                    Text(
-                        stringResource(com.windscribe.vpn.R.string.tls_server_name_hint),
-                        style = font14,
-                        color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.6f),
-                    )
-                },
-                textStyle = font14.copy(textAlign = TextAlign.Start),
-                singleLine = true,
-                colors =
-                    TextFieldDefaults.colors(
-                        focusedTextColor = MaterialTheme.colorScheme.primaryTextColor,
-                        unfocusedTextColor = MaterialTheme.colorScheme.primaryTextColor,
-                        disabledTextColor = MaterialTheme.colorScheme.primaryTextColor,
-                        disabledPlaceholderColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.6f),
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primaryTextColor,
-                        selectionColors =
-                            androidx.compose.foundation.text.selection.TextSelectionColors(
-                                handleColor = MaterialTheme.colorScheme.primaryTextColor,
-                                backgroundColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.3f),
-                            ),
-                    ),
-                onValueChange = {
-                    onTlsServerNameChanged(it)
-                },
-            )
-            if (enabled) {
-                Icon(
-                    painterResource(R.drawable.ic_close_white),
-                    contentDescription = "",
-                    tint = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.5f),
-                    modifier =
-                        Modifier
-                            .size(24.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) {
-                                enabled = false
-                                focusManager.clearFocus()
-                            }.padding(4.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-            Icon(
-                painterResource(if (enabled) R.drawable.ic_check else R.drawable.ic_edit_icon),
-                contentDescription = "",
-                tint =
-                    if (enabled) {
-                        AppColors.neonGreen
-                    } else {
-                        MaterialTheme.colorScheme.primaryTextColor.copy(
-                            alpha = 0.5f,
-                        )
-                    },
-                modifier =
-                    Modifier
-                        .size(24.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
+                // Warning / Notice Banner
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 20.dp,
+                    borderColor = Color(0x44FF3366)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0x33FF3366)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            if (enabled) {
-                                enabled = false
-                                focusManager.clearFocus()
-                            } else {
-                                enabled = true
-                                focusRequester.requestFocus()
-                            }
-                        }.padding(4.dp),
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_anti_censorship_enabled),
+                                contentDescription = null,
+                                tint = Color(0xFFFF5376),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "深度伪装与混淆特性",
+                                color = TextPrimary,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "这些功能会微幅增加延迟与开销，仅在常规连线被严格阻断时推荐开启。",
+                                color = TextMuted,
+                                fontSize = 10.sp,
+                                lineHeight = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 混淆特性：一张卡四段
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 20.dp,
+                    borderColor = Color(0x14FFFFFF)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        CyberProtocolTweaksCard(state = state, actions = actions, embedded = true)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(Color(0x1AFFFFFF))
+                        )
+                        CyberServerRoutingCard(state = state, actions = actions, embedded = true)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(Color(0x1AFFFFFF))
+                        )
+                        CyberExtraTlsPaddingCard(state = state, actions = actions, embedded = true)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(Color(0x1AFFFFFF))
+                        )
+                        CyberCustomSniCard(state = state, actions = actions, embedded = true)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // 诱饵流量单独一张（含倍率滑块）
+                CyberDecoyTrafficCard(state = state, actions = actions)
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CyberProtocolTweaksCard(
+    state: AntiCensorshipState,
+    actions: AntiCensorshipActions,
+    embedded: Boolean = false
+) {
+    val currentModeItem = state.protocolTweaksModes.firstOrNull { it.key == state.selectedProtocolTweaksMode }
+        ?: state.protocolTweaksModes.firstOrNull()
+        ?: DropDownStringItem(state.selectedProtocolTweaksMode)
+
+    GlassSurface(
+        flush = embedded,
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadius = 20.dp,
+        borderColor = Color(0x14FFFFFF)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(
+                        text = "底层协议特征修改",
+                        color = TextPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "对 WireGuard、OpenVPN 和 Stealth 的底层报文头部进行变形打乱",
+                        color = TextMuted,
+                        fontSize = 10.sp
+                    )
+                }
+                CyberDropdown(
+                    label = "Tweaks",
+                    selectedItem = currentModeItem,
+                    items = state.protocolTweaksModes,
+                    onItemSelected = { actions.onProtocolTweaksModeSelected(it.key) },
+                    itemToString = { it.label ?: it.key }
+                )
+            }
+
+            // Amnezia Presets (if active)
+            if (state.selectedProtocolTweaksMode != PreferencesKeyConstants.PROTOCOL_TWEAKS_DISABLED &&
+                state.amneziaPresets.isNotEmpty()
+            ) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val currentPreset = state.amneziaPresets.firstOrNull { it.key == state.selectedPreset }
+                    ?: state.amneziaPresets.first()
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(
+                            text = "Amnezia 预设参数",
+                            color = NeonPurple,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "加载针对特定网络审查环境调优的混淆参数",
+                            color = TextMuted,
+                            fontSize = 10.sp
+                        )
+                    }
+                    CyberDropdown(
+                        label = "Preset",
+                        selectedItem = currentPreset,
+                        items = state.amneziaPresets,
+                        onItemSelected = { actions.onAmneziaPresetSelected(it.key) },
+                        itemToString = { it.label ?: it.key }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CyberServerRoutingCard(
+    state: AntiCensorshipState,
+    actions: AntiCensorshipActions,
+    embedded: Boolean = false
+) {
+    val currentRoutingItem = state.serverRoutingModes.firstOrNull { it.key == state.selectedServerRouting }
+        ?: state.serverRoutingModes.firstOrNull()
+        ?: DropDownStringItem(state.selectedServerRouting)
+
+    GlassSurface(
+        flush = embedded,
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadius = 20.dp,
+        borderColor = Color(0x14FFFFFF)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                Text(
+                    text = "服务器路由通道",
+                    color = TextPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "增加多路径中继握手，虽有轻微延迟但提高连线成功率",
+                    color = TextMuted,
+                    fontSize = 10.sp
+                )
+            }
+            CyberDropdown(
+                label = "Routing",
+                selectedItem = currentRoutingItem,
+                items = state.serverRoutingModes,
+                onItemSelected = { actions.onServerRoutingSelected(it.key) },
+                itemToString = { it.label ?: it.key }
             )
         }
     }
 }
 
-/**
- * Feeds a representative [AntiCensorshipState] into the preview.
- */
-private class AntiCensorshipStateProvider : PreviewParameterProvider<AntiCensorshipState> {
-    override val values =
-        sequenceOf(
-            AntiCensorshipState(
-                protocolTweaksModes =
-                    listOf(
-                        DropDownStringItem("auto", "Auto"),
-                        DropDownStringItem("manual", "Enabled"),
-                        DropDownStringItem("disabled", "Disabled"),
-                    ),
-                selectedProtocolTweaksMode = "auto",
-                serverRoutingModes =
-                    listOf(
-                        DropDownStringItem("auto", "Auto"),
-                        DropDownStringItem("regular", "Regular"),
-                        DropDownStringItem("alternate", "Alternate"),
-                    ),
-                selectedServerRouting = "auto",
-                extraTlsPaddingEnabled = true,
-            ),
-        )
+@Composable
+private fun CyberExtraTlsPaddingCard(
+    state: AntiCensorshipState,
+    actions: AntiCensorshipActions,
+    embedded: Boolean = false
+) {
+    GlassSurface(
+        flush = embedded,
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadius = 20.dp,
+        borderColor = if (state.extraTlsPaddingEnabled) Color(0x1FFFFFFF) else Color(0x14FFFFFF)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                Text(
+                    text = "大型 TLS 封包保护 (Extra TLS Padding)",
+                    color = TextPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "人为填充增大 TLS ClientHello 封包，规避特定深度特征规则",
+                    color = TextMuted,
+                    fontSize = 10.sp
+                )
+            }
+            CyberSwitch(
+                checked = state.extraTlsPaddingEnabled,
+                onCheckedChange = { actions.onExtraTlsPaddingToggled() }
+            )
+        }
+    }
 }
 
 @Composable
-@MultiDevicePreview
-private fun AntiCensorshipContentPreview(
-    @PreviewParameter(AntiCensorshipStateProvider::class) state: AntiCensorshipState,
+private fun CyberCustomSniCard(
+    state: AntiCensorshipState,
+    actions: AntiCensorshipActions,
+    embedded: Boolean = false
 ) {
-    PreviewWithNav {
-        AntiCensorshipContent(
-            state = state,
-            actions = AntiCensorshipActions(),
-        )
+    var sniInput by remember(state.tlsServerName) { mutableStateOf(state.tlsServerName) }
+
+    GlassSurface(
+        flush = embedded,
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadius = 20.dp,
+        borderColor = Color(0x14FFFFFF)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "自订 SNI 网域 (Server Name Indication)",
+                color = TextPrimary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "伪装 TLS 握手的主机名（仅适用于 Stealth 和 Wstunnel 协定）",
+                color = TextMuted,
+                fontSize = 10.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            CyberTextField(
+                value = sniInput,
+                onValueChange = {
+                    sniInput = it
+                    actions.onTlsServerNameChanged(it)
+                },
+                placeholder = "例如: www.microsoft.com 或 www.apple.com"
+            )
+        }
     }
 }
+
+@Composable
+private fun CyberDecoyTrafficCard(
+    state: AntiCensorshipState,
+    actions: AntiCensorshipActions,
+    embedded: Boolean = false
+) {
+    val currentVolumeItem = state.trafficMultipliers.firstOrNull { it.key == state.trafficMultiplier }
+        ?: state.trafficMultipliers.firstOrNull()
+        ?: DropDownStringItem(state.trafficMultiplier)
+
+    GlassSurface(
+        flush = embedded,
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadius = 20.dp,
+        borderColor = if (state.decoyTraffic) Color(0x1FFFFFFF) else Color(0x14FFFFFF)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(
+                        text = "拟态诱饵流量混淆 (Decoy Traffic)",
+                        color = TextPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "持续生成高随机性后台拟态伪装数据包，混淆 DPI 对真实通信流量的行为特征分析",
+                        color = TextMuted,
+                        fontSize = 10.sp
+                    )
+                }
+                CyberSwitch(
+                    checked = state.decoyTraffic,
+                    onCheckedChange = { actions.onDecoyTrafficToggled() }
+                )
+            }
+
+            if (state.decoyTraffic) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(
+                            text = "伪装流量规模 / 倍率",
+                            color = TextPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "调整后台诱饵数据包发送频率与数据规模",
+                            color = TextMuted,
+                            fontSize = 10.sp
+                        )
+                    }
+                    CyberDropdown(
+                        label = "Volume",
+                        selectedItem = currentVolumeItem,
+                        items = state.trafficMultipliers,
+                        onItemSelected = { actions.onFakeTrafficVolumeSelected(it) },
+                        itemToString = { it.label ?: it.key }
+                    )
+                }
+            }
+        }
+    }
+}
+

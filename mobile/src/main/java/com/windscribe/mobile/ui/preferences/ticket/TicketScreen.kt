@@ -1,6 +1,6 @@
 package com.windscribe.mobile.ui.preferences.ticket
 
-import PreferencesNavBar
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,16 +10,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,34 +27,39 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.windscribe.mobile.ui.common.DropDownNoDescription
-import com.windscribe.mobile.ui.common.NextButton
-import com.windscribe.mobile.ui.common.PreferenceBackground
-import com.windscribe.mobile.ui.common.PreferenceProgressBar
-import com.windscribe.mobile.ui.common.ScreenDescription
+import com.windscribe.mobile.R
+import com.windscribe.mobile.ui.common.CyberBackground
+import com.windscribe.mobile.ui.common.CyberButton
+import com.windscribe.mobile.ui.common.CyberDropdown
+import com.windscribe.mobile.ui.common.CyberSectionHeader
+import com.windscribe.mobile.ui.common.CyberTextField
+import com.windscribe.mobile.ui.common.CyberTopAppBar
+import com.windscribe.mobile.ui.common.GlassSurface
+import com.windscribe.mobile.ui.common.NeonCyan
+import com.windscribe.mobile.ui.common.NeonGreen
+import com.windscribe.mobile.ui.common.NeonPurple
+import com.windscribe.mobile.ui.common.TextMuted
+import com.windscribe.mobile.ui.common.TextPrimary
+import com.windscribe.mobile.ui.common.TextSecondary
 import com.windscribe.mobile.ui.common.openUrl
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
 import com.windscribe.mobile.ui.model.DropDownStringItem
 import com.windscribe.mobile.ui.nav.LocalNavController
 import com.windscribe.mobile.ui.popup.FullScreenDialog
-import com.windscribe.mobile.ui.theme.font16
-import com.windscribe.mobile.ui.theme.primaryTextColor
-import com.windscribe.vpn.R
 import com.windscribe.vpn.api.response.QueryType
 
 class TicketActions(
@@ -95,90 +100,204 @@ fun TicketContent(
     actions: TicketActions,
 ) {
     val navController = LocalNavController.current
-    val selectedKey by remember { mutableStateOf(QueryType.Account) }
-    val queryTypes =
-        QueryType.entries.map {
-            DropDownStringItem(it.name, it.name)
-        }
+    var selectedQueryType by remember { mutableStateOf(QueryType.Account) }
+    var emailInput by remember(email) { mutableStateOf(email) }
+    var subjectInput by remember { mutableStateOf("") }
+    var messageInput by remember { mutableStateOf("") }
 
-    PreferenceBackground {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-        ) {
-            PreferencesNavBar(stringResource(R.string.contact_humans)) {
-                navController.popBackStack()
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            ScreenDescription(stringResource(R.string.how_to_send_ticket))
-            Spacer(modifier = Modifier.height(16.dp))
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CyberBackground)
+            .navigationBarsPadding()
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            CyberTopAppBar(
+                title = stringResource(com.windscribe.vpn.R.string.contact_humans),
+                onBack = { navController.popBackStack() }
+            )
+
             Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .imePadding(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .imePadding()
             ) {
-                DropDownNoDescription(
-                    R.string.category,
-                    queryTypes,
-                    selectedItemKey = selectedKey.name,
+                // Info header card
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 16.dp,
+                    borderColor = Color(0x14FFFFFF)
                 ) {
-                    actions.onQueryTypeSelected(QueryType.valueOf(it.key))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0x1FFFFFFF)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_ticket),
+                                contentDescription = null,
+                                tint = NeonCyan,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "人工技术支持工单",
+                                color = TextPrimary,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(com.windscribe.vpn.R.string.how_to_send_ticket),
+                                color = TextMuted,
+                                fontSize = 10.sp,
+                                lineHeight = 14.sp
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                TextField(
-                    hint = stringResource(R.string.email),
+                // Query Category Selection
+                CyberSectionHeader(title = "咨询类型")
+                GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    defaultValue = email,
-                    onValueChange = { actions.onEmailChanged(it) },
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextField(
-                    hint = stringResource(R.string.subject),
-                    modifier = Modifier.fillMaxWidth(),
-                    onValueChange = { actions.onSubjectChanged(it) },
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextField(
-                    hint = stringResource(R.string.what_is_the_issue),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                    singleLine = false,
-                    height = 120.dp,
-                    onValueChange = { actions.onMessageChanged(it) },
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                NextButton(
-                    text = stringResource(R.string.send),
-                    enabled = isButtonEnabled,
+                    cornerRadius = 20.dp,
+                    borderColor = Color(0x14FFFFFF)
                 ) {
-                    actions.onSendTicketClicked()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "工单分类",
+                                color = TextPrimary,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "选择最符合您问题的类别",
+                                color = TextMuted,
+                                fontSize = 10.sp
+                            )
+                        }
+                        CyberDropdown(
+                            label = "Category",
+                            selectedItem = selectedQueryType.name,
+                            items = QueryType.entries.map { it.name },
+                            onItemSelected = { selectedName ->
+                                val found = QueryType.entries.firstOrNull { it.name == selectedName } ?: QueryType.Account
+                                selectedQueryType = found
+                                actions.onQueryTypeSelected(found)
+                            }
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Ticket Details Form
+                CyberSectionHeader(title = "工单详情")
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 20.dp,
+                    borderColor = Color(0x14FFFFFF)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(com.windscribe.vpn.R.string.email),
+                                color = TextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            CyberTextField(
+                                value = emailInput,
+                                onValueChange = {
+                                    emailInput = it
+                                    actions.onEmailChanged(it)
+                                },
+                                placeholder = "your-email@example.com"
+                            )
+                        }
+
+                        Column {
+                            Text(
+                                text = stringResource(com.windscribe.vpn.R.string.subject),
+                                color = TextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            CyberTextField(
+                                value = subjectInput,
+                                onValueChange = {
+                                    subjectInput = it
+                                    actions.onSubjectChanged(it)
+                                },
+                                placeholder = "简短描述遇到的问题"
+                            )
+                        }
+
+                        Column {
+                            Text(
+                                text = stringResource(com.windscribe.vpn.R.string.what_is_the_issue),
+                                color = TextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            CyberTextField(
+                                value = messageInput,
+                                onValueChange = {
+                                    messageInput = it
+                                    actions.onMessageChanged(it)
+                                },
+                                placeholder = "请详细描述您遇到的问题现象、网络环境或错误信息...",
+                                singleLine = false,
+                                modifier = Modifier.height(110.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Submit Action
+                CyberButton(
+                    text = if (submitTicketState is SubmitTicketState.Loading) "正在加密提交工单..." else stringResource(com.windscribe.vpn.R.string.send),
+                    onClick = actions.onSendTicketClicked,
+                    enabled = isButtonEnabled && submitTicketState !is SubmitTicketState.Loading,
+                    color = NeonCyan,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
-        if (submitTicketState is SubmitTicketState.Loading) {
-            PreferenceProgressBar(true)
-        }
+
         HandleState(submitTicketState, actions.onGarryOpened)
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HandleState(
     submitTicketState: SubmitTicketState,
@@ -217,76 +336,6 @@ private fun HandleState(
     }
 }
 
-@Composable
-private fun TextField(
-    modifier: Modifier = Modifier,
-    hint: String,
-    defaultValue: String = "",
-    height: Dp = 52.dp,
-    singleLine: Boolean = true,
-    onValueChange: (String) -> Unit = {},
-) {
-    var text by remember { mutableStateOf(defaultValue) }
-    val contentColor = MaterialTheme.colorScheme.primaryTextColor
-    val containerColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f)
-    Column(modifier = modifier) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp, start = 8.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = hint,
-                style = font16.copy(fontWeight = FontWeight.Medium),
-                color = contentColor,
-            )
-        }
-        Box {
-            TextField(
-                value = text,
-                onValueChange = {
-                    text = it
-                    onValueChange(it)
-                },
-                singleLine = singleLine,
-                shape = RoundedCornerShape(9.dp),
-                keyboardOptions =
-                    KeyboardOptions(
-                        capitalization = KeyboardCapitalization.None,
-                        autoCorrectEnabled = false,
-                        imeAction = ImeAction.Done,
-                    ),
-                colors =
-                    TextFieldDefaults.colors(
-                        focusedTextColor = contentColor,
-                        unfocusedTextColor = contentColor,
-                        disabledTextColor = contentColor,
-                        unfocusedContainerColor = containerColor,
-                        focusedContainerColor = containerColor,
-                        disabledContainerColor = containerColor,
-                        errorContainerColor = containerColor,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        errorIndicatorColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primaryTextColor,
-                        disabledIndicatorColor = Color.Transparent,
-                        selectionColors =
-                            androidx.compose.foundation.text.selection.TextSelectionColors(
-                                handleColor = MaterialTheme.colorScheme.primaryTextColor,
-                                backgroundColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.3f),
-                            ),
-                    ),
-                visualTransformation = VisualTransformation.None,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(height),
-                textStyle = font16.copy(color = contentColor, textAlign = TextAlign.Start),
-            )
-        }
-    }
-}
 
 private class TicketStateProvider : PreviewParameterProvider<SubmitTicketState> {
     override val values =

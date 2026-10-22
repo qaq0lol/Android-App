@@ -123,10 +123,10 @@ fun StyledTextFieldWithUpload(
                     unfocusedTextColor = textColor,
                     disabledTextColor = textColor,
                     errorTextColor = textColor,
-                    unfocusedContainerColor = AppColors.white.copy(alpha = 0.05f),
-                    focusedContainerColor = AppColors.white.copy(alpha = 0.05f),
-                    disabledContainerColor = AppColors.white.copy(alpha = 0.05f),
-                    errorContainerColor = AppColors.white.copy(alpha = 0.05f),
+                    unfocusedContainerColor = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
+                    focusedContainerColor = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
+                    disabledContainerColor = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
+                    errorContainerColor = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     errorIndicatorColor = Color.Transparent,
@@ -142,7 +142,7 @@ fun StyledTextFieldWithUpload(
                 modifier
                     .fillMaxWidth()
                     .background(
-                        color = AppColors.white.copy(alpha = 0.05f),
+                        color = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
                         shape = RoundedCornerShape(9.dp),
                     ).border(
                         width = 1.dp,

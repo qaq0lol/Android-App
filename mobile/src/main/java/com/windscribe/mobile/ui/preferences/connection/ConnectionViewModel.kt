@@ -75,10 +75,6 @@ abstract class ConnectionViewModel : ViewModel() {
 
     abstract fun onAllowLanToggleClicked()
 
-    abstract val startOnBoot: StateFlow<Boolean>
-
-    abstract fun onStartOnBootToggleClicked()
-
     abstract val gpsSpoofing: StateFlow<Boolean>
 
     abstract fun onGPSSpoofingToggleClicked()
@@ -163,8 +159,6 @@ class ConnectionViewModelImpl
         override val autoConnect: StateFlow<Boolean> = _autoConnect
         private val _allowLan = MutableStateFlow(preferencesHelper.lanByPass)
         override val allowLan: StateFlow<Boolean> = _allowLan
-        private val _startOnBoot = MutableStateFlow(preferencesHelper.autoStartOnBoot)
-        override val startOnBoot: StateFlow<Boolean> = _startOnBoot
         private val _gpsSpoofing = MutableStateFlow(preferencesHelper.isGpsSpoofingOn)
         override val gpsSpoofing: StateFlow<Boolean> = _gpsSpoofing
         private val _decoyTraffic = MutableStateFlow(preferencesHelper.isDecoyTrafficOn)
@@ -396,13 +390,6 @@ class ConnectionViewModelImpl
             viewModelScope.launch {
                 _allowLan.emit(!_allowLan.value)
                 preferencesHelper.lanByPass = _allowLan.value
-            }
-        }
-
-        override fun onStartOnBootToggleClicked() {
-            viewModelScope.launch {
-                _startOnBoot.emit(!_startOnBoot.value)
-                preferencesHelper.autoStartOnBoot = _startOnBoot.value
             }
         }
 

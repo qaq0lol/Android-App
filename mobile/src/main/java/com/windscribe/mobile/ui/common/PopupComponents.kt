@@ -3,6 +3,10 @@ package com.windscribe.mobile.ui.common
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -26,11 +30,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font16
@@ -45,7 +52,7 @@ fun PopupContainer(content: @Composable (ColumnScope.() -> Unit)) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.serverListBackgroundColor)
+            .background(color = Color(0xF204060A))
             .clickable { },
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -68,27 +75,30 @@ fun PopupPrimaryActionButton(
     text: String,
     onClick: () -> Unit,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Button(
-        onClick = onClick,
-        enabled = true,
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .height(48.dp),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = AppColors.actionGreen,
-                contentColor = AppColors.midnightNavy,
-                disabledContainerColor = AppColors.white,
-                disabledContentColor = AppColors.green,
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .softGlow(Color(0xFF4FF0C0), true, 14.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0x2E4FF0C0), Color(0x0F4FF0C0))
+                )
+            )
+            .border(1.dp, Color(0x884FF0C0), RoundedCornerShape(14.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
             ),
-        interactionSource = interactionSource,
-        shape = RoundedCornerShape(24.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            style = font18,
+            color = Color(0xFF4FF0C0),
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -99,27 +109,25 @@ fun PopupSecondaryActionButton(
     text: String,
     onClick: () -> Unit,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Button(
-        onClick = onClick,
-        enabled = true,
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .height(48.dp),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = .10f),
-                contentColor = MaterialTheme.colorScheme.primaryTextColor,
-                disabledContainerColor = AppColors.white,
-                disabledContentColor = AppColors.green,
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0x14FFFFFF))
+            .border(1.dp, Color(0x24FFFFFF), RoundedCornerShape(14.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
             ),
-        interactionSource = interactionSource,
-        shape = RoundedCornerShape(24.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            style = font18,
+            color = Color(0xFFC6D0DA),
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -139,8 +147,9 @@ fun PopupHeroImage(resourceId: Int) {
 fun PopupTitle(text: String) {
     Text(
         text = text,
-        style = font22,
-        color = MaterialTheme.colorScheme.primaryTextColor,
+        color = Color(0xFFF2F6F9),
+        fontSize = 19.sp,
+        fontWeight = FontWeight.Bold,
         textAlign = TextAlign.Center,
     )
 }
@@ -149,10 +158,11 @@ fun PopupTitle(text: String) {
 fun PopupDescription(text: String) {
     Text(
         text = text,
-        style = font16,
-        color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = .50f),
+        color = Color(0xFF8A98A6),
+        fontSize = 12.sp,
+        lineHeight = 18.sp,
         textAlign = TextAlign.Center,
-        modifier = Modifier.padding(horizontal = 8.dp),
+        modifier = Modifier.padding(horizontal = 12.dp),
     )
 }
 

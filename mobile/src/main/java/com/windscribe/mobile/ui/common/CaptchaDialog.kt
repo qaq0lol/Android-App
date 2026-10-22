@@ -97,7 +97,7 @@ fun PuzzleCaptchaDialog(
                 Modifier
                     .padding(16.dp)
                     .semantics { paneTitle = title },
-            border = BorderStroke(1.dp, AppColors.white.copy(alpha = 0.05f)),
+            border = BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x1AFFFFFF)),
             tonalElevation = 8.dp,
         ) {
             PuzzleCaptchaView(captchaRequest, error, onSolutionSubmit, onCancel)
@@ -267,7 +267,7 @@ fun PuzzleCaptchaView(
                     Modifier
                         .border(
                             width = 1.dp,
-                            color = AppColors.white.copy(alpha = 0.05f),
+                            color = androidx.compose.ui.graphics.Color(0x1AFFFFFF),
                             shape = shape,
                         ).clip(shape)
                         .background(Color.Transparent)
