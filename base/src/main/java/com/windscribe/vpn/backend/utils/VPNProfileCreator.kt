@@ -689,10 +689,8 @@ class VPNProfileCreator
             }
             if (!preferencesHelper.isPackageSizeModeAuto && preferencesHelper.packetSize != -1) {
                 builder.setMtu(preferencesHelper.packetSize)
-            }
-            // Ipv6 hates small MTU.
-            if (preferencesHelper.isDecoyTrafficOn && preferencesHelper.ipv6Mode == PreferencesKeyConstants.IPV6_MODE_IPV4_ONLY) {
-                builder.setMtu(100)
+            } else {
+                builder.setMtu(1420)
             }
             if (preferencesHelper.splitTunnelToggle) {
                 preferencesHelper.lastConnectedUsingSplit = true
@@ -1084,14 +1082,17 @@ class VPNProfileCreator
             if (preferencesHelper.splitTunnelToggle && (preferencesHelper.splitRoutingMode == PreferencesKeyConstants.EXCLUSIVE_MODE)) {
                 preferencesHelper.lastConnectedUsingSplit = true
                 profile.selectedAppsHandling = SELECTED_APPS_EXCLUDE
+                profile.setSelectedApps(TreeSet(preferencesHelper.installedApps))
             } else if (preferencesHelper.splitTunnelToggle &&
                 (preferencesHelper.splitRoutingMode == PreferencesKeyConstants.INCLUSIVE_MODE)
             ) {
                 preferencesHelper.lastConnectedUsingSplit = true
                 profile.selectedAppsHandling = SELECTED_APPS_ONLY
+                profile.setSelectedApps(TreeSet(preferencesHelper.installedApps))
             } else {
                 preferencesHelper.lastConnectedUsingSplit = false
                 profile.selectedAppsHandling = SELECTED_APPS_DISABLE
+                profile.setSelectedApps(TreeSet())
             }
         }
 

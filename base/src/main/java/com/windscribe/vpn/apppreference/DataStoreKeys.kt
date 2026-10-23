@@ -1,9 +1,10 @@
-/*
+﻿/*
  * Copyright (c) 2021 Windscribe Limited.
  */
 package com.windscribe.vpn.apppreference
 
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -118,9 +119,16 @@ object DataStoreKeys {
     val CONNECTED_CUSTOM_SOUND =
         stringPreferencesKey(PreferencesKeyConstants.CONNECTED_CUSTOM_SOUND)
 
+    // Global Custom Wallpaper Keys
+    val GLOBAL_BG_PATH = stringPreferencesKey("global_bg_path")
+    val GLOBAL_BG_SCALE = floatPreferencesKey("global_bg_scale")
+    val GLOBAL_BG_OFFSET_X = floatPreferencesKey("global_bg_offset_x")
+    val GLOBAL_BG_OFFSET_Y = floatPreferencesKey("global_bg_offset_y")
+    val GLOBAL_BG_ROTATION = intPreferencesKey("global_bg_rotation")
+    val GLOBAL_BG_DARKNESS = floatPreferencesKey("global_bg_darkness")
+    val HAS_GLOBAL_BG = booleanPreferencesKey("has_global_bg")
+
     // Advanced Features
-    val DECOY_TRAFFIC = booleanPreferencesKey(PreferencesKeyConstants.DECOY_TRAFFIC)
-    val FAKE_TRAFFIC_VOLUME = stringPreferencesKey(PreferencesKeyConstants.FAKE_TRAFFIC_VOLUME)
     val ANTI_CENSORSHIP = booleanPreferencesKey(PreferencesKeyConstants.ANTI_CENSORSHIP)
     val ANTI_CENSORSHIP_MANUAL_MODE =
         booleanPreferencesKey(PreferencesKeyConstants.ANTI_CENSORSHIP_MANUAL_MODE)

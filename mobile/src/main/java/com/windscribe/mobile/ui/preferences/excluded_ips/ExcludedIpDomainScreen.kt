@@ -219,8 +219,7 @@ fun ExcludedIpDomainContent(
                 // Info description banner
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 16.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 16.dp
                 ) {
                     Text(
                         text = stringResource(R.string.domains_ips_description),
@@ -236,8 +235,7 @@ fun ExcludedIpDomainContent(
                 CyberSectionHeader(title = "新增排除规则")
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 20.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 20.dp
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         CyberTextField(
@@ -311,8 +309,7 @@ fun ExcludedIpDomainContent(
                             itemsIndexed(state.excludedList) { _, entry ->
                                 GlassSurface(
                                     modifier = Modifier.fillMaxWidth(),
-                                    cornerRadius = 14.dp,
-                                    borderColor = Color(0x1FFFFFFF)
+                                    cornerRadius = 14.dp
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),

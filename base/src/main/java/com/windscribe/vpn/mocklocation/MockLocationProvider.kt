@@ -7,7 +7,6 @@ package com.windscribe.vpn.mocklocation
 import android.content.Context
 import android.location.Location
 import android.location.LocationManager
-import android.os.Build.VERSION
 import android.os.SystemClock
 import java.lang.Exception
 import java.lang.NullPointerException
@@ -36,15 +35,9 @@ class MockLocationProvider constructor(
             location.accuracy = 3.0f
             location.time = System.currentTimeMillis()
             location.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
-            if (VERSION.SDK_INT >= 26) {
-                location.bearingAccuracyDegrees = 0.1f
-            }
-            if (VERSION.SDK_INT >= 26) {
-                location.verticalAccuracyMeters = 0.1f
-            }
-            if (VERSION.SDK_INT >= 26) {
-                location.speedAccuracyMetersPerSecond = 0.01f
-            }
+            location.bearingAccuracyDegrees = 0.1f
+            location.verticalAccuracyMeters = 0.1f
+            location.speedAccuracyMetersPerSecond = 0.01f
             locationManager.setTestProviderLocation(providerName, location)
         } catch (unused: SecurityException) {
             throw MockLocationPermissionException()

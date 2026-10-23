@@ -43,8 +43,8 @@ class LatencyRepository
 
         companion object {
             const val MINIMUM_PING_VALIDATION_MINUTES = 5
-            private const val PING_TIMEOUT_MS = 500
-            private const val BATCH_SIZE = 20
+            private const val PING_TIMEOUT_MS = 1500
+            private const val BATCH_SIZE = 25
         }
 
         private val logger = LoggerFactory.getLogger("ping")
@@ -71,10 +71,10 @@ class LatencyRepository
             }
         }
 
-        suspend fun updateAllServerLatencies(): Boolean {
-            if (skipPing) return false
+        suspend fun updateAllServerLatencies(force: Boolean = false): Boolean {
+            if (!force && skipPing) return false
             val currentIp = preferencesHelper.userIP
-            val validPings =
+            val validPings = if (force) emptyList() else {
                 localDbInterface
                     .getAllPingsAsync()
                     .filter {
@@ -86,6 +86,7 @@ class LatencyRepository
                         val isPingValid = it.pingTime != -1
                         isSameIp && isWithinTimeLimit && isPingValid
                     }.map { it.ping_id }
+            }
             val citiesToPing =
                 localDbInterface
                     .getPingableDatacenters()
@@ -120,8 +121,8 @@ class LatencyRepository
             return cityPingsChanged || staticLatencyChanged
         }
 
-        suspend fun updateFavouriteCityLatencies(): Boolean {
-            if (skipPing) return false
+        suspend fun updateFavouriteCityLatencies(force: Boolean = false): Boolean {
+            if (!force && skipPing) return false
             val cities =
                 localDbInterface.getFavouritesAsync().mapNotNull {
                     runCatching { localDbInterface.getDatacenterByIDAsync(it.id) }.getOrNull()
@@ -170,9 +171,7 @@ class LatencyRepository
             if (type == LatencyType.Servers) {
                 preferencesHelper.lowestPingId = localDbInterface.getLowestPingIdAsync()
             }
-            if (latencies.isNotEmpty()) {
-                _latencyEvent.update { it.copy(it.first.not(), type) }
-            }
+            _latencyEvent.update { it.copy(it.first.not(), type) }
             return latencies.isNotEmpty()
         }
 

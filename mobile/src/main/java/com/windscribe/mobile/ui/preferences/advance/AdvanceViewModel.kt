@@ -55,8 +55,8 @@ class AdvanceViewModelImpl
                 val lines = text.split("\n").filter { it.isNotEmpty() }
                 val invalidLines =
                     lines.filter {
-                        val kv = it.split("=")
-                        kv.count() != 2 || (kv.count() == 2 && (kv[0].isEmpty() || kv[1].isEmpty()))
+                        val kv = it.split("=", limit = 2)
+                        kv.size != 2 || kv[0].trim().isEmpty() || kv[1].trim().isEmpty()
                     }
                 if (invalidLines.isNotEmpty()) {
                     val error =

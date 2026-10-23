@@ -1,11 +1,10 @@
-/*
+﻿/*
  * Copyright (c) 2021 Windscribe Limited.
  */
 package com.windscribe.vpn.apppreference
 
 import com.windscribe.vpn.api.response.ServerCredentialsResponse
 import com.windscribe.vpn.autoconnection.ProtocolConnectionStatus
-import com.windscribe.vpn.decoytraffic.FakeTrafficVolume
 import com.windscribe.vpn.localdatabase.tables.NetworkInfo
 import com.windscribe.vpn.repository.WgLocalParams
 import kotlinx.coroutines.flow.StateFlow
@@ -124,7 +123,6 @@ interface PreferencesHelper {
     var lastDisconnectionError: String?
     var isShowLocationHealthEnabled: Boolean
     var isStartedByAlwaysOn: Boolean
-    var isDecoyTrafficOn: Boolean
     var isAntiCensorshipManualMode: Boolean
     var serverRoutingMode: String
     var protocolTweaksMode: String
@@ -146,7 +144,6 @@ interface PreferencesHelper {
     // OpenVPN Server Config (base64 encoded)
     var openVpnServerConfig: String?
     var alreadyShownShareAppLink: Boolean
-    var fakeTrafficVolume: FakeTrafficVolume
     var dnsMode: String
     var dnsAddress: String?
     var suggestedProtocol: String?
@@ -165,6 +162,13 @@ interface PreferencesHelper {
     var connectedBundleSoundOption: Int
     var customDisconnectedSound: String?
     var customConnectedSound: String?
+    var globalBackgroundPath: String?
+    var globalBackgroundScale: Float
+    var globalBackgroundOffsetX: Float
+    var globalBackgroundOffsetY: Float
+    var globalBackgroundRotation: Int
+    var globalBackgroundDarkness: Float
+    var hasGlobalBackground: Boolean
     var isSsoLogin: Boolean
     var userIP: String?
     var connectionMode: String?

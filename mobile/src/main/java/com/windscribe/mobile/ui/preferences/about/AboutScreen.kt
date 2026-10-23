@@ -43,6 +43,7 @@ import com.windscribe.mobile.ui.common.CyberBadge
 import com.windscribe.mobile.ui.common.CyberSectionHeader
 import com.windscribe.mobile.ui.common.CyberTopAppBar
 import com.windscribe.mobile.ui.common.GlassSurface
+import com.windscribe.mobile.ui.common.LocalGlassColors
 import com.windscribe.mobile.ui.common.NeonCyan
 import com.windscribe.mobile.ui.common.NeonGreen
 import com.windscribe.mobile.ui.common.NeonPurple
@@ -71,7 +72,10 @@ fun AboutScreen() {
 
     val context = LocalContext.current
     val versionLabel = runCatching {
-        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        context.packageManager.getPackageInfo(
+            context.packageName,
+            android.content.pm.PackageManager.PackageInfoFlags.of(0)
+        ).versionName
     }.getOrNull() ?: ""
 
     Box(
@@ -156,8 +160,7 @@ fun AboutScreen() {
 
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 18.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 18.dp
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         aboutItems.forEachIndexed { index, (titleRes, url) ->
@@ -218,7 +221,7 @@ private fun CyberAboutItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0x14FFFFFF))
+                    .background(LocalGlassColors.current.borderSubtle)
             )
         }
     }

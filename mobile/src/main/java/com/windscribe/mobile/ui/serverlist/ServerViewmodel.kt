@@ -179,10 +179,7 @@ class ServerViewModelImpl
         private val _selectedServerListType =
             MutableStateFlow(
                 when (preferencesHelper.lastSelectedTabIndex) {
-                    0 -> ServerListType.All
                     1 -> ServerListType.Fav
-                    2 -> ServerListType.Static
-                    3 -> ServerListType.Config
                     else -> ServerListType.All
                 },
             )
@@ -205,6 +202,7 @@ class ServerViewModelImpl
         private val _alcCountryCodes = MutableStateFlow<Set<String>>(emptySet())
 
         private var searchJob: Job? = null
+        private val fetchJobs = java.util.concurrent.ConcurrentHashMap<String, Job>()
 
         init {
             fetchAllLists()
@@ -468,8 +466,10 @@ class ServerViewModelImpl
             transform: (List<T>) -> List<R>,
             errorMessage: String,
         ) {
+            val key = stateFlow.hashCode().toString()
+            fetchJobs[key]?.cancel()
             stateFlow.value = ListState.Loading
-            viewModelScope.launch(Dispatchers.IO) {
+            fetchJobs[key] = viewModelScope.launch(Dispatchers.IO) {
                 if (!ignoreLatencyAwait) {
                     awaitLatencyIfNeeded()
                 }
@@ -716,15 +716,17 @@ class ServerViewModelImpl
         }
 
         override fun refresh(serverListType: ServerListType) {
+            if (_refreshState.value) return
             viewModelScope.launch(Dispatchers.IO) {
                 _refreshState.emit(true)
+                try {
                 when (serverListType) {
-                    ServerListType.All -> latencyRepository.updateAllServerLatencies()
-                    ServerListType.Fav -> latencyRepository.updateFavouriteCityLatencies()
+                    ServerListType.All -> latencyRepository.updateAllServerLatencies(force = true)
+                    ServerListType.Fav -> latencyRepository.updateFavouriteCityLatencies(force = true)
                     ServerListType.Static -> latencyRepository.updateStaticIpLatency()
                     ServerListType.Config -> latencyRepository.updateConfigLatencies()
                 }
-                latencyRepository.latencyEvent.first()
+                fetchLatencyList()
                 if (preferencesHelper.selection == LATENCY_LIST_SELECTION_MODE) {
                     when (serverListType) {
                         ServerListType.All -> fetchAllLists()
@@ -733,7 +735,9 @@ class ServerViewModelImpl
                         ServerListType.Config -> fetchConfigList()
                     }
                 }
-                _refreshState.emit(false)
+                } finally {
+                    _refreshState.emit(false)
+                }
             }
         }
     }

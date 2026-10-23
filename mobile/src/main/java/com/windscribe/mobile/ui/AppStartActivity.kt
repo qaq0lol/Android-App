@@ -6,10 +6,15 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import com.windscribe.mobile.ui.common.LocalGlassColors
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
@@ -17,18 +22,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.graphics.toColorInt
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavController
 import com.windscribe.mobile.R
+import com.windscribe.mobile.ui.common.CyberBackground
 import com.windscribe.mobile.ui.common.openUrl
 import com.windscribe.mobile.ui.helper.PermissionHelper
 import com.windscribe.mobile.ui.nav.NavigationStack
 import com.windscribe.mobile.ui.nav.Screen
 import com.windscribe.mobile.ui.popup.EncryptionWarningDialog
 import com.windscribe.mobile.ui.popup.SubscriptionGraceDialog
+import com.windscribe.mobile.ui.preferences.lipstick.LipstickViewmodelImpl
 import com.windscribe.mobile.ui.theme.AndroidTheme
 import com.windscribe.vpn.Windscribe.Companion.appContext
 import com.windscribe.vpn.api.response.PushNotificationAction
@@ -41,6 +52,7 @@ import java.util.Locale
 class AppStartActivity : AppCompatActivity() {
     private val viewmodelImpl: AppStartActivityViewModelImpl by viewModels()
     val viewmodel: AppStartActivityViewModel get() = viewmodelImpl
+    private val lipstickViewModel: LipstickViewmodelImpl by viewModels()
     lateinit var navController: NavController
     lateinit var permissionHelper: PermissionHelper
     private var subscriptionGraceProductId by mutableStateOf<String?>(null)
@@ -88,38 +100,44 @@ class AppStartActivity : AppCompatActivity() {
             }
         setContent {
             AndroidTheme(isDark) {
-                @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
                 Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .semantics { testTagsAsResourceId = true },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(CyberBackground)
                 ) {
-                    if (appContext.preference.sessionHash != null) {
-                        NavigationStack(Screen.Home)
-                    } else {
-                        NavigationStack(Screen.Start)
+                    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .semantics { testTagsAsResourceId = true },
+                    ) {
+                            if (appContext.preference.sessionHash != null) {
+                                NavigationStack(Screen.Home)
+                            } else {
+                                NavigationStack(Screen.Start)
+                            }
+                            val showWarning by viewmodel.showEncryptionWarning.collectAsState()
+                            if (showWarning) {
+                                EncryptionWarningDialog(
+                                    onAcknowledge = {
+                                        viewmodel.acknowledgeEncryptionWarning()
+                                    },
+                                )
+                            }
+                            subscriptionGraceProductId?.let { productId ->
+                                SubscriptionGraceDialog(
+                                    onConfirm = {
+                                        subscriptionGraceProductId = null
+                                        GooglePlaySubscriptionUrl.build(packageName, productId)?.let { openUrl(it) }
+                                    },
+                                    onDismiss = {
+                                        subscriptionGraceProductId = null
+                                    },
+                                )
+                            }
+                        }
                     }
-                    val showWarning by viewmodel.showEncryptionWarning.collectAsState()
-                    if (showWarning) {
-                        EncryptionWarningDialog(
-                            onAcknowledge = {
-                                viewmodel.acknowledgeEncryptionWarning()
-                            },
-                        )
-                    }
-                    subscriptionGraceProductId?.let { productId ->
-                        SubscriptionGraceDialog(
-                            onConfirm = {
-                                subscriptionGraceProductId = null
-                                GooglePlaySubscriptionUrl.build(packageName, productId)?.let { openUrl(it) }
-                            },
-                            onDismiss = {
-                                subscriptionGraceProductId = null
-                            },
-                        )
-                    }
-                }
             }
         }
         handleIntent(intent)

@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.preferences.general
 
+import android.content.Context
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,62 +13,73 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.windscribe.mobile.R
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.windscribe.mobile.ui.AppStartActivity
 import com.windscribe.mobile.ui.common.CyberBackground
-import com.windscribe.mobile.ui.common.CyberBadge
-import com.windscribe.mobile.ui.common.CyberDropdown
 import com.windscribe.mobile.ui.common.CyberSectionHeader
 import com.windscribe.mobile.ui.common.CyberSegmented
 import com.windscribe.mobile.ui.common.CyberSwitch
 import com.windscribe.mobile.ui.common.CyberTopAppBar
 import com.windscribe.mobile.ui.common.GlassSurface
-import com.windscribe.mobile.ui.common.NeonCyan
-import com.windscribe.mobile.ui.common.NeonGreen
-import com.windscribe.mobile.ui.common.NeonPurple
-import com.windscribe.mobile.ui.common.NeonYellow
+import com.windscribe.mobile.ui.common.LocalGlassColors
 import com.windscribe.mobile.ui.common.TextMuted
 import com.windscribe.mobile.ui.common.TextPrimary
-import com.windscribe.mobile.ui.common.TextSecondary
 import com.windscribe.mobile.ui.model.DropDownStringItem
 import com.windscribe.mobile.ui.nav.LocalNavController
 
 class GeneralActions(
     val onOrderBySelected: (DropDownStringItem) -> Unit = {},
-    val onLanguageSelected: (DropDownStringItem) -> Unit = {},
     val onLocationLoadClick: () -> Unit = {},
     val onNotificationStatClick: () -> Unit = {},
     val onHapticToggleClick: () -> Unit = {},
+    val onAutoReconnectClick: () -> Unit = {},
+    val onKeepAliveClick: (Context) -> Unit = {},
 )
 
 @Composable
 fun GeneralScreen(viewModel: GeneralViewModel = hiltViewModel<GeneralViewModelImpl>()) {
     val activity = LocalActivity.current as? AppStartActivity
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     val reloadAppState = viewModel.reloadApp.collectAsState(initial = false)
+    val selectedOrderBy by viewModel.selectedOrderBy.collectAsState()
     val isHapticEnabled by viewModel.isHapticEnabled.collectAsState()
     val isNotificationStatEnabled by viewModel.isNotificationStatEnabled.collectAsState()
     val isLocationLoadEnabled by viewModel.isLocationLoadEnabled.collectAsState()
+    val isAutoReconnectEnabled by viewModel.isAutoReconnectEnabled.collectAsState()
+    val isKeepAliveEnabled by viewModel.isKeepAliveEnabled.collectAsState()
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshKeepAliveStatus(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(reloadAppState.value) {
         if (reloadAppState.value) {
@@ -77,19 +89,23 @@ fun GeneralScreen(viewModel: GeneralViewModel = hiltViewModel<GeneralViewModelIm
 
     GeneralContent(
         orderByItems = viewModel.orderByItems,
-        selectedOrderBy = viewModel.selectedOrderBy,
-        languageItems = viewModel.languageItems,
-        selectedLanguage = viewModel.selectedLanguage,
+        selectedOrderBy = selectedOrderBy,
         isLocationLoadEnabled = isLocationLoadEnabled,
         isNotificationStatEnabled = isNotificationStatEnabled,
         isHapticEnabled = isHapticEnabled,
+        isAutoReconnectEnabled = isAutoReconnectEnabled,
+        isKeepAliveEnabled = isKeepAliveEnabled,
         versionName = viewModel.versionName,
+        buildChannel = viewModel.buildChannel,
+        compileTarget = viewModel.compileTarget,
+        coreArch = viewModel.coreArch,
         actions = GeneralActions(
             onOrderBySelected = viewModel::onOrderByItemSelected,
-            onLanguageSelected = viewModel::onLanguageItemSelected,
             onLocationLoadClick = viewModel::onLocationLoadItemClicked,
             onNotificationStatClick = viewModel::onNotificationStatEnabledClick,
             onHapticToggleClick = viewModel::onHapticToggleButtonClicked,
+            onAutoReconnectClick = viewModel::onAutoReconnectClicked,
+            onKeepAliveClick = viewModel::onKeepAliveClicked,
         ),
     )
 }
@@ -98,22 +114,34 @@ fun GeneralScreen(viewModel: GeneralViewModel = hiltViewModel<GeneralViewModelIm
 fun GeneralContent(
     orderByItems: List<DropDownStringItem>,
     selectedOrderBy: String,
-    languageItems: List<DropDownStringItem>,
-    selectedLanguage: String,
     isLocationLoadEnabled: Boolean,
     isNotificationStatEnabled: Boolean,
     isHapticEnabled: Boolean,
+    isAutoReconnectEnabled: Boolean,
+    isKeepAliveEnabled: Boolean,
     versionName: String,
+    buildChannel: String,
+    compileTarget: String,
+    coreArch: String,
     actions: GeneralActions,
 ) {
     val navController = LocalNavController.current
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    val currentOrderItem = orderByItems.firstOrNull { it.key == selectedOrderBy }
-        ?: orderByItems.firstOrNull() ?: DropDownStringItem(selectedOrderBy)
+    val sortOptions = listOf("地理", "延迟", "字母")
+    val selectedIndex = when (selectedOrderBy) {
+        "Geography" -> 0
+        "Latency" -> 1
+        "Alphabet" -> 2
+        else -> 1
+    }
 
-    val currentLangItem = languageItems.firstOrNull { it.key == selectedLanguage }
-        ?: languageItems.firstOrNull() ?: DropDownStringItem(selectedLanguage)
+    val description = when (selectedOrderBy) {
+        "Geography" -> "按与当前物理位置的测距升序排列。"
+        "Alphabet" -> "按国家与城市英文字母 A-Z 顺序排列。"
+        else -> "按实测延迟升序排列，无数据的节点排在末尾。"
+    }
 
     Box(
         modifier = Modifier
@@ -124,7 +152,7 @@ fun GeneralContent(
         Column(modifier = Modifier.fillMaxSize()) {
             CyberTopAppBar(
                 title = "常规",
-                subtitle = "SORTING, TELEMETRY & FEEDBACK",
+                subtitle = "SORTING, TELEMETRY & SYSTEM DIAGNOSTICS",
                 onBack = { navController.popBackStack() }
             )
 
@@ -134,78 +162,48 @@ fun GeneralContent(
                     .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
-                // Section 1: Order By
+                // ================= Section 1: 节点位置排序 (1:1 原型 Screen 12) =================
                 CyberSectionHeader(title = "节点位置排序")
+                
+                CyberSegmented(
+                    options = sortOptions,
+                    selectedIndex = selectedIndex,
+                    onSelect = { index ->
+                        val targetKey = when (index) {
+                            0 -> "Geography"
+                            1 -> "Latency"
+                            2 -> "Alphabet"
+                            else -> "Latency"
+                        }
+                        orderByItems.firstOrNull { it.key == targetKey }?.let {
+                            actions.onOrderBySelected(it)
+                        } ?: actions.onOrderBySelected(DropDownStringItem(targetKey))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(9.dp))
+
+                Text(
+                    text = description,
+                    color = TextMuted,
+                    fontSize = 10.sp,
+                    lineHeight = 14.sp,
+                    modifier = Modifier.padding(horizontal = 2.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ================= Card 1: 体验与通知 (1:1 原型 Screen 12) =================
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 20.dp,
-                    borderColor = Color(0x14FFFFFF)
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0x1FFFFFFF)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_sort_location),
-                                    contentDescription = null,
-                                    tint = NeonCyan,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = "位置顺序",
-                                    color = TextPrimary,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "按地理位置、字母或实测延迟排序节点列表",
-                                    color = TextMuted,
-                                    fontSize = 10.sp
-                                )
-                            }
-                        }
-
-                        if (orderByItems.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            CyberSegmented(
-                                options = orderByItems.map { it.label ?: it.key },
-                                selectedIndex = orderByItems
-                                    .indexOfFirst { it.key == selectedOrderBy }
-                                    .coerceAtLeast(0),
-                                onSelect = { index -> actions.onOrderBySelected(orderByItems[index]) }
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "按实测延迟升序排列，无数据的节点排在末尾。",
-                                color = TextMuted,
-                                fontSize = 10.sp
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Section 3: Telemetry & Feedback Toggles
-                CyberSectionHeader(title = "体验与反馈特性")
-                GlassSurface(
-                    modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 20.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 20.dp
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        // Location Health Load
+                        // 1. 显示负载与延迟
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -213,13 +211,13 @@ fun GeneralContent(
                         ) {
                             Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                                 Text(
-                                    text = "显示节点健康与负载状态",
+                                    text = "显示负载与延迟",
                                     color = TextPrimary,
-                                    fontSize = 13.sp,
+                                    fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "在节点列表中展示服务器实时承载负荷与延迟弧线",
+                                    text = "在节点列表中显示实时弧线与健康度",
                                     color = TextMuted,
                                     fontSize = 10.sp
                                 )
@@ -230,9 +228,9 @@ fun GeneralContent(
                             )
                         }
 
-                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LocalGlassColors.current.borderSubtle))
 
-                        // Notification Stats
+                        // 2. 通知栏实时流量
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -240,13 +238,13 @@ fun GeneralContent(
                         ) {
                             Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                                 Text(
-                                    text = "通知栏实时流量统计",
+                                    text = "通知栏实时流量",
                                     color = TextPrimary,
-                                    fontSize = 13.sp,
+                                    fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "在系统通知栏持续更新显示实时上下行传输数据",
+                                    text = "驻留通知持续显示上下行速率",
                                     color = TextMuted,
                                     fontSize = 10.sp
                                 )
@@ -257,9 +255,9 @@ fun GeneralContent(
                             )
                         }
 
-                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LocalGlassColors.current.borderSubtle))
 
-                        // Haptic Feedback
+                        // 3. 触觉反馈
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -267,13 +265,13 @@ fun GeneralContent(
                         ) {
                             Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                                 Text(
-                                    text = "触觉震动物理反馈 (Haptics)",
+                                    text = "触觉反馈",
                                     color = TextPrimary,
-                                    fontSize = 13.sp,
+                                    fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "开关切换、节点点击与握手成功时的微震动反馈",
+                                    text = "切换与握手成功时的微震动",
                                     color = TextMuted,
                                     fontSize = 10.sp
                                 )
@@ -288,41 +286,115 @@ fun GeneralContent(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Section 4: Version Card
-                CyberSectionHeader(title = "构建与核心版本")
+                // ================= Card 2: 连接与保活 (1:1 原型 Screen 12) =================
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 20.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 20.dp
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Column {
-                            Text(
-                                text = "Windscribe Native Client",
-                                color = TextPrimary,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Target: Android 16 (API 36+) · aarch64",
-                                color = TextMuted,
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace
+                        // 1. 自动重连
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "自动重连",
+                                    color = TextPrimary,
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "网络切换后自动恢复隧道",
+                                    color = TextMuted,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            CyberSwitch(
+                                checked = isAutoReconnectEnabled,
+                                onCheckedChange = { actions.onAutoReconnectClick() }
                             )
                         }
-                        CyberBadge(
-                            text = versionName,
-                            color = NeonCyan
-                        )
+
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LocalGlassColors.current.borderSubtle))
+
+                        // 2. 后台保活
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "后台保活",
+                                    color = TextPrimary,
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "锁定进程，避免被系统回收",
+                                    color = TextMuted,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            CyberSwitch(
+                                checked = isKeepAliveEnabled,
+                                onCheckedChange = { actions.onKeepAliveClick(context) }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // ================= Card 3: 诊断与系统构建信息表 (1:1 原型 Screen 12) =================
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = 20.dp
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        InfoRow(label = "应用版本", value = versionName)
+                        InfoRow(label = "构建渠道", value = buildChannel)
+                        InfoRow(label = "编译目标", value = compileTarget)
+                        InfoRow(label = "核心架构", value = coreArch)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun InfoRow(
+    label: String,
+    value: String,
+    valueColor: Color = TextPrimary
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            color = TextMuted,
+            fontSize = 11.5.sp
+        )
+        Text(
+            text = value,
+            color = valueColor,
+            fontSize = 11.5.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }

@@ -4,8 +4,6 @@
 
 package com.windscribe.vpn.services.ping
 
-import android.os.Build.VERSION
-import android.os.Build.VERSION_CODES
 import android.system.Os
 import android.system.OsConstants
 import android.system.StructPollfd
@@ -84,22 +82,6 @@ object Ping {
         }
 
     private fun setLowDelay(fd: FileDescriptor) {
-        if (VERSION.SDK_INT >= VERSION_CODES.O) {
-            Os.setsockoptInt(fd, OsConstants.IPPROTO_IP, OsConstants.IP_TOS, IP_TOS_LOW_DELAY)
-        } else {
-            // Reflectively call setsockoptInt on older API levels where it isn't public.
-            try {
-                val method =
-                    Os::class.java.getMethod(
-                        "setsockoptInt",
-                        FileDescriptor::class.java,
-                        Int::class.javaPrimitiveType,
-                        Int::class.javaPrimitiveType,
-                        Int::class.javaPrimitiveType,
-                    )
-                method.invoke(null, fd, OsConstants.IPPROTO_IP, OsConstants.IP_TOS, IP_TOS_LOW_DELAY)
-            } catch (_: Exception) {
-            }
-        }
+        Os.setsockoptInt(fd, OsConstants.IPPROTO_IP, OsConstants.IP_TOS, IP_TOS_LOW_DELAY)
     }
 }

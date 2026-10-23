@@ -12,6 +12,7 @@ import com.windscribe.vpn.cache.AppIconCache
 import com.windscribe.vpn.commonutils.SortByName
 import com.windscribe.vpn.commonutils.SortBySelected
 import com.windscribe.vpn.localdatabase.LocalDbInterface
+import com.windscribe.vpn.state.VPNConnectionStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,8 @@ abstract class SplitTunnelViewModel : ViewModel() {
     abstract val showSystemApps: StateFlow<Boolean>
     abstract val appIconCache: AppIconCache
     abstract val excludedIpsCount: StateFlow<Int>
+    abstract val toastMessage: StateFlow<String?>
+    abstract val isVpnConnected: StateFlow<Boolean>
 
     open fun onModeSelected(mode: DropDownStringItem) {}
 
@@ -43,6 +46,8 @@ abstract class SplitTunnelViewModel : ViewModel() {
     open fun onQueryTextChange(query: String) {}
 
     open fun onShowSystemAppsToggle() {}
+
+    open fun clearToastMessage() {}
 }
 
 @HiltViewModel
@@ -52,9 +57,16 @@ class SplitTunnelViewModelImpl
         val preferenceHelper: PreferencesHelper,
         override val appIconCache: AppIconCache,
         private val localDbInterface: LocalDbInterface,
+        private val vpnConnectionStateManager: VPNConnectionStateManager,
     ) : SplitTunnelViewModel() {
         private val _showProgress = MutableStateFlow(false)
         override val showProgress: StateFlow<Boolean> = _showProgress
+        private val _toastMessage = MutableStateFlow<String?>(null)
+        override val toastMessage: StateFlow<String?> = _toastMessage
+        override val isVpnConnected: StateFlow<Boolean> =
+            vpnConnectionStateManager.state
+                .map { it.status != com.windscribe.vpn.backend.VPNState.Status.Disconnected }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), vpnConnectionStateManager.isVPNActive())
         override val excludedIpsCount: StateFlow<Int> =
             localDbInterface
                 .getExcludedIpsDomainsFlow()
@@ -123,6 +135,10 @@ class SplitTunnelViewModelImpl
             }
         }
 
+        override fun clearToastMessage() {
+            _toastMessage.value = null
+        }
+
         override fun onModeSelected(mode: DropDownStringItem) {
             viewModelScope.launch {
                 preferenceHelper.splitRoutingMode = mode.key
@@ -132,13 +148,27 @@ class SplitTunnelViewModelImpl
                     "Inclusive" -> addWindscribeToList(true)
                     "Exclusive" -> addWindscribeToList(false)
                 }
+                if (vpnConnectionStateManager.isVPNActive()) {
+                    _toastMessage.emit("分流规则已更新，需重新连接 VPN 生效")
+                }
             }
         }
 
         override fun onAppSelected(app: InstalledAppsData) {
             viewModelScope.launch(Dispatchers.IO) {
+                if (!app.isChecked && !_isSplitTunnelEnabled.value) {
+                    _isSplitTunnelEnabled.emit(true)
+                    preferenceHelper.splitTunnelToggle = true
+                    when (_selectedModeKey.value) {
+                        "Inclusive" -> addWindscribeToList(true)
+                        "Exclusive" -> addWindscribeToList(false)
+                    }
+                }
                 updateSavedApps(app)
                 updateAppListInPlace(app)
+                if (vpnConnectionStateManager.isVPNActive()) {
+                    _toastMessage.emit("分流规则已更新，需重新连接 VPN 生效")
+                }
             }
         }
 
@@ -200,6 +230,9 @@ class SplitTunnelViewModelImpl
                         "Inclusive" -> addWindscribeToList(true)
                         "Exclusive" -> addWindscribeToList(false)
                     }
+                }
+                if (vpnConnectionStateManager.isVPNActive()) {
+                    _toastMessage.emit("分流规则已更新，需重新连接 VPN 生效")
                 }
             }
         }

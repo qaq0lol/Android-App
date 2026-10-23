@@ -7,6 +7,7 @@ package com.wireguard.android.backend;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.system.OsConstants;
@@ -301,11 +302,19 @@ public final class GoBackend implements Backend {
             final VpnService.Builder builder = service.getBuilder();
             builder.setSession(tunnel.getName());
 
-            for (final String excludedApplication : config.getInterface().getExcludedApplications())
-                builder.addDisallowedApplication(excludedApplication);
+            for (final String excludedApplication : config.getInterface().getExcludedApplications()) {
+                try {
+                    builder.addDisallowedApplication(excludedApplication);
+                } catch (final PackageManager.NameNotFoundException ignored) {
+                }
+            }
 
-            for (final String includedApplication : config.getInterface().getIncludedApplications())
-                builder.addAllowedApplication(includedApplication);
+            for (final String includedApplication : config.getInterface().getIncludedApplications()) {
+                try {
+                    builder.addAllowedApplication(includedApplication);
+                } catch (final PackageManager.NameNotFoundException ignored) {
+                }
+            }
 
             // Check if IPv6 is configured by examining interface addresses
             boolean hasIPv6Address = false;

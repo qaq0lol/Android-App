@@ -2,7 +2,6 @@ package com.windscribe.vpn.backend.utils
 
 import android.net.IpPrefix
 import android.net.VpnService
-import android.os.Build
 import android.util.Log
 import com.windscribe.vpn.localdatabase.LocalDbInterface
 import com.windscribe.vpn.localdatabase.tables.ExcludedIpDomain
@@ -196,22 +195,20 @@ class ExcludedIpHolder
                 builder: VpnService.Builder,
                 routes: List<String>,
             ) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    routes.forEach { ipOrRange ->
-                        try {
-                            val ipPrefix =
-                                if (ipOrRange.contains("/")) {
-                                    val parts = ipOrRange.split("/")
-                                    val address = InetAddress.getByName(parts[0])
-                                    IpPrefix(address, parts[1].toInt())
-                                } else {
-                                    val address = InetAddress.getByName(ipOrRange)
-                                    IpPrefix(address, 32)
-                                }
-                            builder.excludeRoute(ipPrefix)
-                        } catch (e: Exception) {
-                            Log.e("ExcludedIpHolder", "Failed to exclude route: $ipOrRange", e)
-                        }
+                routes.forEach { ipOrRange ->
+                    try {
+                        val ipPrefix =
+                            if (ipOrRange.contains("/")) {
+                                val parts = ipOrRange.split("/")
+                                val address = InetAddress.getByName(parts[0])
+                                IpPrefix(address, parts[1].toInt())
+                            } else {
+                                val address = InetAddress.getByName(ipOrRange)
+                                IpPrefix(address, 32)
+                            }
+                        builder.excludeRoute(ipPrefix)
+                    } catch (e: Exception) {
+                        Log.e("ExcludedIpHolder", "Failed to exclude route: $ipOrRange", e)
                     }
                 }
             }

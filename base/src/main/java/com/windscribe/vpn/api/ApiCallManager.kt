@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2021 Windscribe Limited.
  */
 package com.windscribe.vpn.api
@@ -815,60 +815,6 @@ open class ApiCallManager
                 }
             }
         }
-
-        override suspend fun sendDecoyTraffic(
-            url: String,
-            data: String,
-            sizeToReceive: String?,
-        ): GenericResponseClass<String?, ApiErrorResponse?> =
-            try {
-                withContext(Dispatchers.IO) {
-                    val client =
-                        okhttp3.OkHttpClient
-                            .Builder()
-                            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-                            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-                            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-                            .build()
-
-                    val formBody =
-                        okhttp3.FormBody
-                            .Builder()
-                            .add("data", data)
-                            .build()
-
-                    val requestBuilder =
-                        okhttp3.Request
-                            .Builder()
-                            .url(url)
-                            .post(formBody)
-                            .header("Content-Type", "text/plain")
-
-                    sizeToReceive?.let {
-                        requestBuilder.header("X-DECOY-RESPONSE", it)
-                    }
-
-                    val request = requestBuilder.build()
-                    val response = client.newCall(request).execute()
-                    val responseBody = response.body
-
-                    if (response.isSuccessful) {
-                        val responseString = responseBody.string()
-                        responseBody.close()
-                        GenericResponseClass(responseString, null)
-                    } else {
-                        val apiErrorResponse = ApiErrorResponse()
-                        apiErrorResponse.errorCode = NetworkErrorCodes.ERROR_UNABLE_TO_REACH_API
-                        apiErrorResponse.errorMessage = "HTTP ${response.code}: ${response.message}"
-                        GenericResponseClass(null, apiErrorResponse)
-                    }
-                }
-            } catch (e: Exception) {
-                val apiErrorResponse = ApiErrorResponse()
-                apiErrorResponse.errorCode = NetworkErrorCodes.ERROR_UNABLE_TO_REACH_API
-                apiErrorResponse.errorMessage = e.message ?: ""
-                GenericResponseClass(null, apiErrorResponse)
-            }
 
         override suspend fun generateUsername(): GenericResponseClass<GenerateUsernameResponse?, ApiErrorResponse?> {
             val api = wsNetWrapper.awaitServerAPI()

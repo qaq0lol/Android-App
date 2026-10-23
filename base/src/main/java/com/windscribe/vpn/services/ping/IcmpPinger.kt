@@ -37,7 +37,7 @@ class IcmpPinger : Pinger {
             runCatching {
                 val start = System.currentTimeMillis()
                 Socket().use { it.connect(InetSocketAddress(ip, 443), timeoutMs) }
-                (System.currentTimeMillis() - start).toInt()
+                (System.currentTimeMillis() - start).toInt().coerceAtLeast(1)
             }.getOrElse { -1 }
         }
 }

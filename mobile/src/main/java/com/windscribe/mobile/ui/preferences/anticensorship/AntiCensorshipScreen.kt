@@ -45,6 +45,7 @@ import com.windscribe.mobile.ui.common.CyberSwitch
 import com.windscribe.mobile.ui.common.CyberTextField
 import com.windscribe.mobile.ui.common.CyberTopAppBar
 import com.windscribe.mobile.ui.common.GlassSurface
+import com.windscribe.mobile.ui.common.LocalGlassColors
 import com.windscribe.mobile.ui.common.NeonCyan
 import com.windscribe.mobile.ui.common.NeonGreen
 import com.windscribe.mobile.ui.common.NeonPurple
@@ -63,10 +64,6 @@ data class AntiCensorshipState(
     val amneziaPresets: List<DropDownStringItem> = emptyList(),
     val selectedPreset: String = "",
     val extraTlsPaddingEnabled: Boolean = true,
-    val tlsServerName: String = "",
-    val decoyTraffic: Boolean = false,
-    val trafficMultiplier: String = "",
-    val trafficMultipliers: List<DropDownStringItem> = emptyList(),
 )
 
 class AntiCensorshipActions(
@@ -74,9 +71,6 @@ class AntiCensorshipActions(
     val onAmneziaPresetSelected: (String) -> Unit = {},
     val onServerRoutingSelected: (String) -> Unit = {},
     val onExtraTlsPaddingToggled: () -> Unit = {},
-    val onTlsServerNameChanged: (String) -> Unit = {},
-    val onDecoyTrafficToggled: () -> Unit = {},
-    val onFakeTrafficVolumeSelected: (DropDownStringItem) -> Unit = {},
 )
 
 @Composable
@@ -88,10 +82,6 @@ fun AntiCensorshipScreen(viewModel: AntiCensorshipViewModel = hiltViewModel<Anti
     val amneziaPresets by viewModel.amneziaPresets.collectAsState()
     val selectedPreset by viewModel.selectedPreset.collectAsState()
     val extraTlsPaddingEnabled by viewModel.extraTlsPaddingEnabled.collectAsState()
-    val tlsServerName by viewModel.tlsServerName.collectAsState()
-    val decoyTraffic by viewModel.decoyTraffic.collectAsState()
-    val trafficMultiplier by viewModel.trafficMultiplier.collectAsState()
-    val trafficMultipliers by viewModel.trafficMultipliers.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.refreshPreferences()
@@ -106,19 +96,12 @@ fun AntiCensorshipScreen(viewModel: AntiCensorshipViewModel = hiltViewModel<Anti
             amneziaPresets = amneziaPresets,
             selectedPreset = selectedPreset,
             extraTlsPaddingEnabled = extraTlsPaddingEnabled,
-            tlsServerName = tlsServerName,
-            decoyTraffic = decoyTraffic,
-            trafficMultiplier = trafficMultiplier,
-            trafficMultipliers = trafficMultipliers,
         ),
         actions = AntiCensorshipActions(
             onProtocolTweaksModeSelected = viewModel::onProtocolTweaksModeSelected,
             onAmneziaPresetSelected = viewModel::onAmneziaPresetSelected,
             onServerRoutingSelected = viewModel::onServerRoutingSelected,
             onExtraTlsPaddingToggled = viewModel::onExtraTlsPaddingToggled,
-            onTlsServerNameChanged = viewModel::onTlsServerNameChanged,
-            onDecoyTrafficToggled = viewModel::onDecoyTrafficToggled,
-            onFakeTrafficVolumeSelected = viewModel::onFakeTrafficVolumeSelected,
         ),
     )
 }
@@ -197,8 +180,7 @@ fun AntiCensorshipContent(
                 // 混淆特性：一张卡四段
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 20.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 20.dp
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         CyberProtocolTweaksCard(state = state, actions = actions, embedded = true)
@@ -206,30 +188,18 @@ fun AntiCensorshipContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(1.dp)
-                                .background(Color(0x1AFFFFFF))
+                                .background(LocalGlassColors.current.borderSubtle)
                         )
                         CyberServerRoutingCard(state = state, actions = actions, embedded = true)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(1.dp)
-                                .background(Color(0x1AFFFFFF))
+                                .background(LocalGlassColors.current.borderSubtle)
                         )
                         CyberExtraTlsPaddingCard(state = state, actions = actions, embedded = true)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(Color(0x1AFFFFFF))
-                        )
-                        CyberCustomSniCard(state = state, actions = actions, embedded = true)
                     }
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // 诱饵流量单独一张（含倍率滑块）
-                CyberDecoyTrafficCard(state = state, actions = actions)
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
@@ -250,8 +220,7 @@ private fun CyberProtocolTweaksCard(
     GlassSurface(
         flush = embedded,
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
+        cornerRadius = 20.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -287,7 +256,7 @@ private fun CyberProtocolTweaksCard(
                 state.amneziaPresets.isNotEmpty()
             ) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LocalGlassColors.current.borderSubtle))
                 Spacer(modifier = Modifier.height(12.dp))
 
                 val currentPreset = state.amneziaPresets.firstOrNull { it.key == state.selectedPreset }
@@ -337,8 +306,7 @@ private fun CyberServerRoutingCard(
     GlassSurface(
         flush = embedded,
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
+        cornerRadius = 20.dp
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -409,119 +377,5 @@ private fun CyberExtraTlsPaddingCard(
     }
 }
 
-@Composable
-private fun CyberCustomSniCard(
-    state: AntiCensorshipState,
-    actions: AntiCensorshipActions,
-    embedded: Boolean = false
-) {
-    var sniInput by remember(state.tlsServerName) { mutableStateOf(state.tlsServerName) }
 
-    GlassSurface(
-        flush = embedded,
-        modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "自订 SNI 网域 (Server Name Indication)",
-                color = TextPrimary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "伪装 TLS 握手的主机名（仅适用于 Stealth 和 Wstunnel 协定）",
-                color = TextMuted,
-                fontSize = 10.sp
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            CyberTextField(
-                value = sniInput,
-                onValueChange = {
-                    sniInput = it
-                    actions.onTlsServerNameChanged(it)
-                },
-                placeholder = "例如: www.microsoft.com 或 www.apple.com"
-            )
-        }
-    }
-}
-
-@Composable
-private fun CyberDecoyTrafficCard(
-    state: AntiCensorshipState,
-    actions: AntiCensorshipActions,
-    embedded: Boolean = false
-) {
-    val currentVolumeItem = state.trafficMultipliers.firstOrNull { it.key == state.trafficMultiplier }
-        ?: state.trafficMultipliers.firstOrNull()
-        ?: DropDownStringItem(state.trafficMultiplier)
-
-    GlassSurface(
-        flush = embedded,
-        modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = if (state.decoyTraffic) Color(0x1FFFFFFF) else Color(0x14FFFFFF)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                    Text(
-                        text = "拟态诱饵流量混淆 (Decoy Traffic)",
-                        color = TextPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "持续生成高随机性后台拟态伪装数据包，混淆 DPI 对真实通信流量的行为特征分析",
-                        color = TextMuted,
-                        fontSize = 10.sp
-                    )
-                }
-                CyberSwitch(
-                    checked = state.decoyTraffic,
-                    onCheckedChange = { actions.onDecoyTrafficToggled() }
-                )
-            }
-
-            if (state.decoyTraffic) {
-                Spacer(modifier = Modifier.height(14.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                        Text(
-                            text = "伪装流量规模 / 倍率",
-                            color = TextPrimary,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "调整后台诱饵数据包发送频率与数据规模",
-                            color = TextMuted,
-                            fontSize = 10.sp
-                        )
-                    }
-                    CyberDropdown(
-                        label = "Volume",
-                        selectedItem = currentVolumeItem,
-                        items = state.trafficMultipliers,
-                        onItemSelected = { actions.onFakeTrafficVolumeSelected(it) },
-                        itemToString = { it.label ?: it.key }
-                    )
-                }
-            }
-        }
-    }
-}
 

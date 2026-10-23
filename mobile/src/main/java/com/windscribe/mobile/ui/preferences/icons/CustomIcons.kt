@@ -55,6 +55,7 @@ import com.windscribe.mobile.ui.common.CyberButton
 import com.windscribe.mobile.ui.common.CyberSectionHeader
 import com.windscribe.mobile.ui.common.CyberTopAppBar
 import com.windscribe.mobile.ui.common.GlassSurface
+import com.windscribe.mobile.ui.common.LocalGlassColors
 import com.windscribe.mobile.ui.common.NeonCyan
 import com.windscribe.mobile.ui.common.NeonGreen
 import com.windscribe.mobile.ui.common.NeonPurple
@@ -123,8 +124,7 @@ fun CustomIconsContent(
                 // Info header card
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 16.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 16.dp
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -300,8 +300,7 @@ private fun AppIconCategorySection(
 
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
+        cornerRadius = 20.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             filteredIcons.forEachIndexed { index, item ->
@@ -314,7 +313,7 @@ private fun AppIconCategorySection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(1.dp)
-                            .background(Color(0x1AFFFFFF))
+                            .background(LocalGlassColors.current.borderSubtle)
                     )
                 }
             }

@@ -16,7 +16,6 @@ import com.windscribe.vpn.apppreference.PreferencesKeyConstants.DEFAULT_WIRE_GUA
 import com.windscribe.vpn.apppreference.PreferencesKeyConstants.DNS_MODE_ROBERT
 import com.windscribe.vpn.autoconnection.ProtocolConnectionStatus
 import com.windscribe.vpn.constants.ExtraConstants.DEFAULT_ICON
-import com.windscribe.vpn.decoytraffic.FakeTrafficVolume
 import com.windscribe.vpn.localdatabase.tables.NetworkInfo
 import com.windscribe.vpn.repository.WgLocalParams
 import kotlinx.coroutines.CoroutineScope
@@ -59,7 +58,7 @@ class DataStorePreferenceHelper(
         get() =
             dataStore.data
                 .map { preferences ->
-                    preferences[DataStoreKeys.SHOW_LOCATION_HEALTH] ?: false
+                    preferences[DataStoreKeys.SHOW_LOCATION_HEALTH] ?: true
                 }.distinctUntilChanged()
 
     override val protocolTweaksModeFlow: Flow<String>
@@ -144,6 +143,26 @@ class DataStorePreferenceHelper(
         key: Preferences.Key<Long>,
         default: Long,
     ): Long = dataStore.data.first()[key] ?: default
+
+    /**
+     * Get float from DataStore
+     */
+    private suspend fun getFloat(
+        key: Preferences.Key<Float>,
+        default: Float,
+    ): Float = dataStore.data.first()[key] ?: default
+
+    /**
+     * Set float (DataStore only)
+     */
+    private fun setFloat(
+        key: Preferences.Key<Float>,
+        value: Float,
+    ) {
+        scope.launch {
+            dataStore.edit { it[key] = value }
+        }
+    }
 
     /**
      * Set string (DataStore only) - ASYNC
@@ -482,7 +501,7 @@ class DataStorePreferenceHelper(
     // VPN Features
     override var splitTunnelToggle: Boolean
         get() = runBlocking { getBoolean(DataStoreKeys.SPLIT_TUNNEL_TOGGLE, false) }
-        set(value) = setBoolean(DataStoreKeys.SPLIT_TUNNEL_TOGGLE, value)
+        set(value) = setBooleanSync(DataStoreKeys.SPLIT_TUNNEL_TOGGLE, value)
 
     override var splitRoutingMode: String
         get() =
@@ -492,7 +511,7 @@ class DataStorePreferenceHelper(
                     PreferencesKeyConstants.EXCLUSIVE_MODE,
                 )
             }
-        set(value) = setString(DataStoreKeys.SPLIT_ROUTING_MODE, value)
+        set(value) = setStringSync(DataStoreKeys.SPLIT_ROUTING_MODE, value)
 
     override var lanByPass: Boolean
         get() = runBlocking { getBoolean(DataStoreKeys.LAN_BY_PASS, false) }
@@ -615,7 +634,7 @@ class DataStorePreferenceHelper(
         set(value) = setBoolean(DataStoreKeys.STARTED_BY_ALWAYS_ON, value)
 
     override var isShowLocationHealthEnabled: Boolean
-        get() = runBlocking { getBoolean(DataStoreKeys.SHOW_LOCATION_HEALTH, false) }
+        get() = runBlocking { getBoolean(DataStoreKeys.SHOW_LOCATION_HEALTH, true) }
         set(value) = setBoolean(DataStoreKeys.SHOW_LOCATION_HEALTH, value)
 
     override var isConnectingToStaticIp: Boolean
@@ -640,9 +659,7 @@ class DataStorePreferenceHelper(
     override val isKernelModuleDisabled: Boolean
         get() = runBlocking { getBoolean(DataStoreKeys.DISABLE_KERNEL_MODULE, false) }
 
-    override var isDecoyTrafficOn: Boolean
-        get() = runBlocking { getBoolean(DataStoreKeys.DECOY_TRAFFIC, false) }
-        set(value) = setBoolean(DataStoreKeys.DECOY_TRAFFIC, value)
+
 
     override var isAntiCensorshipManualMode: Boolean
         get() = runBlocking { getBoolean(DataStoreKeys.ANTI_CENSORSHIP_MANUAL_MODE, false) }
@@ -668,13 +685,7 @@ class DataStorePreferenceHelper(
             }
         set(value) = setString(DataStoreKeys.PROTOCOL_TWEAKS_MODE, value)
 
-    override var fakeTrafficVolume: FakeTrafficVolume
-        get() =
-            runBlocking {
-                val value = getString(DataStoreKeys.FAKE_TRAFFIC_VOLUME, FakeTrafficVolume.High.name)
-                FakeTrafficVolume.valueOf(value)
-            }
-        set(value) = setString(DataStoreKeys.FAKE_TRAFFIC_VOLUME, value.name)
+
 
     // App Lifecycle
     override var isNewApplicationInstance: Boolean
@@ -809,7 +820,7 @@ class DataStorePreferenceHelper(
                     Gson().fromJson(jsonString, object : TypeToken<List<String>>() {}.type)
                 }
             }
-        set(value) = setString(DataStoreKeys.INSTALLED_APPS_DATA, Gson().toJson(value))
+        set(value) = setStringSync(DataStoreKeys.INSTALLED_APPS_DATA, Gson().toJson(value))
 
     override var wgConnectApiFailOverState: Map<String, Boolean>
         get() =
@@ -1052,6 +1063,56 @@ class DataStorePreferenceHelper(
                 ).takeIf { it.isNotEmpty() }
             }
         set(value) = setString(DataStoreKeys.CONNECTED_CUSTOM_SOUND, value)
+
+    // Global Custom Wallpaper
+    override var globalBackgroundPath: String?
+        get() = runBlocking { getString(DataStoreKeys.GLOBAL_BG_PATH, "").takeIf { it.isNotEmpty() } }
+        set(value) = setString(DataStoreKeys.GLOBAL_BG_PATH, value)
+
+    override var globalBackgroundScale: Float
+        get() = runBlocking { getFloat(DataStoreKeys.GLOBAL_BG_SCALE, 1.05f) }
+        set(value) = setFloat(DataStoreKeys.GLOBAL_BG_SCALE, value)
+
+    @Volatile private var cachedBgOffsetX: Float? = null
+    @Volatile private var cachedBgOffsetY: Float? = null
+    @Volatile private var cachedBgRotation: Int? = null
+    @Volatile private var cachedBgDarkness: Float? = null
+    @Volatile private var cachedHasGlobalBg: Boolean? = null
+
+    override var globalBackgroundOffsetX: Float
+        get() = cachedBgOffsetX ?: runBlocking { getFloat(DataStoreKeys.GLOBAL_BG_OFFSET_X, 0f) }.also { cachedBgOffsetX = it }
+        set(value) {
+            cachedBgOffsetX = value
+            setFloat(DataStoreKeys.GLOBAL_BG_OFFSET_X, value)
+        }
+
+    override var globalBackgroundOffsetY: Float
+        get() = cachedBgOffsetY ?: runBlocking { getFloat(DataStoreKeys.GLOBAL_BG_OFFSET_Y, 0f) }.also { cachedBgOffsetY = it }
+        set(value) {
+            cachedBgOffsetY = value
+            setFloat(DataStoreKeys.GLOBAL_BG_OFFSET_Y, value)
+        }
+
+    override var globalBackgroundRotation: Int
+        get() = cachedBgRotation ?: runBlocking { getInt(DataStoreKeys.GLOBAL_BG_ROTATION, 0) }.also { cachedBgRotation = it }
+        set(value) {
+            cachedBgRotation = value
+            setInt(DataStoreKeys.GLOBAL_BG_ROTATION, value)
+        }
+
+    override var globalBackgroundDarkness: Float
+        get() = cachedBgDarkness ?: runBlocking { getFloat(DataStoreKeys.GLOBAL_BG_DARKNESS, 0.10f) }.also { cachedBgDarkness = it }
+        set(value) {
+            cachedBgDarkness = value
+            setFloat(DataStoreKeys.GLOBAL_BG_DARKNESS, value)
+        }
+
+    override var hasGlobalBackground: Boolean
+        get() = cachedHasGlobalBg ?: runBlocking { getBoolean(DataStoreKeys.HAS_GLOBAL_BG, false) }.also { cachedHasGlobalBg = it }
+        set(value) {
+            cachedHasGlobalBg = value
+            setBoolean(DataStoreKeys.HAS_GLOBAL_BG, value)
+        }
 
     // SSO
     override var isSsoLogin: Boolean

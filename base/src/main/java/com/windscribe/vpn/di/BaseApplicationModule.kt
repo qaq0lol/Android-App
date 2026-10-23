@@ -1,4 +1,4 @@
-package com.windscribe.vpn.di
+﻿package com.windscribe.vpn.di
 
 import android.app.AlarmManager
 import android.app.NotificationManager
@@ -30,7 +30,6 @@ import com.windscribe.vpn.backend.wireguard.WireguardContextWrapper
 import com.windscribe.vpn.billing.PurchaseManager
 import com.windscribe.vpn.constants.NetworkKeyConstants
 import com.windscribe.vpn.constants.NotificationConstants
-import com.windscribe.vpn.decoytraffic.DecoyTrafficController
 import com.windscribe.vpn.localdatabase.ExcludedIpDomainDao
 import com.windscribe.vpn.localdatabase.LocalDatabaseImpl
 import com.windscribe.vpn.localdatabase.LocalDbInterface
@@ -678,20 +677,7 @@ open class BaseApplicationModule {
             deviceStateManager,
         )
 
-    @Provides
-    @Singleton
-    fun providesDecoyTrafficController(
-        scope: CoroutineScope,
-        apiCallManager: IApiCallManager,
-        preferencesHelper: PreferencesHelper,
-        vpnConnectionStateManager: VPNConnectionStateManager,
-    ): DecoyTrafficController =
-        DecoyTrafficController(
-            scope,
-            apiCallManager,
-            preferencesHelper,
-            vpnConnectionStateManager,
-        )
+
 
     @Provides
     @Singleton

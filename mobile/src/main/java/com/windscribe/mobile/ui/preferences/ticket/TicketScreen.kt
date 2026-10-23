@@ -127,8 +127,7 @@ fun TicketContent(
                 // Info header card
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 16.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 16.dp
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -173,8 +172,7 @@ fun TicketContent(
                 CyberSectionHeader(title = "咨询类型")
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 20.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 20.dp
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -214,8 +212,7 @@ fun TicketContent(
                 CyberSectionHeader(title = "工单详情")
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 20.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 20.dp
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),

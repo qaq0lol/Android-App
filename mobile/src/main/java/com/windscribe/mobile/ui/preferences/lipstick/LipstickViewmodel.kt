@@ -3,85 +3,46 @@ package com.windscribe.mobile.ui.preferences.lipstick
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
-import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.connection.ToastMessage
-import com.windscribe.mobile.ui.model.DropDownItem
 import com.windscribe.mobile.ui.model.ThemeItem
 import com.windscribe.mobile.ui.preferences.icons.AppIconManager
-import com.windscribe.mobile.ui.preferences.lipstick.LookAndFeelHelper.getAspectRatioOptions
-import com.windscribe.mobile.ui.preferences.lipstick.LookAndFeelHelper.getBackgroundOptions
-import com.windscribe.mobile.ui.preferences.lipstick.LookAndFeelHelper.getBundledBackgroundOptions
-import com.windscribe.mobile.ui.preferences.lipstick.LookAndFeelHelper.getBundledSoundOptions
-import com.windscribe.mobile.ui.preferences.lipstick.LookAndFeelHelper.getSoundFile
-import com.windscribe.mobile.ui.preferences.lipstick.LookAndFeelHelper.getSoundOptions
 import com.windscribe.vpn.Windscribe.Companion.appContext
 import com.windscribe.vpn.apppreference.PreferencesHelper
 import com.windscribe.vpn.repository.ServerListRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
-import java.io.FileOutputStream
-import java.io.IOException
+import java.io.File
 import javax.inject.Inject
 
+data class GlobalBackgroundConfig(
+    val hasBackground: Boolean = false,
+    val bitmap: Bitmap? = null,
+    val scale: Float = 1.0f,
+    val offsetX: Float = 0f,
+    val offsetY: Float = 0f,
+    val rotation: Int = 0,
+    val darkness: Float = 0.15f,
+)
+
 abstract class LipstickViewmodel : ViewModel() {
-    abstract val whenDisconnectedBackgroundItem: StateFlow<DropDownItem>
-    abstract val whenConnectedBackgroundItem: StateFlow<DropDownItem>
-    abstract val whenDisconnectedSoundItem: StateFlow<DropDownItem>
-    abstract val whenConnectedSoundItem: StateFlow<DropDownItem>
-    abstract val aspectRatioItem: StateFlow<DropDownItem>
-    abstract val bundledDisconnectedBackgroundItem: StateFlow<DropDownItem>
-    abstract val bundledConnectedBackgroundItem: StateFlow<DropDownItem>
-    abstract val bundledDisconnectedSoundItem: StateFlow<DropDownItem>
-    abstract val bundledConnectedSoundItem: StateFlow<DropDownItem>
-    abstract val customDisconnectedBackgroundItem: StateFlow<String?>
-    abstract val customConnectedBackgroundItem: StateFlow<String?>
-    abstract val customDisconnectedSoundItem: StateFlow<String?>
-    abstract val customConnectedSoundItem: StateFlow<String?>
-
-    abstract fun onWhenDisconnectedBackgroundItemSelected(item: DropDownItem)
-
-    abstract fun onWhenConnectedBackgroundItemSelected(item: DropDownItem)
-
-    abstract fun onAspectRatioItemSelected(item: DropDownItem)
-
-    abstract fun onWhenDisconnectedSoundItemSelected(item: DropDownItem)
-
-    abstract fun onWhenConnectedSoundItemSelected(item: DropDownItem)
-
-    abstract fun onDisconnectedBundledBackgroundItemSelected(item: DropDownItem)
-
-    abstract fun onConnectedBundledBackgroundItemSelected(item: DropDownItem)
-
-    abstract fun onDisconnectedBundledSoundItemSelected(item: DropDownItem)
-
-    abstract fun onConnectedBundledSoundItemSelected(item: DropDownItem)
-
-    abstract fun loadConnectedCustomBackground(
-        context: Context,
-        fileUri: Uri,
-    )
-
-    abstract fun loadDisconnectedCustomBackground(
-        context: Context,
-        fileUri: Uri,
-    )
-
-    abstract fun loadConnectedCustomSound(
-        context: Context,
-        fileUri: Uri,
-    )
-
-    abstract fun loadDisconnectedCustomSound(
-        context: Context,
-        fileUri: Uri,
-    )
+    abstract val globalBackgroundConfig: StateFlow<GlobalBackgroundConfig>
+    abstract fun setGlobalBackgroundFromUri(context: Context, fileUri: Uri)
+    abstract fun updateGlobalBackgroundTransform(scale: Float, offsetX: Float, offsetY: Float, rotation: Int)
+    abstract fun updateGlobalBackgroundDarkness(darkness: Float)
+    abstract fun resetGlobalBackgroundPosition()
+    abstract fun saveAndApplyGlobalBackground()
+    abstract fun cancelGlobalBackgroundEdit()
+    abstract fun clearGlobalBackground(context: Context)
 
     abstract fun loadServerListFile(
         context: Context,
@@ -113,39 +74,9 @@ class LipstickViewmodelImpl
         private val serverListRepository: ServerListRepository,
         private val appIconManager: AppIconManager,
     ) : LipstickViewmodel() {
-        private val _whenDisconnectedBackgroundItem = MutableStateFlow(getBackgroundOptions().first())
-        override val whenDisconnectedBackgroundItem: StateFlow<DropDownItem> =
-            _whenDisconnectedBackgroundItem
-        private val _whenConnectedBackgroundItem = MutableStateFlow(getBackgroundOptions().first())
-        override val whenConnectedBackgroundItem: StateFlow<DropDownItem> = _whenConnectedBackgroundItem
-        private val _aspectRatioItem = MutableStateFlow(getAspectRatioOptions().first())
-        override val aspectRatioItem: StateFlow<DropDownItem> = _aspectRatioItem
-        private val _bundledDisconnectedBackgroundItem =
-            MutableStateFlow(getBundledBackgroundOptions().first())
-        override val bundledDisconnectedBackgroundItem: StateFlow<DropDownItem> =
-            _bundledDisconnectedBackgroundItem
-        private val _bundledConnectedBackgroundItem =
-            MutableStateFlow(getBundledBackgroundOptions().first())
-        override val bundledConnectedBackgroundItem: StateFlow<DropDownItem> =
-            _bundledConnectedBackgroundItem
-        private val _customDisconnectedBackgroundItem = MutableStateFlow<String?>(null)
-        override val customDisconnectedBackgroundItem: StateFlow<String?> =
-            _customDisconnectedBackgroundItem
-        private val _customConnectedBackgroundItem = MutableStateFlow<String?>(null)
-        override val customConnectedBackgroundItem: StateFlow<String?> = _customConnectedBackgroundItem
-        private val _whenDisconnectedSoundItem = MutableStateFlow(getBackgroundOptions().first())
-        override val whenDisconnectedSoundItem: StateFlow<DropDownItem> = _whenDisconnectedSoundItem
-        private val _whenConnectedSoundItem = MutableStateFlow(getBackgroundOptions().first())
-        override val whenConnectedSoundItem: StateFlow<DropDownItem> = _whenConnectedSoundItem
-        private val _customDisconnectedSoundItem = MutableStateFlow<String?>(null)
-        override val customDisconnectedSoundItem: StateFlow<String?> = _customDisconnectedSoundItem
-        private val _customConnectedSoundItem = MutableStateFlow<String?>(null)
-        override val customConnectedSoundItem: StateFlow<String?> = _customConnectedSoundItem
-        private val _bundledDisconnectedSoundItem = MutableStateFlow(getSoundOptions().first())
-        override val bundledDisconnectedSoundItem: StateFlow<DropDownItem> =
-            _bundledDisconnectedSoundItem
-        private val _bundledConnectedSoundItem = MutableStateFlow(getSoundOptions().first())
-        override val bundledConnectedSoundItem: StateFlow<DropDownItem> = _bundledConnectedSoundItem
+        private val _globalBackgroundConfig = MutableStateFlow(GlobalBackgroundConfig())
+        override val globalBackgroundConfig: StateFlow<GlobalBackgroundConfig> = _globalBackgroundConfig
+
         private val _toastMessage = MutableStateFlow<ToastMessage>(ToastMessage.None)
         override val toastMessage: StateFlow<ToastMessage> = _toastMessage
         private val _themeItem = MutableStateFlow(LookAndFeelHelper.getThemeOptions().first())
@@ -154,48 +85,214 @@ class LipstickViewmodelImpl
         override val selectedAppIcon: StateFlow<Int> = _selectedAppIcon
         private val logger = LoggerFactory.getLogger("LipstickViewmodel")
 
+        private var savedSnapshot: GlobalBackgroundConfig? = null
+        private var pendingNewBitmap: Bitmap? = null
+
         init {
-            loadBackgroundPreferences()
-            loadSoundPreferences()
+            loadGlobalBackground()
             loadThemePreferences()
             observeSelectedAppIcon()
         }
 
-        private fun loadBackgroundPreferences() {
-            _whenDisconnectedBackgroundItem.value =
-                getBackgroundOptions().firstOrNull { it.id == preferenceHelper.whenDisconnectedBackgroundOption }
-                    ?: getBackgroundOptions().first()
-            _whenConnectedBackgroundItem.value =
-                getBackgroundOptions().firstOrNull { it.id == preferenceHelper.whenConnectedBackgroundOption }
-                    ?: getBackgroundOptions().first()
-            _aspectRatioItem.value =
-                getAspectRatioOptions().firstOrNull { it.id == preferenceHelper.backgroundAspectRatioOption }
-                    ?: getAspectRatioOptions().first()
-            _bundledDisconnectedBackgroundItem.value =
-                getBundledBackgroundOptions().firstOrNull { it.id == preferenceHelper.disconnectedBundleBackgroundOption }
-                    ?: getBundledBackgroundOptions().first()
-            _bundledConnectedBackgroundItem.value =
-                getBundledBackgroundOptions().firstOrNull { it.id == preferenceHelper.connectedBundleBackgroundOption }
-                    ?: getBundledBackgroundOptions().first()
-            _customDisconnectedBackgroundItem.value = preferenceHelper.customDisconnectedBackground
-            _customConnectedBackgroundItem.value = preferenceHelper.customConnectedBackground
+        private fun loadGlobalBackground() {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    if (preferenceHelper.hasGlobalBackground) {
+                        val file = File(appContext.filesDir, "global_background.png")
+                        val bitmap = if (file.exists()) {
+                            BitmapFactory.decodeFile(file.absolutePath)
+                        } else null
+                        val config = GlobalBackgroundConfig(
+                            hasBackground = bitmap != null,
+                            bitmap = bitmap,
+                            scale = preferenceHelper.globalBackgroundScale,
+                            offsetX = preferenceHelper.globalBackgroundOffsetX,
+                            offsetY = preferenceHelper.globalBackgroundOffsetY,
+                            rotation = preferenceHelper.globalBackgroundRotation,
+                            darkness = preferenceHelper.globalBackgroundDarkness
+                        )
+                        _globalBackgroundConfig.value = config
+                        savedSnapshot = config
+                    } else {
+                        val config = GlobalBackgroundConfig()
+                        _globalBackgroundConfig.value = config
+                        savedSnapshot = config
+                    }
+                } catch (e: Exception) {
+                    logger.error("Error loading global background: ${e.message}")
+                }
+            }
         }
 
-        private fun loadSoundPreferences() {
-            _whenDisconnectedSoundItem.value =
-                getSoundOptions().firstOrNull { it.id == preferenceHelper.whenDisconnectedSoundOption }
-                    ?: getSoundOptions().first()
-            _whenConnectedSoundItem.value =
-                getSoundOptions().firstOrNull { it.id == preferenceHelper.whenConnectedSoundOption }
-                    ?: getSoundOptions().first()
-            _bundledDisconnectedSoundItem.value =
-                getBundledSoundOptions().firstOrNull { it.id == preferenceHelper.disconnectedBundleSoundOption }
-                    ?: getBundledSoundOptions().first()
-            _bundledConnectedSoundItem.value =
-                getBundledSoundOptions().firstOrNull { it.id == preferenceHelper.connectedBundleSoundOption }
-                    ?: getBundledSoundOptions().first()
-            _customDisconnectedSoundItem.value = preferenceHelper.customDisconnectedSound
-            _customConnectedSoundItem.value = preferenceHelper.customConnectedSound
+        override fun setGlobalBackgroundFromUri(context: Context, fileUri: Uri) {
+            if (savedSnapshot == null) {
+                savedSnapshot = _globalBackgroundConfig.value
+            }
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    // 1. Detect EXIF orientation to correct camera photos
+                    var exifOrientation = ExifInterface.ORIENTATION_NORMAL
+                    try {
+                        context.contentResolver.openInputStream(fileUri)?.use { stream ->
+                            val exif = ExifInterface(stream)
+                            exifOrientation = exif.getAttributeInt(
+                                ExifInterface.TAG_ORIENTATION,
+                                ExifInterface.ORIENTATION_NORMAL
+                            )
+                        }
+                    } catch (e: Exception) {
+                        logger.warn("Could not read EXIF orientation: ${e.message}")
+                    }
+
+                    // 2. Decode bounds & calculate sample size
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    context.contentResolver.openInputStream(fileUri)?.use {
+                        BitmapFactory.decodeStream(it, null, options)
+                    }
+                    val maxSize = 2560
+                    var sampleSize = 1
+                    while (options.outWidth / sampleSize > maxSize || options.outHeight / sampleSize > maxSize) {
+                        sampleSize *= 2
+                    }
+                    options.inJustDecodeBounds = false
+                    options.inSampleSize = sampleSize
+                    val rawBitmap = context.contentResolver.openInputStream(fileUri)?.use {
+                        BitmapFactory.decodeStream(it, null, options)
+                    }
+
+                    // 3. Apply orientation rotation if needed
+                    val finalBitmap = if (rawBitmap != null && exifOrientation != ExifInterface.ORIENTATION_NORMAL) {
+                        val matrix = Matrix()
+                        when (exifOrientation) {
+                            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+                            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+                        }
+                        try {
+                            val rotated = Bitmap.createBitmap(rawBitmap, 0, 0, rawBitmap.width, rawBitmap.height, matrix, true)
+                            if (rotated != rawBitmap) {
+                                rawBitmap.recycle()
+                            }
+                            rotated
+                        } catch (_: Exception) {
+                            rawBitmap
+                        }
+                    } else {
+                        rawBitmap
+                    }
+
+                    finalBitmap?.let {
+                        pendingNewBitmap = it
+                        _globalBackgroundConfig.value = _globalBackgroundConfig.value.copy(
+                            hasBackground = true,
+                            bitmap = it,
+                            scale = 1.0f,
+                            offsetX = 0f,
+                            offsetY = 0f,
+                            rotation = 0,
+                            darkness = preferenceHelper.globalBackgroundDarkness
+                        )
+                    }
+                } catch (e: Exception) {
+                    logger.error("Error setting global background: ${e.message}")
+                }
+            }
+        }
+
+        override fun updateGlobalBackgroundTransform(scale: Float, offsetX: Float, offsetY: Float, rotation: Int) {
+            if (savedSnapshot == null) {
+                savedSnapshot = _globalBackgroundConfig.value
+            }
+            _globalBackgroundConfig.value = _globalBackgroundConfig.value.copy(
+                scale = scale,
+                offsetX = offsetX,
+                offsetY = offsetY,
+                rotation = rotation
+            )
+        }
+
+        override fun updateGlobalBackgroundDarkness(darkness: Float) {
+            if (savedSnapshot == null) {
+                savedSnapshot = _globalBackgroundConfig.value
+            }
+            _globalBackgroundConfig.value = _globalBackgroundConfig.value.copy(
+                darkness = darkness
+            )
+        }
+
+        override fun resetGlobalBackgroundPosition() {
+            if (savedSnapshot == null) {
+                savedSnapshot = _globalBackgroundConfig.value
+            }
+            _globalBackgroundConfig.value = _globalBackgroundConfig.value.copy(
+                scale = 1.0f,
+                offsetX = 0f,
+                offsetY = 0f,
+                rotation = 0
+            )
+        }
+
+        override fun saveAndApplyGlobalBackground() {
+            val current = _globalBackgroundConfig.value
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    pendingNewBitmap?.let { bmp ->
+                        appContext.openFileOutput("global_background.png", Context.MODE_PRIVATE).use { output ->
+                            bmp.compress(Bitmap.CompressFormat.PNG, 100, output)
+                        }
+                        bmp.recycle()
+                        pendingNewBitmap = null
+                    }
+                } catch (e: Exception) {
+                    logger.error("Error saving global background image: ${e.message}")
+                }
+                preferenceHelper.hasGlobalBackground = current.hasBackground
+                preferenceHelper.globalBackgroundPath = if (current.hasBackground) "global_background.png" else null
+                preferenceHelper.globalBackgroundScale = current.scale
+                preferenceHelper.globalBackgroundOffsetX = current.offsetX
+                preferenceHelper.globalBackgroundOffsetY = current.offsetY
+                preferenceHelper.globalBackgroundRotation = current.rotation
+                preferenceHelper.globalBackgroundDarkness = current.darkness
+                savedSnapshot = current
+                showToast("✓ 已保存并应用至全局界面！")
+            }
+        }
+
+        override fun cancelGlobalBackgroundEdit() {
+            savedSnapshot?.let {
+                _globalBackgroundConfig.value = it
+            }
+            pendingNewBitmap = null
+        }
+
+        override fun clearGlobalBackground(context: Context) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val file = File(context.filesDir, "global_background.png")
+                    if (file.exists()) {
+                        file.delete()
+                    }
+                } catch (e: Exception) {
+                    logger.error("Error deleting global background file: ${e.message}")
+                }
+                preferenceHelper.hasGlobalBackground = false
+                preferenceHelper.globalBackgroundPath = null
+                pendingNewBitmap = null
+                val resetConfig = GlobalBackgroundConfig(
+                    hasBackground = false,
+                    bitmap = null,
+                    scale = 1.0f,
+                    offsetX = 0f,
+                    offsetY = 0f,
+                    rotation = 0,
+                    darkness = 0.15f
+                )
+                _globalBackgroundConfig.value = resetConfig
+                savedSnapshot = resetConfig
+                showToast("已恢复默认背景")
+            }
         }
 
         private fun loadThemePreferences() {
@@ -203,194 +300,6 @@ class LipstickViewmodelImpl
                 .getThemeOptions()
                 .firstOrNull { it.id == preferenceHelper.selectedTheme }
                 ?: LookAndFeelHelper.getThemeOptions().first()
-            preferenceHelper.selectedTheme
-        }
-
-        override fun onWhenDisconnectedBackgroundItemSelected(item: DropDownItem) {
-            _whenDisconnectedBackgroundItem.value = item
-            preferenceHelper.whenDisconnectedBackgroundOption = item.id
-        }
-
-        override fun onWhenConnectedBackgroundItemSelected(item: DropDownItem) {
-            _whenConnectedBackgroundItem.value = item
-            preferenceHelper.whenConnectedBackgroundOption = item.id
-        }
-
-        override fun onAspectRatioItemSelected(item: DropDownItem) {
-            _aspectRatioItem.value = item
-            preferenceHelper.backgroundAspectRatioOption = item.id
-        }
-
-        override fun onDisconnectedBundledBackgroundItemSelected(item: DropDownItem) {
-            _bundledDisconnectedBackgroundItem.value = item
-            preferenceHelper.disconnectedBundleBackgroundOption = item.id
-        }
-
-        override fun onConnectedBundledBackgroundItemSelected(item: DropDownItem) {
-            _bundledConnectedBackgroundItem.value = item
-            preferenceHelper.connectedBundleBackgroundOption = item.id
-        }
-
-        override fun onDisconnectedBundledSoundItemSelected(item: DropDownItem) {
-            _bundledDisconnectedSoundItem.value = item
-            preferenceHelper.disconnectedBundleSoundOption = item.id
-        }
-
-        override fun onConnectedBundledSoundItemSelected(item: DropDownItem) {
-            _bundledConnectedSoundItem.value = item
-            preferenceHelper.connectedBundleSoundOption = item.id
-        }
-
-        override fun loadDisconnectedCustomBackground(
-            context: Context,
-            fileUri: Uri,
-        ) {
-            try {
-                val documentFile = DocumentFile.fromSingleUri(context, fileUri)
-
-                // Downsample image to max 2560x2560 to prevent OOM
-                val options =
-                    BitmapFactory.Options().apply {
-                        inJustDecodeBounds = true
-                    }
-                context.contentResolver.openInputStream(fileUri)?.use {
-                    BitmapFactory.decodeStream(it, null, options)
-                }
-
-                // Calculate sample size to keep image under 2560x2560
-                val maxSize = 2560
-                var sampleSize = 1
-                while (options.outWidth / sampleSize > maxSize || options.outHeight / sampleSize > maxSize) {
-                    sampleSize *= 2
-                }
-
-                options.inJustDecodeBounds = false
-                options.inSampleSize = sampleSize
-
-                val bitmap =
-                    context.contentResolver.openInputStream(fileUri)?.use {
-                        BitmapFactory.decodeStream(it, null, options)
-                    }
-
-                bitmap?.let {
-                    val output = context.openFileOutput("disconnected_background.png", Context.MODE_PRIVATE)
-                    it.compress(Bitmap.CompressFormat.PNG, 100, output)
-                    output.close()
-                    it.recycle()
-                    _customDisconnectedBackgroundItem.value = documentFile?.name
-                    preferenceHelper.customDisconnectedBackground = documentFile?.name
-                }
-            } catch (e: Exception) {
-                logger.error("Error reading disconnected custom background image file: ${e.message}")
-            }
-        }
-
-        override fun loadConnectedCustomBackground(
-            context: Context,
-            fileUri: Uri,
-        ) {
-            try {
-                val documentFile = DocumentFile.fromSingleUri(context, fileUri)
-
-                // Downsample image to max 2560x2560 to prevent OOM
-                val options =
-                    BitmapFactory.Options().apply {
-                        inJustDecodeBounds = true
-                    }
-                context.contentResolver.openInputStream(fileUri)?.use {
-                    BitmapFactory.decodeStream(it, null, options)
-                }
-
-                // Calculate sample size to keep image under 2560x2560
-                val maxSize = 2560
-                var sampleSize = 1
-                while (options.outWidth / sampleSize > maxSize || options.outHeight / sampleSize > maxSize) {
-                    sampleSize *= 2
-                }
-
-                options.inJustDecodeBounds = false
-                options.inSampleSize = sampleSize
-
-                val bitmap =
-                    context.contentResolver.openInputStream(fileUri)?.use {
-                        BitmapFactory.decodeStream(it, null, options)
-                    }
-
-                bitmap?.let {
-                    val output = context.openFileOutput("connected_background.png", Context.MODE_PRIVATE)
-                    it.compress(Bitmap.CompressFormat.PNG, 100, output)
-                    output.close()
-                    it.recycle()
-                    _customConnectedBackgroundItem.value = documentFile?.name
-                    preferenceHelper.customConnectedBackground = documentFile?.name
-                }
-            } catch (e: Exception) {
-                logger.error("Error reading connected custom background image file: ${e.message}")
-            }
-        }
-
-        override fun loadDisconnectedCustomSound(
-            context: Context,
-            fileUri: Uri,
-        ) {
-            try {
-                val inputStream = context.contentResolver.openInputStream(fileUri)
-                inputStream?.use {
-                    val documentFile = DocumentFile.fromSingleUri(context, fileUri)
-                    if (documentFile?.name == null) {
-                        return
-                    }
-                    val outputFile = getSoundFile(context, false, documentFile.name!!)
-                    if (outputFile == null) {
-                        logger.error("Rejected disconnected custom sound: unusable file name.")
-                        return
-                    }
-                    val output = FileOutputStream(outputFile)
-                    it.copyTo(output)
-                    output.close()
-                    _customDisconnectedSoundItem.value = outputFile.name
-                    preferenceHelper.customDisconnectedSound = outputFile.name
-                }
-            } catch (e: IOException) {
-                logger.error("Error reading disconnected custom sound file: ${e.message}")
-            }
-        }
-
-        override fun loadConnectedCustomSound(
-            context: Context,
-            fileUri: Uri,
-        ) {
-            try {
-                val inputStream = context.contentResolver.openInputStream(fileUri)
-                inputStream?.use {
-                    val documentFile = DocumentFile.fromSingleUri(context, fileUri)
-                    if (documentFile?.name == null) {
-                        return
-                    }
-                    val outputFile = getSoundFile(context, true, documentFile.name!!)
-                    if (outputFile == null) {
-                        logger.error("Rejected connected custom sound: unusable file name.")
-                        return
-                    }
-                    val output = FileOutputStream(outputFile)
-                    it.copyTo(output)
-                    output.close()
-                    _customConnectedSoundItem.value = outputFile.name
-                    preferenceHelper.customConnectedSound = outputFile.name
-                }
-            } catch (e: IOException) {
-                logger.error("Error reading connected custom sound file: ${e.message}")
-            }
-        }
-
-        override fun onWhenConnectedSoundItemSelected(item: DropDownItem) {
-            _whenConnectedSoundItem.value = item
-            preferenceHelper.whenConnectedSoundOption = item.id
-        }
-
-        override fun onWhenDisconnectedSoundItemSelected(item: DropDownItem) {
-            _whenDisconnectedSoundItem.value = item
-            preferenceHelper.whenDisconnectedSoundOption = item.id
         }
 
         override fun loadServerListFile(

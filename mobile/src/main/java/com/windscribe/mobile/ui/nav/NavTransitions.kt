@@ -4,33 +4,48 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 
-private typealias EnterTransform = AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
-private typealias ExitTransform = AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
+typealias EnterTransform = AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
+typealias ExitTransform = AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
 
-/** Standard horizontal slide transitions shared by most navigation screens. */
-private val slideEnter: EnterTransform = { slideInHorizontally(initialOffsetX = { -it }) }
-private val slideExit: ExitTransform = { slideOutHorizontally(targetOffsetX = { it }) }
-private val slidePopEnter: EnterTransform = { slideInHorizontally(initialOffsetX = { it }) }
-private val slidePopExit: ExitTransform = { slideOutHorizontally(targetOffsetX = { -it }) }
+/** Smooth, cyber-style fade transitions shared across all navigation screens */
+val fadeEnter: EnterTransform = {
+    fadeIn(animationSpec = tween(durationMillis = 220, easing = LinearOutSlowInEasing)) +
+    scaleIn(initialScale = 0.98f, animationSpec = tween(220, easing = LinearOutSlowInEasing))
+}
+val fadeExit: ExitTransform = {
+    fadeOut(animationSpec = tween(durationMillis = 180, easing = FastOutLinearInEasing)) +
+    scaleOut(targetScale = 0.98f, animationSpec = tween(180, easing = FastOutLinearInEasing))
+}
+val fadePopEnter: EnterTransform = {
+    fadeIn(animationSpec = tween(durationMillis = 220, easing = LinearOutSlowInEasing)) +
+    scaleIn(initialScale = 0.98f, animationSpec = tween(220, easing = LinearOutSlowInEasing))
+}
+val fadePopExit: ExitTransform = {
+    fadeOut(animationSpec = tween(durationMillis = 180, easing = FastOutLinearInEasing)) +
+    scaleOut(targetScale = 0.98f, animationSpec = tween(180, easing = FastOutLinearInEasing))
+}
 
 /**
- * Like [composable] but applies the standard horizontal slide transitions, so the
- * four enter/exit lambdas don't have to be repeated at every call site. Any of the
- * four can be overridden for screens that need a different animation.
+ * Standard composable with smooth fade-in/fade-out transitions.
  */
 fun NavGraphBuilder.slidingComposable(
     route: String,
-    enterTransition: EnterTransform = slideEnter,
-    exitTransition: ExitTransform = slideExit,
-    popEnterTransition: EnterTransform = slidePopEnter,
-    popExitTransition: ExitTransform = slidePopExit,
+    enterTransition: EnterTransform = fadeEnter,
+    exitTransition: ExitTransform = fadeExit,
+    popEnterTransition: EnterTransform = fadePopEnter,
+    popExitTransition: ExitTransform = fadePopExit,
     content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
 ) = composable(
     route = route,

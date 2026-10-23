@@ -1,6 +1,5 @@
 package com.windscribe.mobile.ui.connection
 
-import android.media.MediaPlayer
 import androidx.annotation.DrawableRes
 import androidx.annotation.RawRes
 import androidx.annotation.StringRes
@@ -26,7 +25,6 @@ import com.windscribe.vpn.commonutils.FlagIconResource
 import com.windscribe.vpn.commonutils.ResourceHelper
 import com.windscribe.vpn.commonutils.WindUtilities
 import com.windscribe.vpn.constants.NetworkKeyConstants
-import com.windscribe.vpn.decoytraffic.DecoyTrafficController
 import com.windscribe.vpn.localdatabase.LocalDbInterface
 import com.windscribe.vpn.model.User
 import com.windscribe.vpn.repository.IpRepository
@@ -185,6 +183,8 @@ abstract class ConnectionViewmodel : ViewModel() {
     abstract fun onHapticFeedbackHandled()
 
     abstract fun onIpAnimationComplete()
+
+    abstract fun refreshNetworkDetection()
 }
 
 @HiltViewModel
@@ -202,7 +202,6 @@ class ConnectionViewmodelImpl
         private val autoConnectionManager: AutoConnectionManager,
         private val userRepository: UserRepository,
         private val serverListRepository: ServerListRepository,
-        private val decoyTrafficController: DecoyTrafficController,
         private val resourceHelper: ResourceHelper,
         private val notificationRepository: NotificationRepository,
     ) : ConnectionViewmodel() {
@@ -240,7 +239,6 @@ class ConnectionViewmodelImpl
         override val isSingleLineLocationName: StateFlow<Boolean> = _isSingleLineLocationName
         private val _shouldPlayHapticFeedback = MutableStateFlow(false)
         override val shouldPlayHapticFeedback: StateFlow<Boolean> = _shouldPlayHapticFeedback
-        private var mediaPlayer: MediaPlayer? = null
         private val logger = LoggerFactory.getLogger("ConnectionViewmodel")
 
         private var lastCityClickTime = 0L
@@ -255,9 +253,7 @@ class ConnectionViewmodelImpl
             fetchBestLocation()
             fetchUserPreferences()
             observeNotificationCount()
-            handleConnectionSoundsState()
             handleConnectionHapticFeedback()
-            observeDecoyTrafficChanges()
         }
 
         private fun observeNotificationCount() {
@@ -314,24 +310,19 @@ class ConnectionViewmodelImpl
             }
         }
 
-        private fun observeDecoyTrafficChanges() {
-            viewModelScope.launch(Dispatchers.IO) {
-                decoyTrafficController.state.collect {
-                    _isDecoyTrafficEnabled.value = it
-                }
-            }
-        }
 
         private fun saveLastLocation(location: DatacenterAndLocation) {
-            val coordinatesArray = (location.datacenter.coordinates ?: "").split(",".toRegex()).toTypedArray()
+            val coords = (location.datacenter.coordinates ?: "").split(",")
+            val lat = coords.getOrNull(0)?.trim() ?: ""
+            val lon = coords.getOrNull(1)?.trim() ?: ""
             val lastLocation =
                 LastSelectedLocation(
                     location.datacenter.id,
                     location.datacenter.nodeName ?: "",
                     location.datacenter.nickName ?: "",
                     location.location?.countryCode,
-                    coordinatesArray[0],
-                    coordinatesArray[1],
+                    lat,
+                    lon,
                 )
             Util.saveSelectedLocation(lastLocation)
             locationRepository.setSelectedCity(lastLocation.cityId)
@@ -409,8 +400,11 @@ class ConnectionViewmodelImpl
             ipRepository.update()
         }
 
+        private var connectionStateJob: kotlinx.coroutines.Job? = null
+
         private fun fetchConnectionState() {
-            viewModelScope.launch(Dispatchers.IO) {
+            connectionStateJob?.cancel()
+            connectionStateJob = viewModelScope.launch(Dispatchers.IO) {
                 combine(
                     vpnConnectionStateManager.state,
                     autoConnectionManager.connectedProtocol,
@@ -471,109 +465,6 @@ class ConnectionViewmodelImpl
                     networkInfo?.isPreferredOn == true &&
                     networkInfo.protocol == protocolInfo.protocol &&
                     networkInfo.port == protocolInfo.port
-            }
-        }
-
-        private fun handleConnectionSoundsState() {
-            viewModelScope.launch(Dispatchers.IO) {
-                vpnConnectionStateManager.state.collectLatest {
-                    if (it.status == VPNState.Status.Connecting && preferences.connectedBundleSoundOption == 3) {
-                        playSoundFromRaw(com.windscribe.vpn.R.raw.fart_deluxe_loop, loop = true)
-                        return@collectLatest
-                    }
-                    if (it.status == VPNState.Status.Connected || it.status == VPNState.Status.Disconnected) {
-                        val isConnected = vpnConnectionStateManager.isVPNConnected()
-                        val option =
-                            if (isConnected) {
-                                preferences.whenConnectedSoundOption
-                            } else {
-                                preferences.whenDisconnectedSoundOption
-                            }
-                        if (option == 1) {
-                            return@collectLatest
-                        }
-                        if (option == 2) {
-                            val index =
-                                if (isConnected) preferences.connectedBundleSoundOption else preferences.disconnectedBundleSoundOption
-                            val bundledSoundToPlay =
-                                LookAndFeelHelper.getBundleSoundResource(isConnected, index)
-                            bundledSoundToPlay?.let { sound ->
-                                playSoundFromRaw(sound)
-                            }
-                        }
-                        if (option == 3) {
-                            val fileName =
-                                if (isConnected) {
-                                    preferences.customConnectedSound
-                                } else {
-                                    preferences.customDisconnectedSound
-                                }
-                            if (fileName.isNullOrEmpty()) {
-                                return@collectLatest
-                            }
-                            val inputFile =
-                                getSoundFile(appContext, isConnected, fileName)
-                                    ?: return@collectLatest
-                            if (inputFile.exists()) {
-                                playSoundFromFile(inputFile.path)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun playSoundFromFile(
-            filePath: String,
-            loop: Boolean = false,
-        ) {
-            try {
-                mediaPlayer?.release() // release old one if exists
-                mediaPlayer =
-                    MediaPlayer().apply {
-                        isLooping = loop
-                        setDataSource(filePath)
-                        setOnPreparedListener { it.start() }
-                        setOnCompletionListener {
-                            it.release()
-                            mediaPlayer = null
-                        }
-                        prepareAsync()
-                    }
-            } catch (e: Exception) {
-                logger.error("Error playing sound file at: $filePath", e)
-                mediaPlayer?.release()
-                mediaPlayer = null
-            }
-        }
-
-        private fun playSoundFromRaw(
-            @RawRes resId: Int,
-            loop: Boolean = false,
-        ) {
-            val fileDescriptor = appContext.resources.openRawResourceFd(resId) ?: return
-            try {
-                mediaPlayer?.release()
-                mediaPlayer =
-                    MediaPlayer().apply {
-                        isLooping = loop
-                        setDataSource(
-                            fileDescriptor.fileDescriptor,
-                            fileDescriptor.startOffset,
-                            fileDescriptor.length,
-                        )
-                        fileDescriptor.close()
-                        setOnPreparedListener { it.start() }
-                        setOnCompletionListener {
-                            it.release()
-                            mediaPlayer = null
-                        }
-                        prepareAsync()
-                    }
-            } catch (e: Exception) {
-                logger.error("Error playing raw sound resource: $resId", e)
-                mediaPlayer?.release()
-                mediaPlayer = null
             }
         }
 
@@ -657,14 +548,45 @@ class ConnectionViewmodelImpl
 
         override fun onConnectButtonClick() {
             val currentState = connectionUIState.value
-            val selectedLocation = lastLocationState.value ?: return
-            if (currentState !is ConnectionUIState.Disconnected) {
+            if (currentState is ConnectionUIState.Connected || currentState is ConnectionUIState.Connecting) {
                 preferences.globalUserConnectionPreference = false
                 vpnController.disconnectAsync()
                 return
             }
-            val locationSource = WindUtilities.getSourceTypeBlocking()
             appScope.launch {
+                // 如果当前选中的位置为 null，尝试自动寻找最佳可用节点或首个节点
+                var selectedLocation = lastLocationState.value
+                if (selectedLocation == null) {
+                    try {
+                        val best = locationRepository.getBestLocationAsync()
+                        saveLastLocation(best)
+                        selectedLocation = lastLocationState.value
+                    } catch (e: Exception) {
+                        logger.error("Failed to get best location fallback", e)
+                    }
+                }
+                if (selectedLocation == null) {
+                    try {
+                        val locations = localdb.getAllLocationsAsync()
+                        val firstCity = locations.firstOrNull()?.datacenters?.firstOrNull()
+                        if (firstCity != null) {
+                            val dcAndLoc = localdb.getDatacenterAndLocation(firstCity.id)
+                            if (dcAndLoc != null) {
+                                saveLastLocation(dcAndLoc)
+                                selectedLocation = lastLocationState.value
+                            }
+                        }
+                    } catch (e: Exception) {
+                        logger.error("Failed to get first city fallback", e)
+                    }
+                }
+
+                if (selectedLocation == null) {
+                    showToast("无法获取可用节点，请先刷新节点列表")
+                    return@launch
+                }
+
+                val locationSource = WindUtilities.getSourceTypeBlocking()
                 when (locationSource) {
                     SelectedLocationType.CustomConfiguredProfile -> {
                         try {
@@ -682,7 +604,7 @@ class ConnectionViewmodelImpl
                         }
                     }
 
-                    SelectedLocationType.CityLocation -> {
+                    SelectedLocationType.CityLocation, null -> {
                         try {
                             val location = localdb.getDatacenterAndLocation(selectedLocation.cityId)
                             if (location != null) {
@@ -698,10 +620,11 @@ class ConnectionViewmodelImpl
             }
         }
 
+        private var selectCityJob: kotlinx.coroutines.Job? = null
         override fun selectCity(city: Datacenter) {
-            viewModelScope.launch(Dispatchers.IO) {
+            selectCityJob?.cancel()
+            selectCityJob = viewModelScope.launch(Dispatchers.IO) {
                 val datacenterAndLocation = localdb.getDatacenterAndLocation(city.id) ?: return@launch
-                preferences.globalUserConnectionPreference = true
                 preferences.isConnectingToStaticIp = false
                 preferences.isConnectingToConfigured = false
                 saveLastLocation(datacenterAndLocation)
@@ -956,5 +879,9 @@ class ConnectionViewmodelImpl
             viewModelScope.launch {
                 _shouldAnimateIp.emit(false)
             }
+        }
+
+        override fun refreshNetworkDetection() {
+            ipRepository.update()
         }
     }

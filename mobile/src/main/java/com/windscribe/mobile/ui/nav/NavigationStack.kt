@@ -1,7 +1,6 @@
 package com.windscribe.mobile.ui.nav
 
 import androidx.activity.compose.LocalActivity
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +35,6 @@ import com.windscribe.mobile.ui.popup.AllProtocolFailedDialogScreen
 import com.windscribe.mobile.ui.popup.EditCustomConfigScreen
 import com.windscribe.mobile.ui.popup.EditCustomConfigViewmodel
 import com.windscribe.mobile.ui.popup.EditCustomConfigViewmodelImpl
-import com.windscribe.mobile.ui.popup.ExtraDataUseWarningScreen
 import com.windscribe.mobile.ui.popup.IpActionResultDialog
 import com.windscribe.mobile.ui.popup.LocationUnderMaintenanceScreen
 import com.windscribe.mobile.ui.popup.NewsfeedScreen
@@ -102,7 +100,14 @@ fun NavigationStack(startDestination: Screen) {
         }
     }
     CompositionLocalProvider(LocalNavController provides navController) {
-        NavHost(navController = navController, startDestination = startDestination.route) {
+        NavHost(
+            navController = navController,
+            startDestination = startDestination.route,
+            enterTransition = fadeEnter,
+            exitTransition = fadeExit,
+            popEnterTransition = fadePopEnter,
+            popExitTransition = fadePopExit
+        ) {
             addNavigationScreens()
         }
     }
@@ -137,10 +142,7 @@ private fun NavGraphBuilder.addNavigationScreens() {
     slidingComposable(route = Screen.MainMenu.route) {
         MainMenuScreen()
     }
-    slidingComposable(
-        route = Screen.General.route,
-        exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) },
-    ) {
+    slidingComposable(route = Screen.General.route) {
         GeneralScreen()
     }
     slidingComposable(route = Screen.Account.route) {
@@ -225,9 +227,7 @@ private fun NavGraphBuilder.addNavigationScreens() {
     composable(route = Screen.AllProtocolFailedDialog.route) {
         AllProtocolFailedDialogScreen()
     }
-    composable(route = Screen.ExtraDataUseWarning.route) {
-        ExtraDataUseWarningScreen(appStartViewModel())
-    }
+
     composable(route = Screen.GpsSpoofing.route) {
         GpsSpoofing(appStartViewModel())
     }

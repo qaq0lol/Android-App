@@ -68,6 +68,7 @@ import com.windscribe.mobile.ui.common.CyberTextField
 import com.windscribe.mobile.ui.common.CyberTopAppBar
 import com.windscribe.mobile.ui.common.GlassSurface
 import com.windscribe.mobile.ui.common.GlassSurfaceColor
+import com.windscribe.mobile.ui.common.LocalGlassColors
 import com.windscribe.mobile.ui.common.NeonCyan
 import com.windscribe.mobile.ui.common.NeonGreen
 import com.windscribe.mobile.ui.common.NeonPurple
@@ -217,8 +218,7 @@ private fun CyberAccountInfoCard(accountState: AccountState) {
 
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
+        cornerRadius = 20.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Username Row
@@ -272,7 +272,7 @@ private fun CyberAccountInfoCard(accountState: AccountState) {
                 }
             }
 
-            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LocalGlassColors.current.borderSubtle))
 
             // Email Row
             Row(
@@ -521,8 +521,7 @@ private fun CyberOtherActionsCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onVoucherClick),
-            cornerRadius = 18.dp,
-            borderColor = Color(0x14FFFFFF)
+            cornerRadius = 18.dp
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -573,8 +572,7 @@ private fun CyberOtherActionsCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onLazyLoginClick),
-            cornerRadius = 18.dp,
-            borderColor = Color(0x14FFFFFF)
+            cornerRadius = 18.dp
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

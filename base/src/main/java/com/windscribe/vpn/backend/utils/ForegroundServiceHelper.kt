@@ -35,20 +35,18 @@ object ForegroundServiceHelper {
      * any service tries to post a foreground notification.
      */
     fun ensureNotificationChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager = context.getSystemService(NotificationManager::class.java)
-            if (manager.getNotificationChannel(NotificationConstants.NOTIFICATION_CHANNEL_ID) == null) {
-                val channel =
-                    NotificationChannel(
-                        NotificationConstants.NOTIFICATION_CHANNEL_ID,
-                        "WindScribe",
-                        NotificationManager.IMPORTANCE_LOW,
-                    ).apply {
-                        description = "VPN connection state and background service notification."
-                        enableLights(true)
-                    }
-                manager.createNotificationChannel(channel)
-            }
+        val manager = context.getSystemService(NotificationManager::class.java)
+        if (manager.getNotificationChannel(NotificationConstants.NOTIFICATION_CHANNEL_ID) == null) {
+            val channel =
+                NotificationChannel(
+                    NotificationConstants.NOTIFICATION_CHANNEL_ID,
+                    "WindScribe",
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = "VPN connection state and background service notification."
+                    enableLights(true)
+                }
+            manager.createNotificationChannel(channel)
         }
     }
 

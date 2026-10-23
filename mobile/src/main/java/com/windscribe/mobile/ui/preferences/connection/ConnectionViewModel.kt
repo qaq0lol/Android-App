@@ -20,8 +20,6 @@ import com.windscribe.vpn.apppreference.PreferencesKeyConstants.PROTO_WIRE_GUARD
 import com.windscribe.vpn.apppreference.PreferencesKeyConstants.PROTO_WS_TUNNEL
 import com.windscribe.vpn.autoconnection.AutoConnectionManager
 import com.windscribe.vpn.backend.ProxyDNSManager
-import com.windscribe.vpn.decoytraffic.DecoyTrafficController
-import com.windscribe.vpn.decoytraffic.FakeTrafficVolume
 import com.windscribe.vpn.exceptions.WindScribeException
 import com.windscribe.vpn.repository.PortMapRepository
 import com.windscribe.vpn.state.VPNConnectionStateManager
@@ -79,20 +77,6 @@ abstract class ConnectionViewModel : ViewModel() {
 
     abstract fun onGPSSpoofingToggleClicked()
 
-    abstract val decoyTraffic: StateFlow<Boolean>
-
-    abstract fun onDecoyTrafficToggleClicked()
-
-    abstract val ipStackEgressMode: StateFlow<String>
-    abstract val ipStackEgressModes: StateFlow<List<DropDownStringItem>>
-
-    abstract fun onIpStackEgressModeSelected(mode: DropDownStringItem)
-
-    abstract val ipStackIngressMode: StateFlow<String>
-    abstract val ipStackIngressModes: StateFlow<List<DropDownStringItem>>
-
-    abstract fun onIpStackIngressModeSelected(mode: DropDownStringItem)
-
     abstract fun onPacketSizeModeSelected(auto: Boolean)
 
     abstract val packetSize: StateFlow<Int>
@@ -106,12 +90,7 @@ abstract class ConnectionViewModel : ViewModel() {
 
     abstract fun refreshPreferences()
 
-    abstract val potentialDataUse: StateFlow<String>
-
-    abstract fun onFakeTrafficVolumeSelected(item: DropDownStringItem)
-
-    abstract val trafficMultipliers: StateFlow<List<DropDownStringItem>>
-    abstract val trafficMultiplier: StateFlow<String>
+    abstract fun testAndSaveCustomDns(address: String, onComplete: (Boolean) -> Unit)
 }
 
 data class ProtoItem(
@@ -134,7 +113,6 @@ class ConnectionViewModelImpl
         val autoConnectionManager: AutoConnectionManager,
         val vpnManagerStateManager: VPNConnectionStateManager,
         val proxyDNSManager: ProxyDNSManager,
-        val decoyTrafficController: DecoyTrafficController,
         val portMapRepository: PortMapRepository,
     ) : ConnectionViewModel() {
         private val _showProgress = MutableStateFlow(false)
@@ -161,8 +139,6 @@ class ConnectionViewModelImpl
         override val allowLan: StateFlow<Boolean> = _allowLan
         private val _gpsSpoofing = MutableStateFlow(preferencesHelper.isGpsSpoofingOn)
         override val gpsSpoofing: StateFlow<Boolean> = _gpsSpoofing
-        private val _decoyTraffic = MutableStateFlow(preferencesHelper.isDecoyTrafficOn)
-        override val decoyTraffic: StateFlow<Boolean> = _decoyTraffic
         private val _packetSizeAuto = MutableStateFlow(preferencesHelper.isPackageSizeModeAuto)
         override val packetSizeAuto: StateFlow<Boolean> = _packetSizeAuto
         private val _packetSize = MutableStateFlow(preferencesHelper.packetSize)
@@ -172,51 +148,9 @@ class ConnectionViewModelImpl
         private val _toastMessage = MutableSharedFlow<ToastMessage>(replay = 0)
         override val toastMessage: SharedFlow<ToastMessage> = _toastMessage
         private var currentPoint = 1500
-        private val _potentialDataUse = MutableStateFlow("")
-        override val potentialDataUse: StateFlow<String> = _potentialDataUse
-        private val _trafficMultipliers = MutableStateFlow(getFakeTrafficVolumeOptions())
-        override val trafficMultipliers: StateFlow<List<DropDownStringItem>> = _trafficMultipliers
-        private val _trafficMultiplier = MutableStateFlow("")
-        override val trafficMultiplier: StateFlow<String> = _trafficMultiplier
-
-        private val _ipStackEgressMode = MutableStateFlow(preferencesHelper.ipv6Mode)
-        override val ipStackEgressMode: StateFlow<String> = _ipStackEgressMode
-        private val _ipStackEgressModes =
-            MutableStateFlow(
-                listOf(
-                    DropDownStringItem(
-                        com.windscribe.vpn.apppreference.PreferencesKeyConstants.IPV6_MODE_AUTO,
-                        "Auto",
-                    ),
-                    DropDownStringItem(
-                        com.windscribe.vpn.apppreference.PreferencesKeyConstants.IPV6_MODE_IPV4_ONLY,
-                        "IPv4 Only",
-                    ),
-                ),
-            )
-        override val ipStackEgressModes: StateFlow<List<DropDownStringItem>> = _ipStackEgressModes
-
-        // Ingress mode (placeholder - not connected to preferences yet)
-        private val _ipStackIngressMode = MutableStateFlow(com.windscribe.vpn.apppreference.PreferencesKeyConstants.IPV6_MODE_AUTO)
-        override val ipStackIngressMode: StateFlow<String> = _ipStackIngressMode
-        private val _ipStackIngressModes =
-            MutableStateFlow(
-                listOf(
-                    DropDownStringItem(
-                        com.windscribe.vpn.apppreference.PreferencesKeyConstants.IPV6_MODE_AUTO,
-                        "Auto",
-                    ),
-                    DropDownStringItem(
-                        com.windscribe.vpn.apppreference.PreferencesKeyConstants.IPV6_MODE_IPV4_ONLY,
-                        "IPv4 Only",
-                    ),
-                ),
-            )
-        override val ipStackIngressModes: StateFlow<List<DropDownStringItem>> = _ipStackIngressModes
 
         init {
             loadPortMapItems()
-            setDecoyTrafficParameters()
         }
 
         private fun loadPortMapItems() {
@@ -244,16 +178,8 @@ class ConnectionViewModelImpl
             }
         }
 
-        fun getFakeTrafficVolumeOptions(): List<DropDownStringItem> =
-            FakeTrafficVolume
-                .values()
-                .map {
-                    DropDownStringItem(it.name)
-                }.toList()
-
         override fun refreshPreferences() {
             viewModelScope.launch {
-                _decoyTraffic.emit(preferencesHelper.isDecoyTrafficOn)
                 _gpsSpoofing.emit(preferencesHelper.isGpsSpoofingOn)
             }
         }
@@ -400,30 +326,60 @@ class ConnectionViewModelImpl
             }
         }
 
-        override fun onDecoyTrafficToggleClicked() {
-            viewModelScope.launch {
-                _decoyTraffic.emit(!_decoyTraffic.value)
-                preferencesHelper.isDecoyTrafficOn = _decoyTraffic.value
-                if (_decoyTraffic.value) {
-                    if (vpnManagerStateManager.isVPNConnected()) {
-                        decoyTrafficController.load()
-                        decoyTrafficController.start()
-                    }
+        override fun testAndSaveCustomDns(address: String, onComplete: (Boolean) -> Unit) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val trimmed = address.trim()
+                if (trimmed.isEmpty()) {
+                    withContext(Dispatchers.Main) { onComplete(false) }
+                    return@launch
                 }
-            }
-        }
+                val host = if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
+                    try {
+                        java.net.URI(trimmed).host ?: trimmed
+                    } catch (_: Exception) {
+                        trimmed
+                    }
+                } else if (trimmed.startsWith("[") && trimmed.contains("]")) {
+                    trimmed.substringAfter("[").substringBefore("]")
+                } else if (trimmed.count { it == ':' } > 1) {
+                    trimmed
+                } else {
+                    trimmed.substringBefore(":")
+                }
+                val reachable = try {
+                    val addr = java.net.InetAddress.getByName(host)
+                    var success = false
+                    try {
+                        java.net.Socket().use { sock ->
+                            sock.connect(java.net.InetSocketAddress(addr, 53), 2000)
+                            success = true
+                        }
+                    } catch (_: Exception) {
+                        try {
+                            java.net.Socket().use { sock ->
+                                sock.connect(java.net.InetSocketAddress(addr, 443), 2000)
+                                success = true
+                            }
+                        } catch (_: Exception) {
+                            addr.isReachable(2000)
+                        }
+                    }
+                    success
+                } catch (_: Exception) {
+                    false
+                }
 
-        override fun onIpStackEgressModeSelected(mode: DropDownStringItem) {
-            viewModelScope.launch {
-                _ipStackEgressMode.emit(mode.key)
-                preferencesHelper.ipv6Mode = mode.key
-            }
-        }
-
-        override fun onIpStackIngressModeSelected(mode: DropDownStringItem) {
-            viewModelScope.launch {
-                _ipStackIngressMode.emit(mode.key)
-                // Not connected to preferences yet - placeholder for future use
+                if (reachable) {
+                    preferencesHelper.dnsAddress = trimmed
+                    _customDnsAddress.emit(trimmed)
+                    proxyDNSManager.invalidConfig = true
+                    if (!vpnManagerStateManager.isVPNConnected()) {
+                        proxyDNSManager.stopControlD()
+                    }
+                    withContext(Dispatchers.Main) { onComplete(true) }
+                } else {
+                    withContext(Dispatchers.Main) { onComplete(false) }
+                }
             }
         }
 
@@ -527,50 +483,6 @@ class ConnectionViewModelImpl
             }
 
         private fun isMtuSmallEnough(response: String): Boolean = !response.contains("100% packet loss")
-
-        private fun setDecoyTrafficParameters() {
-            viewModelScope.launch {
-                val multiplier = preferencesHelper.fakeTrafficVolume.name
-                _trafficMultiplier.emit(multiplier)
-                resetPotentialTrafficInfo()
-            }
-        }
-
-        override fun onFakeTrafficVolumeSelected(item: DropDownStringItem) {
-            preferencesHelper.fakeTrafficVolume = FakeTrafficVolume.valueOf(item.key)
-            resetPotentialTrafficInfo()
-        }
-
-        private fun resetPotentialTrafficInfo() {
-            viewModelScope.launch {
-                val trafficVolume = preferencesHelper.fakeTrafficVolume
-                if (trafficVolume === FakeTrafficVolume.Low) {
-                    _potentialDataUse.emit(
-                        String.format(
-                            Locale.getDefault(),
-                            "%dMB/Hour",
-                            1737,
-                        ),
-                    )
-                } else if (trafficVolume === FakeTrafficVolume.Medium) {
-                    _potentialDataUse.emit(
-                        String.format(
-                            Locale.getDefault(),
-                            "%dMB/Hour",
-                            6948,
-                        ),
-                    )
-                } else {
-                    _potentialDataUse.emit(
-                        String.format(
-                            Locale.getDefault(),
-                            "%dMB/Hour",
-                            16572,
-                        ),
-                    )
-                }
-            }
-        }
 
         override fun onCleared() {
             autoConnectionManager.reset()

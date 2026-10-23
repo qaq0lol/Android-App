@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2021 Windscribe Limited.
  */
 package com.windscribe.vpn.api
@@ -184,11 +184,7 @@ interface IApiCallManager {
         deleteOldestKey: Boolean,
     ): GenericResponseClass<WgInitResponse?, ApiErrorResponse?>
 
-    suspend fun sendDecoyTraffic(
-        url: String,
-        data: String,
-        sizeToReceive: String?,
-    ): GenericResponseClass<String?, ApiErrorResponse?>
+
 
     suspend fun sso(
         provider: String,

@@ -38,11 +38,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -58,6 +60,7 @@ import com.windscribe.mobile.ui.common.CyberSwitch
 import com.windscribe.mobile.ui.common.CyberTextField
 import com.windscribe.mobile.ui.common.CyberTopAppBar
 import com.windscribe.mobile.ui.common.GlassSurface
+import com.windscribe.mobile.ui.common.LocalGlassColors
 import com.windscribe.mobile.ui.common.NeonCyan
 import com.windscribe.mobile.ui.common.NeonGreen
 import com.windscribe.mobile.ui.common.NeonPurple
@@ -83,15 +86,13 @@ import kotlinx.coroutines.flow.Flow
 class ConnectionActions(
     val onAllowLanToggleClicked: () -> Unit = {},
     val onGPSSpoofingToggleClicked: () -> Unit = {},
-    val onDecoyTrafficToggleClicked: () -> Unit = {},
-    val onFakeTrafficVolumeSelected: (DropDownStringItem) -> Unit = {},
-    val onIpStackEgressModeSelected: (DropDownStringItem) -> Unit = {},
     val onModeSelected: (String) -> Unit = {},
     val onProtocolSelected: (DropDownStringItem) -> Unit = {},
     val onPortSelected: (DropDownStringItem) -> Unit = {},
     val onDNSModeSelected: (String) -> Unit = {},
     val onCustomDNSAddressChanged: (String) -> Unit = {},
     val onSaveCustomDNSAddress: () -> Unit = {},
+    val onSaveCustomDnsWithTest: (String, (Boolean) -> Unit) -> Unit = { _, _ -> },
     val onPacketSizeModeSelected: (Boolean) -> Unit = {},
     val onPacketSizedChanged: (Int) -> Unit = {},
     val onPacketSizeSaved: () -> Unit = {},
@@ -104,12 +105,6 @@ class ConnectionActions(
 data class ConnectionUiState(
     val allowLan: Boolean = false,
     val gpsSpoofing: Boolean = false,
-    val decoyTraffic: Boolean = false,
-    val trafficMultiplier: String = "",
-    val trafficMultipliers: List<DropDownStringItem> = emptyList(),
-    val potentialDataUse: String = "",
-    val ipStackEgressMode: String = "auto",
-    val ipStackEgressModes: List<DropDownStringItem> = emptyList(),
     val mode: String = CONNECTION_MODE_AUTO,
     val protocols: List<DropDownStringItem> = listOf(DropDownStringItem("WireGuard")),
     val ports: List<DropDownStringItem> = listOf(DropDownStringItem("1194")),
@@ -126,12 +121,6 @@ data class ConnectionUiState(
 fun ConnectionScreen(viewModel: ConnectionViewModel = hiltViewModel<ConnectionViewModelImpl>()) {
     val allowLan by viewModel.allowLan.collectAsState()
     val gpsSpoofing by viewModel.gpsSpoofing.collectAsState()
-    val decoyTraffic by viewModel.decoyTraffic.collectAsState()
-    val trafficMultiplier by viewModel.trafficMultiplier.collectAsState()
-    val trafficMultipliers by viewModel.trafficMultipliers.collectAsState()
-    val potentialDataUse by viewModel.potentialDataUse.collectAsState()
-    val ipStackEgressMode by viewModel.ipStackEgressMode.collectAsState()
-    val ipStackEgressModes by viewModel.ipStackEgressModes.collectAsState()
     val mode by viewModel.mode.collectAsState()
     val protocols by viewModel.protocols.collectAsState()
     val ports by viewModel.ports.collectAsState()
@@ -150,12 +139,6 @@ fun ConnectionScreen(viewModel: ConnectionViewModel = hiltViewModel<ConnectionVi
     val state = ConnectionUiState(
         allowLan = allowLan,
         gpsSpoofing = gpsSpoofing,
-        decoyTraffic = decoyTraffic,
-        trafficMultiplier = trafficMultiplier,
-        trafficMultipliers = trafficMultipliers,
-        potentialDataUse = potentialDataUse,
-        ipStackEgressMode = ipStackEgressMode,
-        ipStackEgressModes = ipStackEgressModes,
         mode = mode,
         protocols = protocols,
         ports = ports,
@@ -174,15 +157,13 @@ fun ConnectionScreen(viewModel: ConnectionViewModel = hiltViewModel<ConnectionVi
         actions = ConnectionActions(
             onAllowLanToggleClicked = viewModel::onAllowLanToggleClicked,
             onGPSSpoofingToggleClicked = viewModel::onGPSSpoofingToggleClicked,
-            onDecoyTrafficToggleClicked = viewModel::onDecoyTrafficToggleClicked,
-            onFakeTrafficVolumeSelected = viewModel::onFakeTrafficVolumeSelected,
-            onIpStackEgressModeSelected = viewModel::onIpStackEgressModeSelected,
             onModeSelected = viewModel::onModeSelected,
             onProtocolSelected = viewModel::onProtocolSelected,
             onPortSelected = viewModel::onPortSelected,
             onDNSModeSelected = viewModel::onDNSModeSelected,
             onCustomDNSAddressChanged = viewModel::onCustomDNSAddressChanged,
             onSaveCustomDNSAddress = viewModel::saveCustomDNSAddress,
+            onSaveCustomDnsWithTest = viewModel::testAndSaveCustomDns,
             onPacketSizeModeSelected = viewModel::onPacketSizeModeSelected,
             onPacketSizedChanged = viewModel::onPacketSizedChanged,
             onPacketSizeSaved = viewModel::onPacketSizeSaved,
@@ -238,8 +219,7 @@ fun ConnectionContent(
                 // 协议 / 端口 / MTU：一张卡三段
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 20.dp,
-                    borderColor = Color(0x14FFFFFF)
+                    cornerRadius = 20.dp
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         CyberProtocolPortCard(state = state, actions = actions, embedded = true)
@@ -247,7 +227,7 @@ fun ConnectionContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(1.dp)
-                                .background(Color(0x1AFFFFFF))
+                                .background(LocalGlassColors.current.borderSubtle)
                         )
                         CyberPacketSizeCard(state = state, actions = actions, embedded = true)
                     }
@@ -255,23 +235,8 @@ fun ConnectionContent(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // DNS / IP 堆叠：一张卡两段
-                GlassSurface(
-                    modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 20.dp,
-                    borderColor = Color(0x14FFFFFF)
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        CyberDnsCard(state = state, actions = actions, embedded = true)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(Color(0x1AFFFFFF))
-                        )
-                        CyberIpStackCard(state = state, actions = actions, embedded = true)
-                    }
-                }
+                // DNS 服务器配置
+                CyberDnsCard(state = state, actions = actions, embedded = false)
 
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -296,8 +261,7 @@ private fun CyberConnectionModeCard(
     GlassSurface(
         flush = embedded,
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
+        cornerRadius = 20.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -457,7 +421,7 @@ private fun CyberProtocolPortCard(
                     }
                 }
 
-                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LocalGlassColors.current.borderSubtle))
 
                 // Port Row
                 Row(
@@ -503,8 +467,7 @@ private fun CyberPacketSizeCard(
     GlassSurface(
         flush = embedded,
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
+        cornerRadius = 20.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -580,67 +543,50 @@ private fun CyberPacketSizeCard(
 }
 
 @Composable
-private fun CyberIpStackCard(
-    state: ConnectionUiState,
-    actions: ConnectionActions
-,
-    embedded: Boolean = false
-) {
-    val currentEgressItem = state.ipStackEgressModes.firstOrNull { it.key == state.ipStackEgressMode }
-        ?: DropDownStringItem(state.ipStackEgressMode)
-
-    GlassSurface(
-        flush = embedded,
-        modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = "IP 堆叠协议出口",
-                    color = TextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "为 VPN 连接配置 IP 堆栈出口 (仅 WireGuard)",
-                    color = TextMuted,
-                    fontSize = 10.sp
-                )
-            }
-            CyberDropdown(
-                label = "IP Stack",
-                selectedItem = currentEgressItem,
-                items = state.ipStackEgressModes,
-                onItemSelected = { actions.onIpStackEgressModeSelected(it) },
-                itemToString = { it.label ?: it.key }
-            )
-        }
-    }
-}
-
-@Composable
 private fun CyberDnsCard(
     state: ConnectionUiState,
-    actions: ConnectionActions
-,
-    embedded: Boolean = false
+    actions: ConnectionActions,
+    embedded: Boolean = false,
 ) {
     val isCustom = state.dnsMode == DNS_MODE_CUSTOM
     var dnsInput by remember(state.customDnsAddress) { mutableStateOf(state.customDnsAddress) }
-    val context = androidx.compose.ui.platform.LocalContext.current
+    var isEditingDns by remember(state.customDnsAddress) { mutableStateOf(state.customDnsAddress.isBlank()) }
+    var isPingingDns by remember { mutableStateOf(false) }
+    var showDnsErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    if (showDnsErrorDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDnsErrorDialog = false },
+            title = {
+                Text(
+                    text = "服务器错误",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            },
+            text = {
+                Text(
+                    text = if (errorMessage.isNotBlank()) errorMessage else "DNS 服务器连接失败或不可达，请检查服务器地址与网络环境！",
+                    color = TextSecondary,
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { showDnsErrorDialog = false }) {
+                    Text("确定", color = NeonCyan, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = Color(0xFF1E2235),
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 
     GlassSurface(
         flush = embedded,
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
+        cornerRadius = 20.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -657,7 +603,7 @@ private fun CyberDnsCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = if (isCustom) "手动指定自定义 DNS / DoH" else "默认 R.O.B.E.R.T. 云端过滤 DNS",
+                        text = if (isCustom) "指定自定义加密 DNS / DoH / 专用解析节点" else "默认 R.O.B.E.R.T. 云端过滤 DNS",
                         color = TextMuted,
                         fontSize = 10.sp
                     )
@@ -671,6 +617,9 @@ private fun CyberDnsCard(
                             actions.onDNSModeSelected(DNS_MODE_ROBERT)
                         } else {
                             actions.onDNSModeSelected(DNS_MODE_CUSTOM)
+                            if (state.customDnsAddress.isBlank()) {
+                                isEditingDns = true
+                            }
                         }
                     }
                 )
@@ -678,49 +627,144 @@ private fun CyberDnsCard(
 
             if (isCustom) {
                 Spacer(modifier = Modifier.height(12.dp))
-                CyberTextField(
-                    value = dnsInput,
-                    onValueChange = {
-                        dnsInput = it
-                        actions.onCustomDNSAddressChanged(it)
-                    },
-                    placeholder = "https://dns.google/dns-query 或 IP: 1.1.1.1"
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                val dnsDirty = dnsInput.trim() != state.customDnsAddress.trim()
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (dnsDirty) {
-                        CyberButton(
-                            text = "保存 DNS 配置",
-                            onClick = {
-                                actions.onSaveCustomDNSAddress()
-                                android.widget.Toast.makeText(
-                                    context,
-                                    "DNS 配置已保存",
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                            },
-                            color = NeonGreen
-                        )
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+
+                if (isEditingDns) {
+                    CyberTextField(
+                        value = dnsInput,
+                        onValueChange = { dnsInput = it },
+                        placeholder = "例如: 1.1.1.1 或 https://dns.google/dns-query"
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isPingingDns) {
                             Text(
-                                text = "已保存",
-                                color = NeonGreen,
+                                text = "⏳ 正在 Ping 探测目标响应...",
+                                color = NeonCyan,
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                        } else {
                             Text(
-                                text = "✓",
-                                color = NeonGreen,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                                text = "保存时将自动执行 Ping 连通性测试",
+                                color = TextMuted,
+                                fontSize = 10.sp
                             )
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (state.customDnsAddress.isNotBlank()) {
+                                androidx.compose.material3.TextButton(
+                                    onClick = {
+                                        dnsInput = state.customDnsAddress
+                                        isEditingDns = false
+                                    }
+                                ) {
+                                    Text("取消", color = TextMuted, fontSize = 12.sp)
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                            }
+                            CyberButton(
+                                text = if (isPingingDns) "探测中..." else "保存并测试",
+                                onClick = {
+                                    if (dnsInput.trim().isEmpty()) {
+                                        errorMessage = "DNS 服务器地址不能为空！"
+                                        showDnsErrorDialog = true
+                                        return@CyberButton
+                                    }
+                                    isPingingDns = true
+                                    actions.onSaveCustomDnsWithTest(dnsInput.trim()) { success ->
+                                        isPingingDns = false
+                                        if (success) {
+                                            isEditingDns = false
+                                        } else {
+                                            errorMessage = "目标 DNS 服务器无法连通（Ping / Socket 探活超时），请确认地址有效性！"
+                                            showDnsErrorDialog = true
+                                        }
+                                    }
+                                },
+                                color = NeonGreen
+                            )
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(LocalGlassColors.current.surface)
+                            .border(1.dp, LocalGlassColors.current.borderSubtle, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 10.dp)) {
+                                Text(
+                                    text = "当前自定义 DNS 服务器",
+                                    color = TextMuted,
+                                    fontSize = 9.5.sp
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = state.customDnsAddress,
+                                    color = NeonGreen,
+                                    fontSize = 13.5.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            Brush.verticalGradient(
+                                                listOf(
+                                                    NeonCyan.copy(alpha = 0.18f),
+                                                    NeonCyan.copy(alpha = 0.06f)
+                                                )
+                                            )
+                                        )
+                                        .border(1.dp, NeonCyan.copy(alpha = 0.55f), RoundedCornerShape(6.dp))
+                                        .clickable {
+                                            dnsInput = state.customDnsAddress
+                                            isEditingDns = true
+                                        }
+                                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "编辑",
+                                        color = NeonCyan,
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "已保存",
+                                        color = NeonGreen,
+                                        fontSize = 11.5.sp,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "✓",
+                                        color = NeonGreen,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -743,8 +787,7 @@ private fun CyberRoutingTogglesCard(
     GlassSurface(
         flush = embedded,
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 20.dp,
-        borderColor = Color(0x14FFFFFF)
+        cornerRadius = 20.dp
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -775,7 +818,7 @@ private fun CyberRoutingTogglesCard(
                 )
             }
 
-            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(LocalGlassColors.current.borderSubtle))
 
             // GPS 欺骗
             Row(
@@ -810,57 +853,6 @@ private fun CyberRoutingTogglesCard(
                         }
                     }
                 )
-            }
-
-            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0x1AFFFFFF)))
-
-            // 诱饵流量
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                    Text(
-                        text = "诱饵交通 (Decoy Traffic)",
-                        color = TextPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "产生拟态网络握手与流量混淆，掩盖真实协议特征",
-                        color = TextMuted,
-                        fontSize = 10.sp
-                    )
-                }
-                CyberSwitch(
-                    checked = state.decoyTraffic,
-                    onCheckedChange = { actions.onDecoyTrafficToggleClicked() }
-                )
-            }
-
-            if (state.decoyTraffic && state.trafficMultipliers.isNotEmpty()) {
-                val currentMultiplier = state.trafficMultipliers.firstOrNull { it.key == state.trafficMultiplier }
-                    ?: state.trafficMultipliers.first()
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "流量倍增量 (${state.potentialDataUse})",
-                        color = NeonPurple,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    CyberDropdown(
-                        label = "Volume",
-                        selectedItem = currentMultiplier,
-                        items = state.trafficMultipliers,
-                        onItemSelected = { actions.onFakeTrafficVolumeSelected(it) },
-                        itemToString = { it.label ?: it.key }
-                    )
-                }
             }
         }
     }

@@ -174,17 +174,7 @@ class WindNotificationBuilder
             )
         }
 
-        private fun setupNotificationPreO() {
-            notificationBuilder.apply {
-                setSmallIcon(getDefaultIcon(Connecting))
-                setOnlyAlertOnce(true)
-                setOngoing(true)
-            }
-            setContentIntent()
-        }
-
-        @RequiresApi(VERSION_CODES.O)
-        private fun setupNotificationO() {
+        private fun setupNotification() {
             createNotificationChannel()
 
             notificationBuilder.apply {
@@ -289,11 +279,7 @@ class WindNotificationBuilder
             }
 
         private fun createDefaultNotification() {
-            if (VERSION.SDK_INT >= VERSION_CODES.O) {
-                setupNotificationO()
-            } else {
-                setupNotificationPreO()
-            }
+            setupNotification()
         }
     }
 

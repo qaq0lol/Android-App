@@ -155,8 +155,7 @@ fun RobertContent(
                 // 说明与网页控制台入口
                 GlassSurface(
                     modifier = Modifier.fillMaxWidth(),
-                    cornerRadius = 18.dp,
-                    borderColor = Color(0x1AFFFFFF)
+                    cornerRadius = 18.dp
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(

@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -57,15 +59,89 @@ import com.windscribe.mobile.ui.nav.LocalNavController
 import com.windscribe.mobile.ui.nav.Screen
 import com.windscribe.vpn.Windscribe.Companion.appContext
 import com.windscribe.vpn.apppreference.PreferencesKeyConstants
+import org.json.JSONObject
 import java.io.File
+
+private val logJsonRegex = Regex("""^\{"tm":"([^"]*)","lvl":"([^"]*)","mod":"([^"]*)","msg":"(.*)"\}$""")
+
+private data class FormattedLog(
+    val displayText: String,
+    val color: Color,
+)
+
+private fun parseLogEntry(line: String): FormattedLog {
+    val trimmed = line.trim()
+    var tm: String? = null
+    var lvl: String? = null
+    var mod: String? = null
+    var msg: String? = null
+
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        try {
+            val json = JSONObject(trimmed)
+            tm = json.optString("tm")
+            lvl = json.optString("lvl").uppercase()
+            mod = json.optString("mod")
+            msg = json.optString("msg")
+        } catch (_: Exception) {
+            val match = logJsonRegex.find(trimmed)
+            if (match != null) {
+                tm = match.groupValues[1]
+                lvl = match.groupValues[2].uppercase()
+                mod = match.groupValues[3]
+                msg = match.groupValues[4]
+            }
+        }
+    }
+
+    if (!lvl.isNullOrEmpty() && msg != null) {
+        val timeDisplay = if (tm?.contains(" ") == true) tm.substringAfter(" ") else (tm ?: "")
+        val formattedText = buildString {
+            if (timeDisplay.isNotEmpty()) append("[$timeDisplay] ")
+            append("[$lvl] ")
+            if (!mod.isNullOrEmpty()) append("[$mod] ")
+            append(msg)
+        }
+
+        val color = when (lvl) {
+            "ERROR" -> Color(0xFFFF5252)
+            "WARN" -> Color(0xFFFFD54F)
+            "INFO" -> NeonGreen
+            "DEBUG" -> Color(0xEE81E6D9)
+            else -> when {
+                formattedText.contains("error", ignoreCase = true) || formattedText.contains("fail", ignoreCase = true) -> Color(0xFFFF5252)
+                formattedText.contains("warn", ignoreCase = true) -> Color(0xFFFFD54F)
+                formattedText.contains("connected", ignoreCase = true) || formattedText.contains("success", ignoreCase = true) -> NeonGreen
+                else -> Color(0xEE81E6D9)
+            }
+        }
+
+        return FormattedLog(displayText = formattedText, color = color)
+    }
+
+    val color = when {
+        line.contains("error", ignoreCase = true) || line.contains("fail", ignoreCase = true) -> Color(0xFFFF5252)
+        line.contains("warn", ignoreCase = true) -> Color(0xFFFFD54F)
+        line.contains("connected", ignoreCase = true) || line.contains("success", ignoreCase = true) -> NeonGreen
+        else -> Color(0xEE81E6D9)
+    }
+
+    return FormattedLog(displayText = line, color = color)
+}
 
 @Composable
 fun DebugScreen(viewModel: DebugViewModel = hiltViewModel<DebugViewModelImpl>()) {
     val debugLog by viewModel.debugLog.collectAsState()
     val showProgress by viewModel.showProgress.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
+
     DebugContent(
         debugLog = debugLog,
         showProgress = showProgress,
+        onRefresh = { viewModel.refresh() },
     )
 }
 
@@ -73,6 +149,7 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel<DebugViewModelImpl>())
 fun DebugContent(
     debugLog: List<String>,
     showProgress: Boolean,
+    onRefresh: () -> Unit,
 ) {
     val navController = LocalNavController.current
     val context = LocalContext.current
@@ -120,10 +197,13 @@ fun DebugContent(
                             CircularProgressIndicator(color = NeonCyan)
                         } else {
                             Text(
-                                text = "暂无运行日志",
+                                text = "日志记录引擎运行中，暂无最新网络交互日志。可点击下方【刷新】获取最新日志",
                                 color = TextMuted,
                                 fontSize = 12.sp,
-                                fontFamily = FontFamily.Monospace
+                                fontFamily = FontFamily.Monospace,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(24.dp),
+                                lineHeight = 18.sp
                             )
                         }
                     }
@@ -133,6 +213,7 @@ fun DebugContent(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         itemsIndexed(debugLog) { index, line ->
+                            val logEntry = remember(line) { parseLogEntry(line) }
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -145,16 +226,8 @@ fun DebugContent(
                                     fontFamily = FontFamily.Monospace
                                 )
                                 Text(
-                                    text = line,
-                                    color = if (line.contains("error", ignoreCase = true) || line.contains("fail", ignoreCase = true)) {
-                                        Color(0xFFFF5252)
-                                    } else if (line.contains("warn", ignoreCase = true)) {
-                                        Color(0xFFFFD54F)
-                                    } else if (line.contains("connected", ignoreCase = true) || line.contains("success", ignoreCase = true)) {
-                                        NeonGreen
-                                    } else {
-                                        Color(0xEE81E6D9)
-                                    },
+                                    text = logEntry.displayText,
+                                    color = logEntry.color,
                                     fontSize = 11.sp,
                                     fontFamily = FontFamily.Monospace,
                                     lineHeight = 15.sp
@@ -170,13 +243,19 @@ fun DebugContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                cornerRadius = 20.dp,
-                borderColor = Color(0x14FFFFFF)
+                cornerRadius = 20.dp
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    CyberButton(
+                        text = "刷新",
+                        onClick = onRefresh,
+                        modifier = Modifier.weight(1f),
+                        color = NeonCyan
+                    )
+
                     CyberButton(
                         text = "复制完整日志",
                         onClick = {
@@ -185,8 +264,8 @@ fun DebugContent(
                             clipboard.setPrimaryClip(ClipData.newPlainText("DebugLog", fullLog))
                             Toast.makeText(context, "已复制 ${debugLog.size} 行日志到剪贴板", Toast.LENGTH_SHORT).show()
                         },
-                        modifier = Modifier.weight(1f),
-                        color = NeonCyan
+                        modifier = Modifier.weight(1.3f),
+                        color = Color(0xFFFFB74D)
                     )
 
                     CyberButton(
@@ -195,7 +274,6 @@ fun DebugContent(
                         modifier = Modifier.weight(1f),
                         color = NeonGreen
                     )
-
                 }
             }
 
@@ -206,22 +284,26 @@ fun DebugContent(
 
 private fun exportLog(context: Context) {
     val logFile = File(appContext.filesDir.path + PreferencesKeyConstants.DEBUG_LOG_FILE_NAME)
-    if (logFile.exists()) {
-        val fileUri: Uri =
-            FileProvider.getUriForFile(
-                context,
-                "com.windscribe.vpn.provider",
-                logFile,
-            )
-        val shareIntent =
-            Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_STREAM, fileUri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    if (logFile.exists() && logFile.length() > 0) {
+        try {
+            val fileUri: Uri =
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.provider",
+                    logFile,
+                )
+            val shareIntent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_STREAM, fileUri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            val chooser = Intent.createChooser(shareIntent, "Export Log File").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-        val chooser = Intent.createChooser(shareIntent, "Export Log File")
-        if (shareIntent.resolveActivity(context.packageManager) != null) {
             context.startActivity(chooser)
+        } catch (_: Exception) {
+            Toast.makeText(context, "未找到可用于分享日志的应用", Toast.LENGTH_SHORT).show()
         }
     } else {
         Toast.makeText(context, "日志文件尚未生成", Toast.LENGTH_SHORT).show()

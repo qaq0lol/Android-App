@@ -1,5 +1,6 @@
 package com.windscribe.mobile.ui.preferences.split_tunnel
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,14 +24,17 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -70,6 +74,8 @@ data class SplitTunnelState(
     val filteredApps: List<InstalledAppsData> = emptyList(),
     val appIconCache: AppIconCache? = null,
     val excludedIpsCount: Int = 0,
+    val isVpnConnected: Boolean = false,
+    val reconnectNotice: String? = null,
 )
 
 class SplitTunnelActions(
@@ -83,6 +89,7 @@ class SplitTunnelActions(
 
 @Composable
 fun SplitTunnelScreen(viewModel: SplitTunnelViewModel = hiltViewModel<SplitTunnelViewModelImpl>()) {
+    val context = LocalContext.current
     val navController = LocalNavController.current
     val showProgress by viewModel.showProgress.collectAsState()
     val selectedModeKey by viewModel.selectedModeKey.collectAsState()
@@ -91,6 +98,14 @@ fun SplitTunnelScreen(viewModel: SplitTunnelViewModel = hiltViewModel<SplitTunne
     val searchKeyword by viewModel.searchKeyword.collectAsState()
     val filteredApps by viewModel.filteredApps.collectAsState()
     val excludedIpsCount by viewModel.excludedIpsCount.collectAsState()
+    val toastMessage by viewModel.toastMessage.collectAsState()
+    val isVpnConnected by viewModel.isVpnConnected.collectAsState()
+
+    LaunchedEffect(toastMessage) {
+        toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     SplitTunnelContent(
         state = SplitTunnelState(
@@ -103,6 +118,8 @@ fun SplitTunnelScreen(viewModel: SplitTunnelViewModel = hiltViewModel<SplitTunne
             filteredApps = filteredApps,
             appIconCache = viewModel.appIconCache,
             excludedIpsCount = excludedIpsCount,
+            isVpnConnected = isVpnConnected,
+            reconnectNotice = if (isVpnConnected && toastMessage != null) toastMessage else null,
         ),
         actions = SplitTunnelActions(
             onModeSelected = viewModel::onModeSelected,
@@ -214,6 +231,38 @@ fun SplitTunnelContent(
                     }
                 }
 
+                if (state.reconnectNotice != null) {
+                    item {
+                        GlassSurface(
+                            modifier = Modifier.fillMaxWidth(),
+                            cornerRadius = 16.dp,
+                            borderColor = Color(0x66FFB74D),
+                            backgroundColor = Color(0x26FF9800)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp, horizontal = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_warning_icon),
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFB74D),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = state.reconnectNotice,
+                                    color = Color(0xFFFFCC80),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Mode Selector
                 item {
                     val currentModeItem = state.modes.firstOrNull { it.key == state.selectedModeKey }
@@ -222,8 +271,7 @@ fun SplitTunnelContent(
 
                     GlassSurface(
                         modifier = Modifier.fillMaxWidth(),
-                        cornerRadius = 20.dp,
-                        borderColor = Color(0x14FFFFFF)
+                        cornerRadius = 20.dp
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -264,8 +312,7 @@ fun SplitTunnelContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { actions.onManageDomainsIps() },
-                        cornerRadius = 20.dp,
-                        borderColor = Color(0x14FFFFFF)
+                        cornerRadius = 20.dp
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -326,8 +373,7 @@ fun SplitTunnelContent(
 
                         GlassSurface(
                             modifier = Modifier.fillMaxWidth(),
-                            cornerRadius = 20.dp,
-                            borderColor = Color(0x14FFFFFF)
+                            cornerRadius = 20.dp
                         ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 // Show System Apps Toggle
@@ -371,11 +417,13 @@ fun SplitTunnelContent(
 
                 // Apps List
                 items(state.filteredApps, key = { it.packageName }) { app ->
-                    CyberAppRow(
-                        app = app,
-                        appIconCache = state.appIconCache,
-                        onAppSelected = { actions.onAppSelected(app) }
-                    )
+                    Box(modifier = Modifier.alpha(if (state.isSplitTunnelEnabled) 1.0f else 0.4f)) {
+                        CyberAppRow(
+                            app = app,
+                            appIconCache = state.appIconCache,
+                            onAppSelected = { actions.onAppSelected(app) }
+                        )
+                    }
                 }
 
                 item {

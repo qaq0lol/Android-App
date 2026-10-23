@@ -1,8 +1,12 @@
 package com.windscribe.mobile
 
 import android.content.Intent
+import android.os.Build
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.joran.JoranConfigurator
+import ch.qos.logback.core.android.AndroidContextUtil
 import com.windscribe.mobile.ui.AppStartActivity
 import com.windscribe.mobile.ui.nav.Screen
 import com.windscribe.mobile.ui.preferences.icons.AppIconManager
@@ -12,6 +16,7 @@ import com.windscribe.vpn.autoconnection.AutoConnectionModeCallback
 import com.windscribe.vpn.autoconnection.FragmentType
 import com.windscribe.vpn.autoconnection.ProtocolInformation
 import dagger.hilt.android.HiltAndroidApp
+import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -36,10 +41,42 @@ class PhoneApplication :
         // can safely access appContext from singleton init blocks.
         appContext = this
         applicationInterface = this
+        configureLogging()
         super.onCreate()
         try {
             setTheme()
         } catch (e: Exception) {
+        }
+    }
+
+    private fun configureLogging() {
+        try {
+            filesDir.mkdirs()
+            val logFile = java.io.File(filesDir, "applog.txt")
+            if (!logFile.exists()) {
+                logFile.createNewFile()
+            }
+            val loggerContext = LoggerFactory.getILoggerFactory() as? LoggerContext
+            if (loggerContext != null) {
+                try {
+                    val configurator = JoranConfigurator()
+                    configurator.context = loggerContext
+                    loggerContext.reset()
+                    AndroidContextUtil(this).setupProperties(loggerContext)
+                    loggerContext.putProperty("DATA_DIR", filesDir.absolutePath)
+                    assets.open("logback.xml").use { inputStream ->
+                        configurator.doConfigure(inputStream)
+                    }
+                } catch (_: Exception) {
+                }
+            }
+            val logger = LoggerFactory.getLogger("windscribe-mobile")
+            logger.info(
+                "Windscribe application started on Android {} (API {})",
+                Build.VERSION.RELEASE,
+                Build.VERSION.SDK_INT,
+            )
+        } catch (_: Exception) {
         }
     }
 

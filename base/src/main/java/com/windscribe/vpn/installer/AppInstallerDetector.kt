@@ -4,7 +4,6 @@
 package com.windscribe.vpn.installer
 
 import android.content.Context
-import android.os.Build
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,14 +29,7 @@ class AppInstallerDetector
             val packageName = context.packageName
             val installerPackageName =
                 try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        // Android 11+ (API 30+)
-                        context.packageManager.getInstallSourceInfo(packageName).installingPackageName
-                    } else {
-                        // Below Android 11
-                        @Suppress("DEPRECATION")
-                        context.packageManager.getInstallerPackageName(packageName)
-                    }
+                    context.packageManager.getInstallSourceInfo(packageName).installingPackageName
                 } catch (e: Exception) {
                     null
                 }

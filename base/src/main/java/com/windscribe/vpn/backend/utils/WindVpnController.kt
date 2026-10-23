@@ -199,7 +199,7 @@ open class WindVpnController
                 if (pinnedNode != null && attempt == 0) pinnedNode else nodes[randomIndex]
             logger.debug("{}", selectedNode)
             lastUsedRandomIndex = randomIndex
-            val coordinatesArray = (city.coordinates ?: "").split(",".toRegex()).toTypedArray()
+            val coordinates = (city.coordinates ?: "").split(",")
             val ikev2Ip = selectedNode.ip
             val udpIp = selectedNode.ip2
             val tcpIp = selectedNode.ip2
@@ -212,8 +212,8 @@ open class WindVpnController
                     city.nodeName ?: "",
                     city.nickName ?: "",
                     cityAndRegion.location?.countryCode,
-                    coordinatesArray[0],
-                    coordinatesArray[1],
+                    coordinates.getOrNull(0) ?: "",
+                    coordinates.getOrNull(1) ?: "",
                 )
             val vpnParameters =
                 VPNParameters(
@@ -262,15 +262,15 @@ open class WindVpnController
                     ?: throw Exception("Static IP location not found.")
             val node = staticRegion.getStaticIpNode()
             appContext.preference.staticIpCredentials = staticRegion.credentials
-            val coordinatesArray = staticRegion.coordinates?.split(",".toRegex())?.toTypedArray()
+            val coordinates = (staticRegion.coordinates ?: "").split(",")
             val location =
                 LastSelectedLocation(
                     staticRegion.id ?: 0,
                     staticRegion.cityName ?: "",
                     staticRegion.staticIp ?: "",
                     staticRegion.countryCode,
-                    coordinatesArray?.get(0),
-                    coordinatesArray?.get(1),
+                    coordinates.getOrNull(0) ?: "",
+                    coordinates.getOrNull(1) ?: "",
                 )
             val vpnParameters =
                 VPNParameters(
@@ -396,7 +396,7 @@ open class WindVpnController
                         return@let it
                     } ?: getProtocolInformationToConnect()
                 logger.info("Protocol: $protocolInformation")
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && preferencesHelper.splitTunnelToggle) {
+                if (preferencesHelper.splitTunnelToggle) {
                     excludedIpHolder.loadCachedIps()
                 } else {
                     excludedIpHolder.clear()
@@ -427,14 +427,7 @@ open class WindVpnController
             val config: ProtocolInformation =
                 autoConnectionManager.listOfProtocols.firstOrNull { it.type == ProtocolConnectionStatus.NextUp }
                     ?: autoConnectionManager.listOfProtocols.first()
-            // Decoy traffic only works in Wireguard
-            if (preferencesHelper.isDecoyTrafficOn) {
-                Util.buildProtocolInformation(
-                    autoConnectionManager.listOfProtocols,
-                    PROTO_WIRE_GUARD,
-                    preferencesHelper.wireGuardPort,
-                )
-            }
+
             autoConnectionManager.setSelectedProtocol(config)
             return config
         }

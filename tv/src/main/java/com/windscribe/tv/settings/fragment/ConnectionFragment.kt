@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2021 Windscribe Limited.
  */
 package com.windscribe.tv.settings.fragment
@@ -269,13 +269,7 @@ class ConnectionFragment : Fragment() {
             listener?.onBlockBootStartClick()
         }
 
-        binding.ipStackEgressAuto.setOnClickListener {
-            listener?.onIpStackEgressAutoClicked()
-        }
 
-        binding.ipStackEgressIpv4Only.setOnClickListener {
-            listener?.onIpStackEgressIpv4OnlyClicked()
-        }
 
         binding.protocolTweaksAuto.setOnClickListener {
             listener?.onProtocolTweaksModeSelected(com.windscribe.vpn.apppreference.PreferencesKeyConstants.PROTOCOL_TWEAKS_AUTO)
@@ -406,12 +400,6 @@ class ConnectionFragment : Fragment() {
     }
 
     fun setIpStackEgressMode(mode: String) {
-        if (mode == com.windscribe.vpn.apppreference.PreferencesKeyConstants.IPV6_MODE_AUTO) {
-            binding.ipStackEgressAuto.setState(State.MenuButtonState.Selected)
-            binding.ipStackEgressIpv4Only.setState(State.MenuButtonState.NotSelected)
-        } else {
-            binding.ipStackEgressIpv4Only.setState(State.MenuButtonState.Selected)
-            binding.ipStackEgressAuto.setState(State.MenuButtonState.NotSelected)
-        }
+        // Global Auto Mode - egress selector removed
     }
 }

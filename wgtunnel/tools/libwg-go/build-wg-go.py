@@ -34,6 +34,7 @@ env["CGO_ENABLED"] = "1"
 env["GOOS"] = "android"
 env["GOARCH"] = goarch
 env["CC"] = cc_cmd
+env["CGO_CFLAGS"] = "-O3 -DNDEBUG"
 env["CGO_LDFLAGS"] = "-Wl,-soname,libwg-go.so -Wl,-z,max-page-size=16384"
 
 cd_tag = "1.5.4"

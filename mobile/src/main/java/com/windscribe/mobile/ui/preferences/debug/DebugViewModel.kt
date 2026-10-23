@@ -13,6 +13,7 @@ import javax.inject.Inject
 abstract class DebugViewModel : ViewModel() {
     abstract val showProgress: StateFlow<Boolean>
     abstract val debugLog: StateFlow<List<String>>
+    abstract fun refresh()
 }
 
 @HiltViewModel
@@ -27,6 +28,10 @@ class DebugViewModelImpl
         override val debugLog: StateFlow<List<String>> = _debugLog
 
         init {
+            load()
+        }
+
+        override fun refresh() {
             load()
         }
 

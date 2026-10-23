@@ -16,12 +16,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -31,6 +35,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import android.graphics.Bitmap
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -57,18 +64,54 @@ import androidx.compose.ui.unit.sp
 import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.connection.ConnectionUIState
 
-// Cyber Glass Color Palette
-val CyberBackground = Color(0xFF06080D)
-val GlassSurfaceColor = Color(0xB30D1218)
-val GlassNestedColor = Color(0x8A0A0F14)
-val GlassBorderColor = Color(0x1FFFFFFF)
-val NeonCyan = Color(0xFF6FE3DC)
-val NeonGreen = Color(0xFF4FF0C0)
-val NeonPurple = Color(0xFFB299FF)
-val NeonYellow = Color(0xFFFACC15)
-val TextPrimary = Color(0xFFF1F5F9)
-val TextSecondary = Color(0xFF8A98A6)
-val TextMuted = Color(0xFF5E6C7A)
+/**
+ * Unified Dark Cyber Palette (Deep Obsidian & Purple Glow)
+ */
+data class DynamicGlassColors(
+    val surface: Color = Color(0xFF1A1B26),
+    val nestedSurface: Color = Color(0xFF141520),
+    val border: Color = Color(0x14FFFFFF),
+    val borderSubtle: Color = Color(0x0FFFFFFF),
+    val accent: Color = Color(0xFF9D8DF1),
+    val accentMuted: Color = Color(0x269D8DF1),
+    val isDynamic: Boolean = false,
+)
+
+val LocalGlassColors = staticCompositionLocalOf { DynamicGlassColors() }
+
+fun extractWallpaperGlassColors(bitmap: Bitmap? = null): DynamicGlassColors = DynamicGlassColors()
+
+// Unified Color System matching approved prototype
+val CyberBackground = Color(0xFF12131C)
+val GlassSurfaceColor = Color(0xFF1A1B26)
+val GlassNestedColor = Color(0xFF141520)
+val GlassBorderColor = Color(0x14FFFFFF)
+val GlassBorderSubtle = Color(0x0FFFFFFF)
+val NeonCyan = Color(0xFF9D8DF1)
+val NeonPurple = Color(0xFF9D8DF1)
+val PurpleAccent = Color(0xFF7C68EE)
+val NeonGreen = Color(0xFF4ECCA3)
+val NeonYellow = Color(0xFFFFD166)
+val NeonRed = Color(0xFFFF5252)
+val TextPrimary = Color(0xFFFFFFFF)
+val TextSecondary = Color(0xFF9D9EAF)
+val TextMuted = Color(0xFF6B6E7E)
+
+/**
+ * Global Tricolor Latency Evaluation Rule:
+ * < 160ms: NeonGreen (optimal / fastest)
+ * 160ms .. 299ms: NeonYellow (good / moderate)
+ * >= 300ms: NeonRed (high latency / congested)
+ * <= 0 / null: TextMuted (unmeasured / inactive)
+ */
+fun getLatencyColor(pingMs: Int?): Color {
+    if (pingMs == null || pingMs <= 0) return TextMuted
+    return when {
+        pingMs < 160 -> NeonGreen
+        pingMs <= 300 -> NeonYellow
+        else -> NeonRed
+    }
+}
 
 /**
  * Reusable Glassmorphism Card Container
@@ -77,8 +120,8 @@ val TextMuted = Color(0xFF5E6C7A)
 fun GlassSurface(
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 18.dp,
-    borderColor: Color = Color(0x1FFFFFFF),
-    backgroundColor: Color = GlassSurfaceColor,
+    borderColor: Color = LocalGlassColors.current.border,
+    backgroundColor: Color = LocalGlassColors.current.surface,
     flush: Boolean = false,
     content: @Composable () -> Unit,
 ) {
@@ -92,202 +135,14 @@ fun GlassSurface(
             .background(backgroundColor)
             .border(
                 width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        borderColor,
-                        borderColor.copy(alpha = 0.05f),
-                        borderColor.copy(alpha = 0.15f),
-                    )
-                ),
+                color = borderColor,
                 shape = RoundedCornerShape(cornerRadius)
             )
-            .padding(16.dp)
+            .padding(14.dp)
     ) {
         content()
     }
 }
-
-// —— 连接球：紫罗兰涟漪 + 青绿核心 ——
-val RippleViolet = Color(0xFFB299FF)
-val OrbCyanHigh = Color(0xFFC9FFF6)
-val OrbCyanMid = Color(0xFF27CFD6)
-val OrbCyanDeep = Color(0xFF0A8CA6)
-val OrbIdleHigh = Color(0xFF3C444D)
-val OrbIdleDeep = Color(0xFF10161D)
-
-/**
- * 三态连接球。
- *
- * - 未连接：灰色哑球，紫环静止且整体压暗，不产生任何涟漪动画。
- * - 连接中：青绿球体轻微呼吸，三圈紫罗兰涟漪快速外扩（约 2.1s 一轮）。
- * - 已连接：青绿球体常亮，涟漪放慢（约 4.6s 一轮），形成稳定呼吸感。
- *
- * 紫环为静态同心结构（带断口），涟漪是叠加在其上的动态层，二者互不干扰。
- */
-@Composable
-fun GlowingConnectionOrb(
-    state: ConnectionUIState,
-    onConnectClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    diameter: Dp = 232.dp,
-) {
-    val isConnected = state is ConnectionUIState.Connected
-    val isConnecting = state is ConnectionUIState.Connecting
-    val active = isConnected || isConnecting
-
-    val transition = rememberInfiniteTransition(label = "OrbRipple")
-    val ripple by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(if (isConnecting) 2100 else 4600, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "ripple",
-    )
-    val pulse by transition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.035f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1600, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "pulse",
-    )
-
-    val orbDiameter = diameter * 0.42f
-
-    Box(
-        modifier = modifier
-            .size(diameter)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onConnectClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        // 静态紫环 + 动态涟漪
-        Canvas(modifier = Modifier.size(diameter)) {
-            val c = center
-            val maxR = size.minDimension / 2f
-            val orbR = maxR * 0.42f
-
-            // 右上角紫罗兰氛围光
-            if (active) {
-                val glowCenter = Offset(c.x + maxR * 0.26f, c.y - maxR * 0.24f)
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(RippleViolet.copy(alpha = 0.30f), Color.Transparent),
-                        center = glowCenter,
-                        radius = maxR * 0.66f,
-                    ),
-                    radius = maxR * 0.66f,
-                    center = glowCenter,
-                )
-            }
-
-            // 7 圈同心紫环，逐层变淡并带断口
-            val ratios = floatArrayOf(0.50f, 0.58f, 0.66f, 0.74f, 0.82f, 0.90f, 0.97f)
-            val alphas = floatArrayOf(0.46f, 0.40f, 0.34f, 0.28f, 0.22f, 0.16f, 0.11f)
-            ratios.forEachIndexed { i, ratio ->
-                val r = maxR * ratio
-                val pattern = floatArrayOf(
-                    r * 1.55f, r * 0.085f,
-                    r * 0.62f, r * 0.065f,
-                )
-                drawCircle(
-                    color = RippleViolet.copy(alpha = if (active) alphas[i] else alphas[i] * 0.55f),
-                    radius = r,
-                    style = Stroke(
-                        width = 1f,
-                        pathEffect = PathEffect.dashPathEffect(pattern, r * (0.23f * i)),
-                    ),
-                )
-            }
-
-            // 三圈错相位涟漪
-            if (active) {
-                repeat(3) { i ->
-                    val p = (ripple + i / 3f) % 1f
-                    drawCircle(
-                        color = RippleViolet.copy(alpha = (1f - p) * 0.55f),
-                        radius = orbR + (maxR - orbR) * p,
-                        style = Stroke(width = 1.3f),
-                    )
-                }
-            }
-        }
-
-        // 球体外层辉光
-        Box(
-            modifier = Modifier
-                .size(diameter * 0.82f)
-                .drawBehind {
-                    if (active) {
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    OrbCyanMid.copy(alpha = if (isConnected) 0.34f else 0.22f),
-                                    Color.Transparent,
-                                ),
-                                center = center,
-                                radius = size.minDimension / 2f,
-                            ),
-                        )
-                    }
-                },
-        )
-
-        // 青绿核心球
-        Box(
-            modifier = Modifier
-                .size(orbDiameter)
-                .graphicsLayer {
-                    if (isConnecting) {
-                        scaleX = pulse
-                        scaleY = pulse
-                    }
-                }
-                .clip(CircleShape)
-                .drawBehind {
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = if (active) {
-                                listOf(OrbCyanHigh, OrbCyanMid, OrbCyanDeep)
-                            } else {
-                                listOf(OrbIdleHigh, Color(0xFF232B34), OrbIdleDeep)
-                            },
-                            center = Offset(size.width * 0.33f, size.height * 0.24f),
-                            radius = size.width * 0.95f,
-                        ),
-                    )
-                    if (active) {
-                        // 左上高光
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(Color.White.copy(alpha = 0.45f), Color.Transparent),
-                                center = Offset(size.width * 0.32f, size.height * 0.2f),
-                                radius = size.width * 0.3f,
-                            ),
-                        )
-                    }
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(
-                    id = if (isConnected) R.drawable.ic_on_button else R.drawable.ic_connection_icon,
-                ),
-                contentDescription = null,
-                modifier = Modifier.size((orbDiameter.value * 0.30f).dp),
-                tint = if (active) Color(0xFF04323B) else TextMuted,
-            )
-        }
-    }
-}
-
-
 private val countryZhMap = mapOf(
     "hong kong" to "香港", "singapore" to "新加坡", "japan" to "日本",
     "united states" to "美国", "usa" to "美国", "us" to "美国", "u.s." to "美国", "canada" to "加拿大",
@@ -329,7 +184,7 @@ private val countryZhMap = mapOf(
     "andorra" to "安道尔", "north macedonia" to "北马其顿", "bosnia and herzegovina" to "波黑",
     "montenegro" to "黑山", "belarus" to "白俄罗斯", "uzbekistan" to "乌兹别克斯坦",
     "kyrgyzstan" to "吉尔吉斯斯坦", "tajikistan" to "塔吉克斯坦", "turkmenistan" to "土库曼斯坦",
-    "azerbaijan" to "阿塞拜疆", "afghanistan" to "阿富汗", "syria to" to "叙利亚",
+    "azerbaijan" to "阿塞拜疆", "afghanistan" to "阿富汗", "syria" to "叙利亚",
     "yemen" to "也门", "libya" to "利比亚", "sudan" to "苏丹",
     "senegal" to "塞内加尔", "cameroon" to "喀麦隆", "zimbabwe" to "津巴布韦",
     "zambia" to "赞比亚", "mozambique" to "莫桑比克", "angola" to "安哥拉",
@@ -388,85 +243,10 @@ fun formatTrafficSpeed(bytesPerSec: Long): String {
     }
 }
 
-/**
- * Real-time Hardware Accelerated Spline Waveform Canvas
- */
-@Composable
-fun LiveWaveformCanvas(
-    isConnected: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "WaveAnimation")
-    val phase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 6.28318f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "phase",
-    )
-
-    Box(modifier = modifier) {
-        Canvas(modifier = Modifier.fillMaxWidth().height(65.dp)) {
-            val width = size.width
-            val height = size.height
-
-            if (isConnected) {
-                // Downlink Cyan Wave
-                val pathDown = Path()
-                pathDown.moveTo(0f, height * 0.6f)
-                val points = 24
-                for (i in 0..points) {
-                    val x = (width / points) * i
-                    val sinFactor = Math.sin((i * 0.45 + phase).toDouble()).toFloat()
-                    val cosFactor = Math.cos((i * 0.25 - phase).toDouble()).toFloat()
-                    val y = (height * 0.5f) + (sinFactor * 18f) + (cosFactor * 8f)
-                    pathDown.lineTo(x, y.coerceIn(4f, height - 4f))
-                }
-                drawPath(
-                    path = pathDown,
-                    color = NeonCyan,
-                    style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
-                )
-
-                // Uplink Purple Wave
-                val pathUp = Path()
-                pathUp.moveTo(0f, height * 0.75f)
-                for (i in 0..points) {
-                    val x = (width / points) * i
-                    val sinFactor = Math.cos((i * 0.35 + phase * 1.2).toDouble()).toFloat()
-                    val y = (height * 0.7f) + (sinFactor * 12f)
-                    pathUp.lineTo(x, y.coerceIn(6f, height - 4f))
-                }
-                drawPath(
-                    path = pathUp,
-                    color = NeonPurple,
-                    style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round)
-                )
-            } else {
-                // Idle gentle wave
-                val pathIdle = Path()
-                pathIdle.moveTo(0f, height * 0.8f)
-                val points = 20
-                for (i in 0..points) {
-                    val x = (width / points) * i
-                    val sinFactor = Math.sin((i * 0.3 + phase * 0.5).toDouble()).toFloat()
-                    val y = (height * 0.8f) + (sinFactor * 5f)
-                    pathIdle.lineTo(x, y)
-                }
-                drawPath(
-                    path = pathIdle,
-                    color = TextMuted.copy(alpha = 0.4f),
-                    style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
-                )
-            }
-        }
-    }
-}
 
 /**
- * Suspended Floating Glass Dock Navigation Bar
+ * Fixed Solid Glass Dock Navigation Bar (Zero Click-Through / Click Penetration)
+ * Pinned to bottom, full width, 100% touch consumption, zero gap between categories.
  */
 @Composable
 fun FloatingGlassDock(
@@ -477,34 +257,41 @@ fun FloatingGlassDock(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(32.dp))
-            .background(Color(0xE60F1420))
+            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { /* Intercept all touches to prevent click-through to underlying cards */ }
+            .background(LocalGlassColors.current.surface.copy(alpha = 0.98f))
             .border(
                 width = 1.dp,
-                color = Color(0x1FFFFFFF),
-                shape = RoundedCornerShape(32.dp)
+                color = LocalGlassColors.current.border,
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .navigationBarsPadding()
+            .height(62.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround,
+            modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             DockItem(
-                title = "控制台",
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                title = "仪表盘",
                 iconRes = R.drawable.ic_preferences_icon,
                 isSelected = currentTabIndex == 0,
                 onClick = { onTabSelected(0) }
             )
             DockItem(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 title = "节点矩阵",
                 iconRes = R.drawable.ic_location_load,
                 isSelected = currentTabIndex == 1,
                 onClick = { onTabSelected(1) }
             )
             DockItem(
-                title = "偏好设置",
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                title = "设置",
                 iconRes = R.drawable.ic_feel,
                 isSelected = currentTabIndex == 2,
                 onClick = { onTabSelected(2) }
@@ -519,29 +306,29 @@ private fun DockItem(
     iconRes: Int,
     isSelected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier
+        modifier = modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 12.dp, vertical = 4.dp)
     ) {
         Icon(
             painter = painterResource(id = iconRes),
             contentDescription = title,
             modifier = Modifier.size(22.dp),
-            tint = if (isSelected) NeonCyan else TextMuted
+            tint = if (isSelected) LocalGlassColors.current.accent else TextMuted
         )
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(3.dp))
         Text(
             text = title,
             color = if (isSelected) NeonCyan else TextMuted,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
     }
@@ -619,7 +406,7 @@ fun CyberTopAppBar(
 }
 
 /**
- * Modern Cyber Switch with Glowing States
+ * Modern Cyber Switch with Subtle Glow (Compact & Refined)
  */
 @Composable
 fun CyberSwitch(
@@ -629,16 +416,16 @@ fun CyberSwitch(
     enabled: Boolean = true,
 ) {
     val thumbOffset by androidx.compose.animation.core.animateDpAsState(
-        targetValue = if (checked) 26.dp else 3.dp,
+        targetValue = if (checked) 25.dp else 3.dp,
         animationSpec = androidx.compose.animation.core.tween(180),
         label = "thumbOffset"
     )
     val trackColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (checked) Color(0x334FF0C0) else Color(0x14FFFFFF),
+        targetValue = if (checked) Color(0x284FF0C0) else Color(0x14FFFFFF),
         label = "track"
     )
     val borderColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (checked) Color(0x884FF0C0) else Color(0x24FFFFFF),
+        targetValue = if (checked) Color(0x774FF0C0) else Color(0x24FFFFFF),
         label = "border"
     )
     val thumbColor by androidx.compose.animation.animateColorAsState(
@@ -648,23 +435,20 @@ fun CyberSwitch(
 
     Box(
         modifier = modifier
-            .size(width = 54.dp, height = 31.dp)
-            .drawBehind {
-                if (!checked) return@drawBehind
-                val r = size.maxDimension
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF4FF0C0).copy(alpha = 0.20f), Color.Transparent),
-                        center = center,
-                        radius = r
-                    ),
-                    radius = r,
-                    center = center
-                )
-            }
-            .clip(RoundedCornerShape(16.dp))
+            .size(width = 50.dp, height = 28.dp)
+            .then(
+                if (checked) {
+                    Modifier.shadow(
+                        elevation = 2.dp,
+                        shape = RoundedCornerShape(14.dp),
+                        spotColor = Color(0xFF4FF0C0),
+                        ambientColor = Color(0xFF4FF0C0)
+                    )
+                } else Modifier
+            )
+            .clip(RoundedCornerShape(14.dp))
             .background(trackColor)
-            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(14.dp))
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
@@ -675,24 +459,7 @@ fun CyberSwitch(
         Box(
             modifier = Modifier
                 .padding(start = thumbOffset)
-                .size(25.dp)
-                .drawBehind {
-                    if (checked) {
-                        val r = size.maxDimension * 0.9f
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    Color(0xFF4FF0C0).copy(alpha = 0.55f),
-                                    Color.Transparent
-                                ),
-                                center = center,
-                                radius = r
-                            ),
-                            radius = r,
-                            center = center
-                        )
-                    }
-                }
+                .size(22.dp)
                 .clip(CircleShape)
                 .background(thumbColor)
         )
@@ -709,8 +476,8 @@ fun CyberSegmented(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(13.dp))
-            .background(Color(0x14FFFFFF))
-            .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(13.dp))
+            .background(LocalGlassColors.current.nestedSurface)
+            .border(1.dp, LocalGlassColors.current.borderSubtle, RoundedCornerShape(13.dp))
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -720,12 +487,12 @@ fun CyberSegmented(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (selected) NeonGreen.copy(alpha = 0.14f) else Color.Transparent)
+                    .background(if (selected) LocalGlassColors.current.accentMuted else Color.Transparent)
                     .then(
                         if (selected) {
                             Modifier.border(
                                 width = 1.dp,
-                                color = NeonGreen.copy(alpha = 0.28f),
+                                color = LocalGlassColors.current.accent,
                                 shape = RoundedCornerShape(10.dp)
                             )
                         } else {
@@ -741,7 +508,7 @@ fun CyberSegmented(
             ) {
                 Text(
                     text = label,
-                    color = if (selected) NeonGreen else TextSecondary,
+                    color = if (selected) LocalGlassColors.current.accent else TextSecondary,
                     fontSize = 12.sp,
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                     maxLines = 1
@@ -796,6 +563,45 @@ fun CyberBadge(
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace
+        )
+    }
+}
+
+/**
+ * Global Cyber PRO Badge (Rectangular with subtle golden glow)
+ */
+@Composable
+fun CyberProBadge(
+    modifier: Modifier = Modifier,
+    text: String = "PRO",
+) {
+    Box(
+        modifier = modifier
+            .shadow(
+                elevation = 3.dp,
+                shape = RoundedCornerShape(3.dp),
+                spotColor = Color(0xFFFFA751),
+                ambientColor = Color(0xFFFFA751),
+            )
+            .height(13.5.dp)
+            .defaultMinSize(minWidth = 24.3.dp)
+            .clip(RoundedCornerShape(3.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFFFFE259), Color(0xFFFFA751)),
+                ),
+            )
+            .border(0.5.dp, Color(0x99FFFFFF), RoundedCornerShape(3.dp))
+            .padding(horizontal = 4.5.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            color = Color.Black,
+            fontSize = 7.5.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 0.6.sp,
+            lineHeight = 8.5.sp,
         )
     }
 }
@@ -944,7 +750,7 @@ fun CyberTextField(
 }
 
 /**
- * Cyber Glass Button
+ * Cyber Glass Button (Clean & Glow-Free)
  */
 @Composable
 fun CyberButton(
@@ -956,8 +762,7 @@ fun CyberButton(
 ) {
     Box(
         modifier = modifier
-            .softGlow(color, enabled, 14.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(
                 if (enabled) {
                     Brush.verticalGradient(
@@ -972,7 +777,7 @@ fun CyberButton(
             .border(
                 1.dp,
                 if (enabled) color.copy(alpha = 0.45f) else Color(0x22FFFFFF),
-                RoundedCornerShape(14.dp)
+                RoundedCornerShape(12.dp)
             )
             .clickable(
                 enabled = enabled,
@@ -980,13 +785,13 @@ fun CyberButton(
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = if (enabled) color else TextMuted,
-            fontSize = 13.sp,
+            fontSize = 12.5.sp,
             fontWeight = FontWeight.Bold
         )
     }

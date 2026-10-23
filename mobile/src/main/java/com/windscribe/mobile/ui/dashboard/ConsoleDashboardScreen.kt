@@ -1,5 +1,20 @@
 package com.windscribe.mobile.ui.dashboard
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+
+
+import com.windscribe.mobile.ui.common.GlassBorderColor
+import com.windscribe.mobile.ui.common.PurpleAccent
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.Canvas
+
+import com.windscribe.vpn.Windscribe
+
 import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -12,6 +27,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +51,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -53,6 +71,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
@@ -70,8 +89,20 @@ import com.windscribe.mobile.ui.common.FloatingGlassDock
 import com.windscribe.mobile.ui.common.GlassNestedColor
 import com.windscribe.mobile.ui.common.GlassSurface
 import com.windscribe.mobile.ui.common.GlassSurfaceColor
+import com.windscribe.mobile.ui.common.LocalGlassColors
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import com.windscribe.mobile.ui.common.getLatencyColor
+
+import com.windscribe.mobile.ui.common.CyberProBadge
 import com.windscribe.mobile.ui.common.CyberSegmented
-import com.windscribe.mobile.ui.common.GlowingConnectionOrb
 import com.windscribe.mobile.ui.common.NeonCyan
 import com.windscribe.mobile.ui.common.NeonGreen
 import com.windscribe.mobile.ui.common.NeonPurple
@@ -82,6 +113,8 @@ import com.windscribe.mobile.ui.common.TextSecondary
 import com.windscribe.mobile.ui.common.countryCodeToEmoji
 import com.windscribe.mobile.ui.common.countryNameToZh
 import com.windscribe.mobile.ui.common.formatTrafficSpeed
+import com.windscribe.vpn.commonutils.FlagIconResource
+import androidx.compose.ui.draw.alpha
 import com.windscribe.mobile.ui.connection.BridgeApiViewModel
 import com.windscribe.mobile.ui.connection.BridgeApiViewModelImpl
 import com.windscribe.mobile.ui.connection.ConnectionUIState
@@ -99,11 +132,23 @@ import com.windscribe.mobile.ui.nav.Screen
 import com.windscribe.mobile.ui.preferences.main.MainMenuViewModel
 import com.windscribe.mobile.ui.preferences.main.MainMenuViewModelImpl
 import com.windscribe.mobile.ui.serverlist.ListState
+import com.windscribe.mobile.ui.serverlist.ServerListItem
 import com.windscribe.mobile.ui.serverlist.ServerListType
 import com.windscribe.mobile.ui.serverlist.ServerViewModel
 import com.windscribe.mobile.ui.serverlist.ServerViewModelImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+
+private object DashboardSessionState {
+    var connectedStartTime: Long? = null
+    var sessionTxBytes: Long = 0L
+    var sessionRxBytes: Long = 0L
+    var txSpeedText: String = "0B/s"
+    var rxSpeedText: String = "0B/s"
+    val speedHistory = mutableListOf<Float>(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
+}
+
 
 /**
  * 100% Cyber-Glassmorphism Dashboard Screen
@@ -147,46 +192,99 @@ fun ConsoleDashboardScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(CyberBackground)
-            .navigationBarsPadding()
     ) {
-        // Tab contents
-        when (currentTabIndex) {
-            0 -> ConsoleTab(
-                connectionViewmodel = connectionViewmodel,
-                serverViewModel = serverViewModel,
-                homeViewmodel = homeViewmodel,
-                bridgeApiViewModel = bridgeApiViewModel,
-                onSwitchToNodes = { currentTabIndex = 1 }
-            )
-            1 -> CyberNodesMatrix(
-                serverViewModel = serverViewModel,
-                connectionViewmodel = connectionViewmodel,
-                homeViewmodel = homeViewmodel
-            )
-            2 -> SettingsTab(
-                homeViewmodel = homeViewmodel,
-                connectionViewmodel = connectionViewmodel,
-                mainMenuViewModel = mainMenuViewModel
-            )
+        // Tab contents with smooth cross-fade animation
+        AnimatedContent(
+            targetState = currentTabIndex,
+            transitionSpec = {
+                (fadeIn(animationSpec = tween(200, easing = LinearOutSlowInEasing)) +
+                 scaleIn(initialScale = 0.99f, animationSpec = tween(200)))
+                    .togetherWith(
+                        fadeOut(animationSpec = tween(160, easing = FastOutLinearInEasing)) +
+                        scaleOut(targetScale = 0.99f, animationSpec = tween(160))
+                    )
+            },
+            label = "MainTabsCrossfade",
+            modifier = Modifier.fillMaxSize()
+        ) { tabIndex ->
+            when (tabIndex) {
+                0 -> ConsoleTab(
+                    connectionViewmodel = connectionViewmodel,
+                    serverViewModel = serverViewModel,
+                    homeViewmodel = homeViewmodel,
+                    bridgeApiViewModel = bridgeApiViewModel,
+                    onSwitchToNodes = { currentTabIndex = 1 }
+                )
+                1 -> CyberNodesMatrix(
+                    serverViewModel = serverViewModel,
+                    connectionViewmodel = connectionViewmodel,
+                    homeViewmodel = homeViewmodel
+                )
+                2 -> SettingsTab(
+                    homeViewmodel = homeViewmodel,
+                    connectionViewmodel = connectionViewmodel,
+                    mainMenuViewModel = mainMenuViewModel
+                )
+            }
         }
 
-        // Floating Glass Dock at bottom
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 14.dp)
-        ) {
-            FloatingGlassDock(
-                currentTabIndex = currentTabIndex,
-                onTabSelected = { currentTabIndex = it }
-            )
+        // Floating Action Button (FAB) only on Dashboard Tab (0)
+        val connStateForFab by connectionViewmodel.connectionUIState.collectAsState()
+        val isConnectedForFab = connStateForFab is ConnectionUIState.Connected
+        val isConnectingForFab = connStateForFab is ConnectionUIState.Connecting
+
+        if (currentTabIndex == 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
+                    .padding(end = 20.dp, bottom = 78.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(58.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(PurpleAccent)
+                        .clickable { connectionViewmodel.onConnectButtonClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    when {
+                        isConnectingForFab -> CircularProgressIndicator(
+                            color = Color.White,
+                            strokeWidth = 2.5.dp,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        isConnectedForFab -> Canvas(modifier = Modifier.size(18.dp)) {
+                            drawRoundRect(
+                                color = Color.White,
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx(), 3.dp.toPx())
+                            )
+                        }
+                        else -> Canvas(modifier = Modifier.size(22.dp)) {
+                            val path = Path().apply {
+                                moveTo(size.width * 0.28f, size.height * 0.18f)
+                                lineTo(size.width * 0.85f, size.height * 0.50f)
+                                lineTo(size.width * 0.28f, size.height * 0.82f)
+                                close()
+                            }
+                            drawPath(path, color = Color.White)
+                        }
+                    }
+                }
+            }
         }
+
+        // Fixed Solid Glass Dock at bottom (Zero click penetration / 100% interception)
+        FloatingGlassDock(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            currentTabIndex = currentTabIndex,
+            onTabSelected = { currentTabIndex = it }
+        )
     }
 }
 
 /**
- * Tab 0: Core Cyber Dashboard (Strict 1:1 Match with Screenshot 1)
+ * Tab 0: Core Cyber Dashboard (Strict 1:1 Match with Prototype Screenshot)
  */
 @Composable
 private fun ConsoleTab(
@@ -197,40 +295,111 @@ private fun ConsoleTab(
     onSwitchToNodes: () -> Unit,
 ) {
     val context = LocalContext.current
-    val navController = LocalNavController.current
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val connectionState by connectionViewmodel.connectionUIState.collectAsState()
     val isConnected = connectionState is ConnectionUIState.Connected
     val isConnecting = connectionState is ConnectionUIState.Connecting
 
-    // Real selected city ID from ViewModel
     val selectedCityId by connectionViewmodel.selectedCityId.collectAsState()
+    val ipState by connectionViewmodel.ipState.collectAsState()
+    val serverState by serverViewModel.serverListState.collectAsState()
 
-    // Real latency and servers health state
-    val latencyState by serverViewModel.latencyListState.collectAsState()
-    val serversState by serverViewModel.serversState.collectAsState()
-    val latencyMap = (latencyState as? ListState.Success)?.data?.associateBy { it.id }
-    val serverMap = (serversState as? com.windscribe.vpn.serverlist.entity.ServerMapState.Success)?.data
+    var isDetectingNetwork by remember { mutableStateOf(false) }
 
-    val activePing = latencyMap?.get(selectedCityId)?.time
-    val pingText = if (activePing != null && activePing > 0) "${activePing} ms" else (if (isConnected) "24 ms" else "-- ms")
+    // Location / Node information
+    val locationInfo = (connectionState.locationInfo as? LocationInfoState.Success)?.locationInfo
+    val fallbackItems = (serverState as? ListState.Success<ServerListItem>)?.data
+    val fallbackCity = fallbackItems
+        ?.flatMap { it.datacenters }
+        ?.firstOrNull { it.id == selectedCityId }
+    val fallbackRegion = fallbackItems
+        ?.firstOrNull { it.datacenters.any { dc -> dc.id == selectedCityId } }?.region
 
-    val activeServers = serverMap?.get(selectedCityId)
-    val activeLoad = if (!activeServers.isNullOrEmpty()) {
-        activeServers.map { it.health }.average().toInt().coerceIn(5, 99)
+    val nodeName = if (isConnected) {
+        locationInfo?.nodeName
+            ?: fallbackCity?.nodeName
+            ?: countryNameToZh(fallbackRegion?.name)
+            ?: "直连节点"
     } else {
-        12
+        "本地直连网络"
+    }
+    val nickname = if (isConnected) {
+        locationInfo?.nickName
+            ?: fallbackCity?.nickName
+            ?: "已连接"
+    } else {
+        "未开启代理"
+    }
+    val flagEmoji = if (isConnected) {
+        countryCodeToEmoji(
+            locationInfo?.country
+                ?: fallbackRegion?.countryCode
+                ?: "US"
+        )
+    } else {
+        "🌐"
     }
 
-    // Real-time Traffic Speeds measured via TrafficStats
-    var downSpeed by remember { mutableStateOf("0.0 KB/s") }
-    var upSpeed by remember { mutableStateOf("0.0 KB/s") }
+    // Real-time Traffic Speeds & duration backed by DashboardSessionState across Tab switches
+    var txSpeedText by remember { mutableStateOf(DashboardSessionState.txSpeedText) }
+    var rxSpeedText by remember { mutableStateOf(DashboardSessionState.rxSpeedText) }
+    var sessionTxBytes by remember { androidx.compose.runtime.mutableLongStateOf(DashboardSessionState.sessionTxBytes) }
+    var sessionRxBytes by remember { androidx.compose.runtime.mutableLongStateOf(DashboardSessionState.sessionRxBytes) }
+    val speedHistory = remember {
+        mutableStateListOf<Float>().apply {
+            addAll(DashboardSessionState.speedHistory)
+        }
+    }
+
+    var durationSeconds by remember { mutableStateOf(0L) }
 
     LaunchedEffect(isConnected) {
+        if (isConnected) {
+            if (DashboardSessionState.connectedStartTime == null) {
+                DashboardSessionState.connectedStartTime = System.currentTimeMillis()
+            }
+            while (isActive) {
+                val start = DashboardSessionState.connectedStartTime ?: System.currentTimeMillis()
+                durationSeconds = (System.currentTimeMillis() - start) / 1000
+                delay(1000)
+            }
+        } else {
+            DashboardSessionState.connectedStartTime = null
+            DashboardSessionState.sessionTxBytes = 0L
+            DashboardSessionState.sessionRxBytes = 0L
+            DashboardSessionState.txSpeedText = "0B/s"
+            DashboardSessionState.rxSpeedText = "0B/s"
+            DashboardSessionState.speedHistory.clear()
+            repeat(16) { DashboardSessionState.speedHistory.add(0f) }
+            durationSeconds = 0L
+        }
+    }
+
+    val durationText = if (isConnected) {
+        val h = durationSeconds / 3600
+        val m = (durationSeconds % 3600) / 60
+        val s = durationSeconds % 60
+        "%02d:%02d:%02d".format(h, m, s)
+    } else {
+        "--:--:--"
+    }
+
+    // Traffic speed polling and session traffic accumulation
+    LaunchedEffect(isConnected) {
         if (!isConnected) {
-            downSpeed = "0.0 KB/s"
-            upSpeed = "0.0 KB/s"
+            txSpeedText = "0B/s"
+            rxSpeedText = "0B/s"
+            DashboardSessionState.txSpeedText = "0B/s"
+            DashboardSessionState.rxSpeedText = "0B/s"
+            sessionTxBytes = 0L
+            sessionRxBytes = 0L
+            speedHistory.clear()
+            repeat(16) { speedHistory.add(0f) }
             return@LaunchedEffect
         }
+        // 保持现存累计值，防止切页被清零
+        sessionTxBytes = DashboardSessionState.sessionTxBytes
+        sessionRxBytes = DashboardSessionState.sessionRxBytes
         var lastRx = TrafficStats.getTotalRxBytes()
         var lastTx = TrafficStats.getTotalTxBytes()
         while (isActive) {
@@ -242,29 +411,52 @@ private fun ConsoleTab(
             lastRx = curRx
             lastTx = curTx
 
-            downSpeed = formatTrafficSpeed(rxDelta)
-            upSpeed = formatTrafficSpeed(txDelta)
+            sessionTxBytes += txDelta
+            sessionRxBytes += rxDelta
+            DashboardSessionState.sessionTxBytes = sessionTxBytes
+            DashboardSessionState.sessionRxBytes = sessionRxBytes
+
+            rxSpeedText = formatTrafficSpeed(rxDelta)
+            txSpeedText = formatTrafficSpeed(txDelta)
+            DashboardSessionState.rxSpeedText = rxSpeedText
+            DashboardSessionState.txSpeedText = txSpeedText
+
+            val totalSpeedKb = ((rxDelta + txDelta) / 1024f).coerceAtLeast(0f)
+            if (speedHistory.size >= 24) {
+                speedHistory.removeAt(0)
+            }
+            speedHistory.add(totalSpeedKb)
+            DashboardSessionState.speedHistory.clear()
+            DashboardSessionState.speedHistory.addAll(speedHistory)
         }
     }
 
-    val scrollState = rememberScrollState()
+    // Local IP
+    var lanIp by remember { mutableStateOf("--.--.--.--") }
+    LaunchedEffect(isConnected, ipState) {
+        val (ip, _) = withContext(Dispatchers.IO) {
+            getLocalIpAddress()
+        }
+        lanIp = ip
+    }
+    var isLanHighlighted by remember { mutableStateOf(false) }
 
-    // Extract current location info
-    val locationInfo = (connectionState.locationInfo as? LocationInfoState.Success)?.locationInfo
-    val nodeName = locationInfo?.nodeName ?: "香港"
-    val nickname = locationInfo?.nickName ?: "维多利亚"
-    val countryCode = locationInfo?.country ?: "HK"
-    val flagEmoji = countryCodeToEmoji(countryCode)
+    // Exit IP & Public IP (Authentic real IP flow, eliminating hardcoded fallbacks)
+    val exitIp = if (isConnected && ipState.isNotBlank()) ipState else (ipState.takeIf { it.isNotBlank() && !it.contains("--") } ?: Windscribe.appContext.preference.userIP ?: "--.--.--.--")
+
+    // Total session traffic bytes
+    val totalTrafficBytes = (sessionTxBytes + sessionRxBytes).coerceAtLeast(1)
+
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
-        // Top Header Bar (Screenshot 1: WINDSCRIBE [PRO] + SECURE TUNNEL + 选节点 ➔)
+        // Top App Bar: "仪表盘" + Right Action
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -272,345 +464,541 @@ private fun ConsoleTab(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Left: Brand Icon + Title & PRO Badge + SECURE TUNNEL
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0x14FFFFFF))
-                        .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "W",
-                        color = NeonCyan,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
+            Text(
+                text = "仪表盘",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.5).sp
+            )
 
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "WINDSCRIBE",
-                            color = TextPrimary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "PRO",
-                            color = NeonGreen,
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color(0x264FF0C0))
-                                .border(1.dp, Color(0x404FF0C0), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 5.dp, vertical = 1.dp)
-                        )
-                    }
-                    Text(
-                        text = "SECURE TUNNEL",
-                        color = TextSecondary,
-                        fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-            }
-
-            // Right: 选节点 ➔ Button
+            // Right edit / switch icon
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0x661E293B))
-                    .border(1.dp, Color(0x99334155), RoundedCornerShape(12.dp))
-                    .clickable(onClick = onSwitchToNodes)
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onSwitchToNodes),
                 contentAlignment = Alignment.Center
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "选节点",
-                        color = NeonCyan,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "➔",
-                        color = NeonCyan,
-                        fontSize = 12.sp
-                    )
-                }
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search_icon),
+                    contentDescription = "Switch Nodes",
+                    tint = TextSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Target Node Card (Placed ABOVE the Orb, Screenshot 1)
-        GlassSurface(
+        // Card 1: 网络速度 (Top Full-width Card with Waveform Curve)
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onSwitchToNodes),
-            cornerRadius = 18.dp,
-            borderColor = Color(0x33FFFFFF),
-            backgroundColor = Color(0xB30D1218)
+                .clip(RoundedCornerShape(18.dp))
+                .background(GlassSurfaceColor)
+                .border(1.dp, GlassBorderColor, RoundedCornerShape(18.dp))
+                .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = flagEmoji,
-                        fontSize = 32.sp
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "TARGET NODE",
-                                color = TextMuted,
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                letterSpacing = 1.sp
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "已就绪",
-                                color = NeonCyan,
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(Color(0x1FFFFFFF))
-                                    .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 6.dp, vertical = 1.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Header Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "$nodeName · $nickname",
-                            color = TextPrimary,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            text = "⚡",
+                            fontSize = 14.sp
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "负载 $activeLoad%",
-                                color = NeonGreen,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
-                            Text(
-                                text = " · ",
-                                color = TextMuted,
-                                fontSize = 11.sp
-                            )
-                            Text(
-                                text = pingText,
-                                color = NeonGreen,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "网络速度",
+                            color = TextPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
-                }
 
-                Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "点击切换",
-                        color = NeonCyan,
-                        fontSize = 11.sp,
+                        text = "↑ $txSpeedText   ↓ $rxSpeedText",
+                        color = TextSecondary,
+                        fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace
                     )
-                    Text(
-                        text = "›",
-                        color = TextSecondary,
-                        fontSize = 14.sp
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Waveform / Area Curve Chart
+                val linePath = remember { Path() }
+                val areaPath = remember { Path() }
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(84.dp)
+                ) {
+                    val w = size.width
+                    val h = size.height
+                    if (speedHistory.isEmpty()) return@Canvas
+
+                    val maxVal = (speedHistory.maxOrNull() ?: 10f).coerceAtLeast(10f)
+                    val stepX = w / (speedHistory.size - 1).coerceAtLeast(1)
+
+                    linePath.reset()
+                    areaPath.reset()
+
+                    speedHistory.forEachIndexed { i, speed ->
+                        val x = i * stepX
+                        val normalized = (speed / maxVal).coerceIn(0f, 1f)
+                        val y = h - (normalized * (h - 22f)) - 8f
+
+                        if (i == 0) {
+                            linePath.moveTo(x, y)
+                            areaPath.moveTo(x, y)
+                        } else {
+                            val prevX = (i - 1) * stepX
+                            val prevSpeed = speedHistory[i - 1]
+                            val prevNorm = (prevSpeed / maxVal).coerceIn(0f, 1f)
+                            val prevY = h - (prevNorm * (h - 22f)) - 8f
+                            val midX = (prevX + x) / 2f
+                            linePath.cubicTo(midX, prevY, midX, y, x, y)
+                            areaPath.cubicTo(midX, prevY, midX, y, x, y)
+                        }
+                    }
+
+                    areaPath.lineTo(w, h)
+                    areaPath.lineTo(0f, h)
+                    areaPath.close()
+
+                    // Draw area gradient
+                    drawPath(
+                        path = areaPath,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(PurpleAccent.copy(alpha = 0.38f), Color.Transparent),
+                            startY = 0f,
+                            endY = h
+                        )
+                    )
+
+                    // Draw glowing curve
+                    drawPath(
+                        path = linePath,
+                        color = NeonPurple,
+                        style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
+                    )
+
+                    // Subtle bottom baseline
+                    drawLine(
+                        brush = Brush.horizontalGradient(
+                            listOf(Color.Transparent, PurpleAccent.copy(alpha = 0.5f), Color.Transparent)
+                        ),
+                        start = Offset(0f, h - 1f),
+                        end = Offset(w, h - 1f),
+                        strokeWidth = 1.dp.toPx()
                     )
                 }
             }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Center Connection Orb
-        GlowingConnectionOrb(
-            state = connectionState,
-            onConnectClick = { connectionViewmodel.onConnectButtonClick() }
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // 状态文案跟随真实连接状态
-        Text(
-            text = when {
-                isConnected -> "已连接"
-                isConnecting -> "正在连接"
-                else -> "未连接"
-            },
-            color = when {
-                isConnected -> NeonGreen
-                isConnecting -> NeonCyan
-                else -> TextPrimary
-            },
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = when {
-                isConnected -> "隧道已激活 · 点击中央按钮断开"
-                isConnecting -> "正在握手 · 再次点击可中止"
-                else -> "点击中央按钮手动启动隧道"
-            },
-            color = TextMuted,
-            fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 实时指标条：三段等分，细线分隔
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xB30D1218))
-                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(16.dp))
-                .padding(vertical = 11.dp)
-        ) {
-            MetricCell("实测延迟", pingText, NeonGreen, Modifier.weight(1f))
-            Box(
-                Modifier
-                    .width(1.dp)
-                    .height(30.dp)
-                    .background(Color(0x14FFFFFF))
-            )
-            MetricCell("实时下行", downSpeed, TextPrimary, Modifier.weight(1f))
-            Box(
-                Modifier
-                    .width(1.dp)
-                    .height(30.dp)
-                    .background(Color(0x14FFFFFF))
-            )
-            MetricCell("实时上行", upSpeed, TextPrimary, Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Quick Launchers into Key Features (2 cards, Screenshot 1)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // Launcher 1: 应用分流
-            GlassSurface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { navController.navigate(Screen.SplitTunnel.route) },
-                cornerRadius = 14.dp,
-                borderColor = Color(0x1AFFFFFF),
-                backgroundColor = Color(0xB30D1218)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0x26B299FF)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "🔀",
-                            fontSize = 14.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            text = "应用分流",
-                            color = TextPrimary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "独家独立分流模式",
-                            color = TextMuted,
-                            fontSize = 9.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+        // Card: 当前连接的国家与地区 (全屏宽长面板，高度通高 108dp)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(108.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(GlassSurfaceColor)
+                .border(1.dp, GlassBorderColor, RoundedCornerShape(18.dp))
+                .clickable {
+                    if (isConnected) {
+                        onSwitchToNodes()
+                    } else {
+                        connectionViewmodel.onConnectButtonClick()
                     }
                 }
-            }
-
-            // Launcher 2: 反审查
-            GlassSurface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { navController.navigate(Screen.AntiCensorship.route) },
-                cornerRadius = 14.dp,
-                borderColor = Color(0x1AFFFFFF),
-                backgroundColor = Color(0xB30D1218)
+                .padding(14.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0x1FFFFFFF)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "🛡️",
-                            fontSize = 14.sp
+                            text = "🌐",
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "当前连接地区",
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            text = "反审查",
-                            color = TextPrimary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+
+                    when {
+                        isConnected -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(NeonGreen)
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "加密隧道已建立",
+                                    color = NeonGreen,
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        isConnecting -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(NeonYellow)
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "正在建立加密隧道...",
+                                    color = NeonYellow,
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        else -> {
+                            Text(
+                                text = "待机未连接",
+                                color = TextMuted,
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val currentCountryCode = if (isConnected) {
+                            locationInfo?.country ?: fallbackRegion?.countryCode ?: "US"
+                        } else {
+                            fallbackRegion?.countryCode ?: "US"
+                        }
+                        val flagResId = FlagIconResource.getSmallFlag(currentCountryCode)
+                        Image(
+                            painter = painterResource(id = flagResId),
+                            contentDescription = fallbackRegion?.name ?: "Country",
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, Color(0x33FFFFFF), CircleShape)
                         )
-                        Text(
-                            text = "协议混淆与微调",
-                            color = TextMuted,
-                            fontSize = 9.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = if (isConnected) "$nodeName · $nickname" else (fallbackCity?.let { "${countryNameToZh(fallbackRegion?.name)} · ${it.nickName ?: it.nodeName ?: "地区"}" } ?: "未选择地区"),
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = when {
+                                    isConnected -> fallbackCity?.nodeName ?: "专用节点通信中"
+                                    isConnecting -> "正在协商安全连接，点击可取消"
+                                    else -> "点击右下角按钮或区域卡片发起连接"
+                                },
+                                color = if (isConnecting) NeonYellow.copy(alpha = 0.85f) else TextMuted,
+                                fontSize = 11.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    if (fallbackCity?.linkSpeed != null && fallbackCity.linkSpeed >= 10000) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0x2638BDF8))
+                                .border(1.dp, Color(0x6638BDF8), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "10G 专线",
+                                color = NeonCyan,
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // Bottom clearance for FloatingGlassDock
-        Spacer(modifier = Modifier.height(110.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 2-Column Grid: 方案 B (左侧双 IP 融合卡片 + 连接时间，右侧会话流量通高齐平)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Column 1 (Left): 双 IP 融合卡片 (64dp) + 连接时间 (46dp), 间隔 8dp, 合计 118dp
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Card 1: 双 IP 融合卡片 (高 64dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (isLanHighlighted) LocalGlassColors.current.accentMuted else GlassSurfaceColor)
+                        .border(
+                            1.dp,
+                            if (isLanHighlighted) LocalGlassColors.current.accent else GlassBorderColor,
+                            RoundedCornerShape(14.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // 内网 IP 行 (点击切换高亮)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    isLanHighlighted = !isLanHighlighted
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "💻",
+                                    fontSize = 11.5.sp
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "内网",
+                                    color = TextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Text(
+                                text = lanIp,
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        // 出口 IP 行 (点击刷新)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (!isDetectingNetwork) {
+                                        isDetectingNetwork = true
+                                        connectionViewmodel.refreshNetworkDetection()
+                                        coroutineScope.launch {
+                                            delay(1000)
+                                            isDetectingNetwork = false
+                                        }
+                                    }
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "🌐",
+                                    fontSize = 11.5.sp
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "出口",
+                                    color = TextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Text(
+                                text = if (isDetectingNetwork) "刷新中..." else exitIp,
+                                color = if (isDetectingNetwork) Color.White.copy(alpha = 0.5f) else NeonCyan,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
+                // Card 2: 连接时间 (高 46dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(GlassSurfaceColor)
+                        .border(1.dp, GlassBorderColor, RoundedCornerShape(14.dp))
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "⏱️",
+                                fontSize = 12.sp
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "连接时间",
+                                color = TextSecondary,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        Text(
+                            text = durationText,
+                            color = NeonPurple,
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
+                }
+            }
+
+            // Column 2 (Right): 会话流量 (高 118dp，与左列两张卡片通高精准齐平)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(118.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(GlassSurfaceColor)
+                    .border(1.dp, GlassBorderColor, RoundedCornerShape(16.dp))
+                    .padding(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "🔄",
+                            fontSize = 12.sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "会话流量",
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Mini Donut Chart
+                        Canvas(modifier = Modifier.size(38.dp)) {
+                            val strokeW = 4.5.dp.toPx()
+                            drawCircle(
+                                color = Color(0xFF2B2D3E),
+                                style = Stroke(width = strokeW)
+                            )
+                            val sweep = ((sessionTxBytes.toFloat() / totalTrafficBytes) * 360f).coerceIn(25f, 335f)
+                            drawArc(
+                                color = NeonPurple,
+                                startAngle = -90f,
+                                sweepAngle = sweep,
+                                useCenter = false,
+                                style = Stroke(width = strokeW, cap = StrokeCap.Round)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Legend & formatted bytes
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = "↑ 上传", color = NeonPurple, fontSize = 10.sp)
+                                Text(
+                                    text = formatTrafficBytes(sessionTxBytes),
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = "↓ 下载", color = TextSecondary, fontSize = 10.sp)
+                                Text(
+                                    text = formatTrafficBytes(sessionRxBytes),
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Bottom clearance for dock and FAB
+        Spacer(modifier = Modifier.height(130.dp))
     }
 }
-
 /**
  * Tab 1: 100% Cyber-Glassmorphism Nodes Matrix (Strict 1:1 Match with Screenshot 2)
  */
@@ -628,16 +1016,32 @@ private fun CyberNodesMatrix(
     // Observe real selected city ID to highlight [已选中]
     val selectedCityId by connectionViewmodel.selectedCityId.collectAsState()
 
+    // Observe user preference for location health / load visibility
+    val showLocationLoad by homeViewmodel.showLocationLoad.collectAsState()
+
+    // Observe connection state to give feedback on latency test
+    val connectionUIState by connectionViewmodel.connectionUIState.collectAsState()
+    val isVpnActive = connectionUIState is ConnectionUIState.Connected || connectionUIState is ConnectionUIState.Connecting
+
     // Collect server lists & real health/latency states
     val serverState by serverViewModel.serverListState.collectAsState()
     val favState by serverViewModel.favouriteListState.collectAsState()
     val latencyState by serverViewModel.latencyListState.collectAsState()
     val serversState by serverViewModel.serversState.collectAsState()
 
-    val latencyMap = (latencyState as? ListState.Success)?.data?.associateBy { it.id }
+    val latencyMap = remember(latencyState) { (latencyState as? ListState.Success)?.data?.associateBy { it.id } }
     val serverMap = (serversState as? com.windscribe.vpn.serverlist.entity.ServerMapState.Success)?.data
 
     val expandedMap = remember { mutableStateMapOf<Int, Boolean>() }
+    val favExpandedMap = remember { mutableStateMapOf<Int, Boolean>() }
+
+    // Dynamic counts for total regions and total datacenters
+    val totalRegions = remember(serverState) { (serverState as? ListState.Success)?.data?.size ?: 0 }
+    val totalDatacenters = remember(serverState) { (serverState as? ListState.Success)?.data?.sumOf { it.datacenters.size } ?: 0 }
+    val statsText = if (totalRegions > 0) "$totalRegions 个国家 · $totalDatacenters 个地区" else "正在载入节点数据..."
+
+    val favCount = (favState as? ListState.Success)?.data?.size ?: 0
+    val favTabTitle = if (favCount > 0) "收藏 $favCount" else "收藏"
 
     Column(
         modifier = Modifier
@@ -645,76 +1049,61 @@ private fun CyberNodesMatrix(
             .statusBarsPadding()
             .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
-        // Search & Batch Ping Bar (Screenshot 2: Blank placeholder, 一键测速 pill button)
+        // Top Header: Title & Total Datacenters Summary + Batch Ping Button (ui_preview_v3.html)
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Search Input Field (No placeholder text, defaults blank)
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xB30D1218))
-                    .border(1.dp, Color(0x1FFFFFFF), RoundedCornerShape(16.dp))
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_search_icon),
-                        contentDescription = "Search",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    BasicTextField(
-                        value = searchKeyword,
-                        onValueChange = { serverViewModel.onQueryTextChange(it) },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            color = TextPrimary,
-                            fontSize = 12.sp
-                        ),
-                        cursorBrush = SolidColor(NeonCyan),
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (searchKeyword.isNotEmpty()) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_close),
-                            contentDescription = "Clear",
-                            tint = TextMuted,
-                            modifier = Modifier
-                                .size(14.dp)
-                                .clickable { serverViewModel.clearSearch() }
-                        )
-                    }
-                }
+            Column {
+                Text(
+                    text = "节点矩阵",
+                    color = TextPrimary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = statsText,
+                    color = TextMuted,
+                    fontSize = 11.sp
+                )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Batch Ping Button (Wired to real latency test)
+            // Batch Ping Button (Purple themed, unblocked)
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0x14FFFFFF))
-                    .border(1.dp, Color(0x26FFFFFF), RoundedCornerShape(16.dp))
-                    .clickable { serverViewModel.refresh(selectedType) }
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .background(Color(0x1F7C68EE))
+                    .border(1.dp, Color(0x4D7C68EE), RoundedCornerShape(16.dp))
+                    .clickable {
+                        if (!isRefreshing) {
+                            serverViewModel.refresh(selectedType)
+                        }
+                    }
+                    .padding(horizontal = 13.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (isRefreshing) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(12.dp),
-                            color = NeonCyan,
+                            color = NeonPurple,
                             strokeWidth = 2.dp
                         )
                         Spacer(modifier = Modifier.width(6.dp))
+                    } else {
+                        Text(
+                            text = "◈ ",
+                            color = NeonPurple,
+                            fontSize = 11.sp
+                        )
                     }
                     Text(
                         text = "一键测速",
-                        color = NeonCyan,
+                        color = NeonPurple,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -724,10 +1113,75 @@ private fun CyberNodesMatrix(
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        // Full-width Search Input Field (ui_preview_v3.html)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(LocalGlassColors.current.surface)
+                .border(1.dp, LocalGlassColors.current.border, RoundedCornerShape(16.dp))
+                .padding(horizontal = 14.dp, vertical = 11.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search_icon),
+                    contentDescription = "Search",
+                    tint = TextSecondary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                BasicTextField(
+                    value = searchKeyword,
+                    onValueChange = { serverViewModel.onQueryTextChange(it) },
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = TextPrimary,
+                        fontSize = 13.sp
+                    ),
+                    cursorBrush = SolidColor(NeonCyan),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    modifier = Modifier.weight(1f),
+                    decorationBox = { innerTextField ->
+                        if (searchKeyword.isEmpty()) {
+                            Text(
+                                text = "搜索国家、城市或代码...",
+                                color = TextMuted,
+                                fontSize = 13.sp
+                            )
+                        }
+                        innerTextField()
+                    }
+                )
+                if (searchKeyword.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                serverViewModel.clearSearch()
+                                expandedMap.clear()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = "Clear",
+                            tint = TextMuted,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
         // 全部 / 收藏 分段控件
         CyberSegmented(
             modifier = Modifier.fillMaxWidth(),
-            options = listOf("全部", "收藏"),
+            options = listOf("全部", favTabTitle),
             selectedIndex = if (selectedType == ServerListType.Fav) 1 else 0,
             onSelect = { index ->
                 serverViewModel.setSelectedType(
@@ -735,6 +1189,38 @@ private fun CyberNodesMatrix(
                 )
             }
         )
+
+        val filteredServers = remember(serverState, searchKeyword) {
+            val list = (serverState as? ListState.Success)?.data ?: return@remember emptyList()
+            if (searchKeyword.isBlank()) list
+            else {
+                list.filter { item ->
+                    val regionEnMatch = item.region.name?.contains(searchKeyword, ignoreCase = true) == true
+                    val regionZhMatch = countryNameToZh(item.region.name).contains(searchKeyword, ignoreCase = true)
+                    val ccMatch = item.region.countryCode?.contains(searchKeyword, ignoreCase = true) == true
+                    val cityMatch = item.datacenters.any {
+                        (it.nickName?.contains(searchKeyword, ignoreCase = true) == true) ||
+                        (it.nodeName?.contains(searchKeyword, ignoreCase = true) == true)
+                    }
+                    regionEnMatch || regionZhMatch || ccMatch || cityMatch
+                }
+            }
+        }
+
+        val filteredFavs = remember(favState, searchKeyword) {
+            val list = (favState as? ListState.Success)?.data ?: return@remember emptyList()
+            if (searchKeyword.isBlank()) list
+            else {
+                list.filter { item ->
+                    val nickMatch = item.city.nickName?.contains(searchKeyword, ignoreCase = true) == true
+                    val nodeMatch = item.city.nodeName?.contains(searchKeyword, ignoreCase = true) == true
+                    val zhMatch = countryNameToZh(item.region.name).contains(searchKeyword, ignoreCase = true)
+                    val enMatch = item.region.name?.contains(searchKeyword, ignoreCase = true) == true
+                    val ccMatch = (item.countryCode ?: item.region.countryCode)?.contains(searchKeyword, ignoreCase = true) == true
+                    nickMatch || nodeMatch || zhMatch || enMatch || ccMatch
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -761,225 +1247,287 @@ private fun CyberNodesMatrix(
                             }
                         }
                         is ListState.Success -> {
-                            val itemsList = state.data.filter { item ->
-                                if (searchKeyword.isEmpty()) true
-                                else {
-                                    val regionMatch = item.region.name?.contains(searchKeyword, ignoreCase = true) == true
-                                    val cityMatch = item.datacenters.any {
-                                        (it.nickName?.contains(searchKeyword, ignoreCase = true) == true) ||
-                                        (it.nodeName?.contains(searchKeyword, ignoreCase = true) == true)
+                            val itemsList = filteredServers
+
+                            if (itemsList.isEmpty()) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 48.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (searchKeyword.isNotBlank()) "未找到与「$searchKeyword」匹配的节点" else "暂无可用节点",
+                                            color = TextMuted,
+                                            fontSize = 13.sp
+                                        )
                                     }
-                                    regionMatch || cityMatch
                                 }
-                            }
+                            } else {
+                                items(itemsList, key = { it.id }) { item ->
+                                    val region = item.region
+                                    val datacenters = item.datacenters
 
-                            items(itemsList, key = { it.id }) { item ->
-                                val region = item.region
-                                val datacenters = item.datacenters
-                                val isExpanded = expandedMap[item.id] ?: false
-                                val emoji = countryCodeToEmoji(region.countryCode)
+                                    val regionEnMatch = searchKeyword.isNotBlank() && item.region.name?.contains(searchKeyword, ignoreCase = true) == true
+                                    val regionZhMatch = searchKeyword.isNotBlank() && countryNameToZh(item.region.name).contains(searchKeyword, ignoreCase = true)
+                                    val ccMatch = searchKeyword.isNotBlank() && item.region.countryCode?.contains(searchKeyword, ignoreCase = true) == true
+                                    val countryDirectlyMatched = regionEnMatch || regionZhMatch || ccMatch
 
-                                // Real health calculation for region
-                                val regionServers = datacenters.flatMap { serverMap?.get(it.id) ?: emptyList() }
-                                val regionHealth = if (regionServers.isNotEmpty()) {
-                                    regionServers.map { it.health }.average().toInt().coerceIn(5, 99)
-                                } else {
-                                    18
-                                }
-                                val healthColor = when {
-                                    regionHealth < 40 -> NeonGreen
-                                    regionHealth < 75 -> NeonYellow
-                                    else -> Color(0xFFFF5252)
-                                }
+                                    // Auto expand if search matches; otherwise user manual toggle
+                                    val isExpanded = if (searchKeyword.isNotBlank()) {
+                                        expandedMap[item.id] ?: true
+                                    } else {
+                                        expandedMap[item.id] ?: false
+                                    }
 
-                                // Real lowest latency calculation for region
-                                val minPing = datacenters.mapNotNull { latencyMap?.get(it.id)?.time }.filter { it > 0 }.minOrNull()
-                                val regionPingText = if (minPing != null) "$minPing ms" else "-- ms"
-                                val pingColor = if (minPing != null && minPing > 0) NeonGreen else TextMuted
-
-                                GlassSurface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    cornerRadius = 16.dp,
-                                    borderColor = if (isExpanded) NeonCyan.copy(alpha = 0.35f) else Color(0x1AFFFFFF),
-                                    backgroundColor = Color(0xB30D1218)
-                                ) {
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        // Country Card Header: Unified Accordion (Every country expands on tap, NEVER auto-connects)
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    // 所有国家统一手风琴：只展开/收起，绝不拨号
-                                                    expandedMap[item.id] = !isExpanded
-                                                },
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = emoji,
-                                                fontSize = 20.sp
-                                            )
-                                            Spacer(modifier = Modifier.width(11.dp))
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(
-                                                    text = countryNameToZh(region.name),
-                                                    color = TextPrimary,
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                Text(
-                                                    text = "${datacenters.size} 个机房 · 平均 $regionPingText",
-                                                    color = TextMuted,
-                                                    fontSize = 9.5.sp
-                                                )
-                                            }
-
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(20.dp))
-                                                    .border(1.dp, Color(0x26FFFFFF), RoundedCornerShape(20.dp))
-                                                    .padding(horizontal = 8.dp, vertical = 3.dp)
-                                            ) {
-                                                Text(
-                                                    text = regionPingText,
-                                                    color = pingColor,
-                                                    fontSize = 10.sp,
-                                                    fontFamily = FontFamily.Monospace,
-                                                    fontWeight = FontWeight.SemiBold
-                                                )
-                                            }
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = if (isExpanded) "\u2303" else "\u2304",
-                                                color = TextMuted,
-                                                fontSize = 13.sp
-                                            )
+                                    // Sub-datacenters to display: If country matched or no search, show all; if only specific cities matched, show matching cities
+                                    val displayedDatacenters = if (searchKeyword.isBlank() || countryDirectlyMatched) {
+                                        datacenters
+                                    } else {
+                                        datacenters.filter {
+                                            (it.nickName?.contains(searchKeyword, ignoreCase = true) == true) ||
+                                            (it.nodeName?.contains(searchKeyword, ignoreCase = true) == true)
                                         }
+                                    }
 
-                                        // Expandable Sub-Datacenters (City Rows)
-                                        AnimatedVisibility(
-                                            visible = isExpanded,
-                                            enter = fadeIn() + expandVertically(),
-                                            exit = fadeOut() + shrinkVertically()
-                                        ) {
-                                            Column(
+                                    val emoji = countryCodeToEmoji(region.countryCode)
+
+                                    // Latency calculations: Real average and lowest
+                                    val validPings = datacenters.mapNotNull { latencyMap?.get(it.id)?.time }.filter { it > 0 }
+                                    val minPing = validPings.minOrNull()
+                                    val avgPing = if (validPings.isNotEmpty()) validPings.average().toInt() else null
+                                    val minPingText = if (minPing != null) "$minPing ms" else "-- ms"
+                                    val avgPingText = if (avgPing != null) "$avgPing ms" else "-- ms"
+                                    val pingColor = getLatencyColor(minPing)
+
+                                    GlassSurface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        cornerRadius = 16.dp,
+                                        borderColor = if (isExpanded) NeonCyan.copy(alpha = 0.35f) else LocalGlassColors.current.border,
+                                        backgroundColor = LocalGlassColors.current.surface
+                                    ) {
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            // Country Card Header: Unified Accordion (Every country expands on tap, NEVER auto-connects)
+                                            Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(top = 10.dp)
+                                                    .clickable {
+                                                        // 所有国家统一手风琴：只展开/收起，绝不拨号
+                                                        expandedMap[item.id] = !isExpanded
+                                                    },
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                datacenters.forEach { dc ->
-                                                    val isSelectedCity = dc.id == selectedCityId
-                                                    val dcServers = serverMap?.get(dc.id)
-                                                    val dcHealth = if (!dcServers.isNullOrEmpty()) {
-                                                        dcServers.map { it.health }.average().toInt().coerceIn(5, 99)
-                                                    } else {
-                                                        regionHealth
-                                                    }
-                                                    val dcPing = latencyMap?.get(dc.id)?.time
-                                                    val dcPingText = if (dcPing != null && dcPing > 0) "$dcPing ms" else "-- ms"
-                                                    val isFav = (favState as? ListState.Success)?.data
-                                                        ?.any { it.city.id == dc.id } == true
-                                                    val dcPingColor = if (dcPing != null && dcPing > 0) NeonGreen else TextMuted
+                                                val flagResId = FlagIconResource.getSmallFlag(region.countryCode)
+                                                Image(
+                                                    painter = painterResource(id = flagResId),
+                                                    contentDescription = region.name,
+                                                    modifier = Modifier
+                                                        .size(22.dp)
+                                                        .clip(CircleShape)
+                                                )
+                                                Spacer(modifier = Modifier.width(11.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = countryNameToZh(region.name),
+                                                        color = TextPrimary,
+                                                        fontSize = 13.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Text(
+                                                        text = "${datacenters.size} 个地区 · 平均 $avgPingText",
+                                                        color = TextMuted,
+                                                        fontSize = 9.5.sp
+                                                    )
+                                                }
 
-                                                    Row(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .clip(RoundedCornerShape(10.dp))
-                                                            .background(
-                                                                if (isSelectedCity) Color(0x144FF0C0) else Color(0x0DFFFFFF)
-                                                            )
-                                                            .border(
-                                                                width = 1.dp,
-                                                                color = if (isSelectedCity) Color(0x664FF0C0) else Color(0x0FFFFFFF),
-                                                                shape = RoundedCornerShape(10.dp)
-                                                            )
-                                                            .clickable {
-                                                                // 只选中节点，绝不自动发起连接
-                                                                connectionViewmodel.selectCity(dc)
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    "已选择节点：${dc.nickName ?: dc.nodeName ?: "Node"}，请返回控制台手动连接",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-                                                            }
-                                                            .padding(horizontal = 11.dp, vertical = 9.dp),
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Column(modifier = Modifier.weight(1f)) {
-                                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                                Text(
-                                                                    text = dc.nickName ?: dc.nodeName ?: "Node",
-                                                                    color = TextPrimary,
-                                                                    fontSize = 12.5.sp,
-                                                                    fontWeight = FontWeight.SemiBold,
-                                                                    maxLines = 1,
-                                                                    overflow = TextOverflow.Ellipsis
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(20.dp))
+                                                        .border(1.dp, Color(0x26FFFFFF), RoundedCornerShape(20.dp))
+                                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                                ) {
+                                                    Text(
+                                                        text = minPingText,
+                                                        color = pingColor,
+                                                        fontSize = 10.sp,
+                                                        fontFamily = FontFamily.Monospace,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = if (isExpanded) "⌃" else "⌄",
+                                                    color = TextMuted,
+                                                    fontSize = 13.sp
+                                                )
+                                            }
+
+                                            // Expandable Sub-Datacenters (City Rows)
+                                            AnimatedVisibility(
+                                                visible = isExpanded,
+                                                enter = fadeIn() + expandVertically(),
+                                                exit = fadeOut() + shrinkVertically()
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(top = 10.dp)
+                                                ) {
+                                                    displayedDatacenters.forEach { dc ->
+                                                        val dcServers = serverMap?.get(dc.id)
+                                                        val isMaintenance = (dc.status != 1) || (dcServers.isNullOrEmpty())
+                                                        val isSelectedCity = if (isMaintenance) false else (dc.id == selectedCityId)
+                                                        val isProNode = dc.pro == 1
+                                                        val isTenGbps = dc.linkSpeed >= 10000
+
+                                                        val dcHealth = if (!isMaintenance && !dcServers.isNullOrEmpty()) {
+                                                            dcServers.map { it.health }.average().toInt().coerceIn(5, 99)
+                                                        } else {
+                                                            null
+                                                        }
+
+                                                        val dcPing = latencyMap?.get(dc.id)?.time
+                                                        val dcPingText = if (isMaintenance) "-- ms" else if (dcPing != null && dcPing > 0) "$dcPing ms" else "-- ms"
+                                                        val isFav = (favState as? ListState.Success)?.data
+                                                            ?.any { it.city.id == dc.id } == true
+                                                        val dcPingColor = if (isMaintenance) TextMuted else getLatencyColor(dcPing)
+
+                                                        Row(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .clip(RoundedCornerShape(10.dp))
+                                                                .background(
+                                                                    if (isSelectedCity) LocalGlassColors.current.accentMuted else LocalGlassColors.current.nestedSurface
                                                                 )
-                                                                if (isSelectedCity) {
-                                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                                .border(
+                                                                    width = 1.dp,
+                                                                    color = if (isSelectedCity) LocalGlassColors.current.accent else LocalGlassColors.current.borderSubtle,
+                                                                    shape = RoundedCornerShape(10.dp)
+                                                                )
+                                                                .then(
+                                                                    if (isMaintenance) {
+                                                                        Modifier.alpha(0.5f)
+                                                                    } else {
+                                                                        Modifier.clickable {
+                                                                            // 只选中节点，绝不自动发起连接
+                                                                            connectionViewmodel.selectCity(dc)
+                                                                            Toast.makeText(
+                                                                                context,
+                                                                                "已选择地区：${dc.nickName ?: dc.nodeName ?: "Node"}，请返回控制台手动连接",
+                                                                                Toast.LENGTH_SHORT
+                                                                            ).show()
+                                                                        }
+                                                                    }
+                                                                )
+                                                                .padding(horizontal = 11.dp, vertical = 9.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Column(modifier = Modifier.weight(1f)) {
+                                                                Row(verticalAlignment = Alignment.CenterVertically) {
                                                                     Text(
-                                                                        text = "已选中",
-                                                                        color = NeonGreen,
-                                                                        fontSize = 8.5.sp,
-                                                                        fontFamily = FontFamily.Monospace,
-                                                                        fontWeight = FontWeight.Bold,
-                                                                        modifier = Modifier
-                                                                            .clip(RoundedCornerShape(4.dp))
-                                                                            .background(Color(0x264FF0C0))
-                                                                            .border(1.dp, Color(0x404FF0C0), RoundedCornerShape(4.dp))
-                                                                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                                        text = dc.nickName ?: dc.nodeName ?: "Node",
+                                                                        color = if (isMaintenance) TextMuted else TextPrimary,
+                                                                        fontSize = 12.5.sp,
+                                                                        fontWeight = FontWeight.SemiBold,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis
                                                                     )
+                                                                    if (isMaintenance) {
+                                                                        Spacer(modifier = Modifier.width(6.dp))
+                                                                        Text(
+                                                                            text = "🚧 维护中",
+                                                                            color = Color(0xFFFBBF24),
+                                                                            fontSize = 8.5.sp,
+                                                                            fontWeight = FontWeight.Bold,
+                                                                            modifier = Modifier
+                                                                                .clip(RoundedCornerShape(4.dp))
+                                                                                .background(Color(0x26FBBF24))
+                                                                                .border(1.dp, Color(0x66FBBF24), RoundedCornerShape(4.dp))
+                                                                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                                        )
+                                                                    } else {
+                                                                        if (isProNode) {
+                                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                                            CyberProBadge()
+                                                                        }
+                                                                        if (isTenGbps) {
+                                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                                            Box(
+                                                                                modifier = Modifier
+                                                                                    .size(18.dp)
+                                                                                    .clip(CircleShape)
+                                                                                    .background(Color(0x2600F0FF))
+                                                                                    .border(1.dp, Color(0x6600F0FF), CircleShape),
+                                                                                contentAlignment = Alignment.Center
+                                                                            ) {
+                                                                                Image(
+                                                                                    painter = painterResource(id = R.drawable.city_ten_gbps),
+                                                                                    contentDescription = "10Gbps",
+                                                                                    modifier = Modifier.size(11.dp),
+                                                                                    colorFilter = ColorFilter.tint(NeonCyan)
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
                                                                 }
-                                                            }
-                                                            Spacer(modifier = Modifier.height(6.dp))
-                                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                                Box(
-                                                                    modifier = Modifier
-                                                                        .width(104.dp)
-                                                                        .height(5.dp)
-                                                                        .clip(RoundedCornerShape(3.dp))
-                                                                        .background(Color(0x1AFFFFFF))
-                                                                ) {
+                                                                Spacer(modifier = Modifier.height(6.dp))
+                                                                Row(verticalAlignment = Alignment.CenterVertically) {
                                                                     Box(
                                                                         modifier = Modifier
+                                                                            .width(104.dp)
                                                                             .height(5.dp)
-                                                                            .fillMaxWidth(
-                                                                                (dcHealth.coerceIn(0, 100) / 100f)
+                                                                            .clip(RoundedCornerShape(3.dp))
+                                                                            .background(LocalGlassColors.current.borderSubtle)
+                                                                    ) {
+                                                                        if (dcHealth != null && !isMaintenance) {
+                                                                            Box(
+                                                                                modifier = Modifier
+                                                                                    .height(5.dp)
+                                                                                    .fillMaxWidth((dcHealth.coerceIn(5, 99) / 100f))
+                                                                                    .background(if (dcHealth >= 70) NeonYellow else NeonGreen)
                                                                             )
-                                                                            .background(
-                                                                                if (dcHealth >= 70) NeonYellow else NeonGreen
-                                                                            )
+                                                                        }
+                                                                    }
+                                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                                    Text(
+                                                                        text = if (isMaintenance || dcHealth == null) "负载 获取失败" else "负载 $dcHealth%",
+                                                                        color = TextMuted,
+                                                                        fontSize = 9.5.sp
                                                                     )
                                                                 }
-                                                                Spacer(modifier = Modifier.width(8.dp))
-                                                                Text(
-                                                                    text = "负载 $dcHealth%",
-                                                                    color = TextMuted,
-                                                                    fontSize = 9.5.sp
+                                                            }
+
+                                                            Text(
+                                                                text = dcPingText,
+                                                                color = dcPingColor,
+                                                                fontSize = 11.sp,
+                                                                fontFamily = FontFamily.Monospace
+                                                            )
+                                                            Spacer(modifier = Modifier.width(10.dp))
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(40.dp)
+                                                                    .clickable(
+                                                                        interactionSource = remember { MutableInteractionSource() },
+                                                                        indication = null
+                                                                    ) { serverViewModel.toggleFavorite(dc) },
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Icon(
+                                                                    painter = painterResource(
+                                                                        id = if (isFav) R.drawable.ic_fav_selected else R.drawable.ic_favourite
+                                                                    ),
+                                                                    contentDescription = "Favorite",
+                                                                    tint = if (isFav) NeonYellow else Color(0x66FFFFFF),
+                                                                    modifier = Modifier.size(16.dp)
                                                                 )
                                                             }
                                                         }
-
-                                                        Text(
-                                                            text = dcPingText,
-                                                            color = dcPingColor,
-                                                            fontSize = 11.sp,
-                                                            fontFamily = FontFamily.Monospace
-                                                        )
-                                                        Spacer(modifier = Modifier.width(10.dp))
-                                                        Icon(
-                                                            painter = painterResource(
-                                                                id = if (isFav) R.drawable.ic_fav_selected else R.drawable.ic_favourite
-                                                            ),
-                                                            contentDescription = "Favorite",
-                                                            tint = if (isFav) NeonYellow else Color(0x66FFFFFF),
-                                                            modifier = Modifier
-                                                                .size(15.dp)
-                                                                .clickable { serverViewModel.toggleFavorite(dc) }
-                                                        )
+                                                        Spacer(modifier = Modifier.height(4.dp))
                                                     }
-                                                    Spacer(modifier = Modifier.height(4.dp))
                                                 }
                                             }
                                         }
@@ -1003,103 +1551,267 @@ private fun CyberNodesMatrix(
                             item { Text("暂无收藏节点", color = TextMuted, fontSize = 12.sp) }
                         }
                         is ListState.Success -> {
+
                             if (state.data.isEmpty()) {
                                 item {
-                                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+                                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
                                         Text("暂无收藏的节点，在节点列表中点击星标即可添加", color = TextMuted, fontSize = 12.sp)
                                     }
                                 }
+                            } else if (filteredFavs.isEmpty()) {
+                                item {
+                                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
+                                        Text("未找到与「$searchKeyword」匹配的收藏节点", color = TextMuted, fontSize = 12.sp)
+                                    }
+                                }
                             } else {
-                                items(state.data, key = { it.id }) { favItem ->
-                                    val isSelectedCity = favItem.city.id == selectedCityId
-                                    val emoji = countryCodeToEmoji(favItem.countryCode)
-                                    val favPing = latencyMap?.get(favItem.city.id)?.time
-                                    val favPingText = if (favPing != null && favPing > 0) "$favPing ms" else "-- ms"
-                                    val favPingColor = when {
-                                        favPing != null && favPing < 120 -> NeonGreen
-                                        favPing != null && favPing < 250 -> NeonYellow
-                                        else -> TextSecondary
+                                val favsByRegion = filteredFavs.groupBy { it.region.id }
+
+                                items(favsByRegion.keys.toList(), key = { it }) { regionId ->
+                                    val favGroup = favsByRegion[regionId] ?: return@items
+                                    val firstItem = favGroup.first()
+                                    val region = firstItem.region
+                                    val countryCode = firstItem.countryCode ?: region.countryCode
+
+                                    // Auto expand if search matches; otherwise user manual toggle
+                                    val isExpanded = if (searchKeyword.isNotBlank()) {
+                                        favExpandedMap[regionId] ?: true
+                                    } else {
+                                        favExpandedMap[regionId] ?: false
                                     }
 
-                                    val favServers = serverMap?.get(favItem.city.id)
-                                    val favHealth = if (!favServers.isNullOrEmpty()) {
-                                        favServers.map { it.health }.average().toInt().coerceIn(5, 99)
-                                    } else {
-                                        18
-                                    }
+                                    val validPings = favGroup.mapNotNull { latencyMap?.get(it.city.id)?.time }.filter { it > 0 }
+                                    val minPing = validPings.minOrNull()
+                                    val avgPing = if (validPings.isNotEmpty()) validPings.average().toInt() else null
+                                    val minPingText = if (minPing != null) "$minPing ms" else "-- ms"
+                                    val avgPingText = if (avgPing != null) "$avgPing ms" else "-- ms"
+                                    val pingColor = getLatencyColor(minPing)
+
+                                    val flagResId = FlagIconResource.getSmallFlag(countryCode)
 
                                     GlassSurface(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                // Select active city ONLY, NEVER auto-connect!
-                                                connectionViewmodel.selectCity(favItem.city)
-                                                Toast.makeText(
-                                                    context,
-                                                    "已选择节点：${favItem.city.nickName ?: favItem.city.nodeName ?: "Node"}，请返回控制台手动连接",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            },
-                                        cornerRadius = 14.dp,
-                                        borderColor = if (isSelectedCity) NeonCyan else Color(0x1AFFFFFF),
-                                        backgroundColor = if (isSelectedCity) Color(0x1FFFFFFF) else Color(0xB30D1218)
+                                        modifier = Modifier.fillMaxWidth(),
+                                        cornerRadius = 16.dp,
+                                        borderColor = if (isExpanded) NeonCyan.copy(alpha = 0.35f) else LocalGlassColors.current.border,
+                                        backgroundColor = LocalGlassColors.current.surface
                                     ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(text = emoji, fontSize = 20.sp)
-                                                Spacer(modifier = Modifier.width(10.dp))
-                                                Column {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Text(
-                                                            text = favItem.city.nickName ?: favItem.city.nodeName ?: "Node",
-                                                            color = TextPrimary,
-                                                            fontSize = 13.sp,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                        if (isSelectedCity) {
-                                                            Spacer(modifier = Modifier.width(6.dp))
-                                                            Text(
-                                                                text = "已选中",
-                                                                color = NeonCyan,
-                                                                fontSize = 9.sp,
-                                                                fontFamily = FontFamily.Monospace,
-                                                                fontWeight = FontWeight.Bold,
-                                                                modifier = Modifier
-                                                                    .clip(RoundedCornerShape(4.dp))
-                                                                    .background(Color(0x1FFFFFFF))
-                                                                    .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(4.dp))
-                                                                    .padding(horizontal = 4.dp, vertical = 1.dp)
-                                                            )
-                                                        }
-                                                    }
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            // Country Card Header: Unified Accordion
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        favExpandedMap[regionId] = !isExpanded
+                                                    },
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Image(
+                                                    painter = painterResource(id = flagResId),
+                                                    contentDescription = region.name,
+                                                    modifier = Modifier
+                                                        .size(22.dp)
+                                                        .clip(CircleShape)
+                                                )
+                                                Spacer(modifier = Modifier.width(11.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
                                                     Text(
-                                                        text = "${favItem.region.name ?: ""} · 负载 $favHealth%",
+                                                        text = countryNameToZh(region.name),
+                                                        color = TextPrimary,
+                                                        fontSize = 13.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Text(
+                                                        text = "${favGroup.size} 个已收藏地区 · 平均 $avgPingText",
                                                         color = TextMuted,
-                                                        fontSize = 10.sp
+                                                        fontSize = 9.5.sp
                                                     )
                                                 }
-                                            }
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(
-                                                    text = favPingText,
-                                                    color = favPingColor,
-                                                    fontSize = 11.sp,
-                                                    fontFamily = FontFamily.Monospace,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                                Spacer(modifier = Modifier.width(10.dp))
-                                                Icon(
-                                                    painter = painterResource(id = R.drawable.ic_favourite),
-                                                    contentDescription = "Remove Favorite",
-                                                    tint = NeonYellow,
+
+                                                Box(
                                                     modifier = Modifier
-                                                        .size(18.dp)
-                                                        .clickable { serverViewModel.deleteFavourite(favItem.id) }
+                                                        .clip(RoundedCornerShape(20.dp))
+                                                        .border(1.dp, Color(0x26FFFFFF), RoundedCornerShape(20.dp))
+                                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                                ) {
+                                                    Text(
+                                                        text = minPingText,
+                                                        color = pingColor,
+                                                        fontSize = 10.sp,
+                                                        fontFamily = FontFamily.Monospace,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = if (isExpanded) "⌃" else "⌄",
+                                                    color = TextMuted,
+                                                    fontSize = 13.sp
                                                 )
+                                            }
+
+                                            // Expandable Sub-Datacenters (Favorite City Rows)
+                                            AnimatedVisibility(
+                                                visible = isExpanded,
+                                                enter = fadeIn() + expandVertically(),
+                                                exit = fadeOut() + shrinkVertically()
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(top = 10.dp)
+                                                ) {
+                                                    favGroup.forEach { favItem ->
+                                                        val dc = favItem.city
+                                                        val dcServers = serverMap?.get(dc.id)
+                                                        val isMaintenance = (dc.status != 1) || (dcServers.isNullOrEmpty())
+                                                        val isSelectedCity = if (isMaintenance) false else (dc.id == selectedCityId)
+                                                        val isProNode = dc.pro == 1
+                                                        val isTenGbps = dc.linkSpeed >= 10000
+
+                                                        val dcHealth = if (!isMaintenance && !dcServers.isNullOrEmpty()) {
+                                                            dcServers.map { it.health }.average().toInt().coerceIn(5, 99)
+                                                        } else {
+                                                            null
+                                                        }
+
+                                                        val dcPing = latencyMap?.get(dc.id)?.time
+                                                        val dcPingText = if (isMaintenance) "-- ms" else if (dcPing != null && dcPing > 0) "$dcPing ms" else "-- ms"
+                                                        val dcPingColor = if (isMaintenance) TextMuted else getLatencyColor(dcPing)
+
+                                                        Row(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .clip(RoundedCornerShape(10.dp))
+                                                                .background(
+                                                                    if (isSelectedCity) LocalGlassColors.current.accentMuted else LocalGlassColors.current.nestedSurface
+                                                                )
+                                                                .border(
+                                                                    width = 1.dp,
+                                                                    color = if (isSelectedCity) LocalGlassColors.current.accent else LocalGlassColors.current.borderSubtle,
+                                                                    shape = RoundedCornerShape(10.dp)
+                                                                )
+                                                                .then(
+                                                                    if (isMaintenance) {
+                                                                        Modifier.alpha(0.5f)
+                                                                    } else {
+                                                                        Modifier.clickable {
+                                                                            // 只选中节点，绝不自动发起连接
+                                                                            connectionViewmodel.selectCity(dc)
+                                                                            Toast.makeText(
+                                                                                context,
+                                                                                "已选择地区：${dc.nickName ?: dc.nodeName ?: "Node"}，请返回控制台手动连接",
+                                                                                Toast.LENGTH_SHORT
+                                                                            ).show()
+                                                                        }
+                                                                    }
+                                                                )
+                                                                .padding(horizontal = 11.dp, vertical = 9.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Column(modifier = Modifier.weight(1f)) {
+                                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                                    Text(
+                                                                        text = dc.nickName ?: dc.nodeName ?: "Node",
+                                                                        color = if (isMaintenance) TextMuted else TextPrimary,
+                                                                        fontSize = 12.5.sp,
+                                                                        fontWeight = FontWeight.SemiBold,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis
+                                                                    )
+                                                                    if (isMaintenance) {
+                                                                        Spacer(modifier = Modifier.width(6.dp))
+                                                                        Text(
+                                                                            text = "🚧 维护中",
+                                                                            color = Color(0xFFFBBF24),
+                                                                            fontSize = 8.5.sp,
+                                                                            fontWeight = FontWeight.Bold,
+                                                                            modifier = Modifier
+                                                                                .clip(RoundedCornerShape(4.dp))
+                                                                                .background(Color(0x26FBBF24))
+                                                                                .border(1.dp, Color(0x66FBBF24), RoundedCornerShape(4.dp))
+                                                                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                                        )
+                                                                    } else {
+                                                                        if (isProNode) {
+                                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                                            CyberProBadge()
+                                                                        }
+                                                                        if (isTenGbps) {
+                                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                                            Box(
+                                                                                modifier = Modifier
+                                                                                    .size(18.dp)
+                                                                                    .clip(CircleShape)
+                                                                                    .background(Color(0x2600F0FF))
+                                                                                    .border(1.dp, Color(0x6600F0FF), CircleShape),
+                                                                                contentAlignment = Alignment.Center
+                                                                            ) {
+                                                                                Image(
+                                                                                    painter = painterResource(id = R.drawable.city_ten_gbps),
+                                                                                    contentDescription = "10Gbps",
+                                                                                    modifier = Modifier.size(11.dp),
+                                                                                    colorFilter = ColorFilter.tint(NeonCyan)
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                                Spacer(modifier = Modifier.height(6.dp))
+                                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                                    Box(
+                                                                        modifier = Modifier
+                                                                            .width(104.dp)
+                                                                            .height(5.dp)
+                                                                            .clip(RoundedCornerShape(3.dp))
+                                                                            .background(LocalGlassColors.current.borderSubtle)
+                                                                    ) {
+                                                                        if (dcHealth != null && !isMaintenance) {
+                                                                            Box(
+                                                                                modifier = Modifier
+                                                                                    .height(5.dp)
+                                                                                    .fillMaxWidth((dcHealth.coerceIn(5, 99) / 100f))
+                                                                                    .background(if (dcHealth >= 70) NeonYellow else NeonGreen)
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                                    Text(
+                                                                        text = if (isMaintenance || dcHealth == null) "负载 获取失败" else "负载 $dcHealth%",
+                                                                        color = TextMuted,
+                                                                        fontSize = 9.5.sp
+                                                                    )
+                                                                }
+                                                            }
+
+                                                            Text(
+                                                                text = dcPingText,
+                                                                color = dcPingColor,
+                                                                fontSize = 11.sp,
+                                                                fontFamily = FontFamily.Monospace
+                                                            )
+                                                            Spacer(modifier = Modifier.width(10.dp))
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(40.dp)
+                                                                    .clickable(
+                                                                        interactionSource = remember { MutableInteractionSource() },
+                                                                        indication = null
+                                                                    ) { serverViewModel.deleteFavourite(favItem.id) },
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Icon(
+                                                                    painter = painterResource(id = R.drawable.ic_fav_selected),
+                                                                    contentDescription = "Remove Favorite",
+                                                                    tint = NeonYellow,
+                                                                    modifier = Modifier.size(18.dp)
+                                                                )
+                                                            }
+                                                        }
+                                                        Spacer(modifier = Modifier.height(4.dp))
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -1135,6 +1847,56 @@ private fun SettingsTab(
     val userState by homeViewmodel.userState.collectAsState()
     val showProgress by mainMenuViewModel.showProgress.collectAsState()
     val scrollState = rememberScrollState()
+    var showLogoutConfirm by remember { mutableStateOf(false) }
+
+    if (showLogoutConfirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            title = {
+                Text(
+                    text = "注销登录",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "确定要退出当前账户登录吗？退出后需要重新输入账户凭据。",
+                    color = TextSecondary,
+                    fontSize = 13.5.sp
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showLogoutConfirm = false
+                        mainMenuViewModel.logout()
+                    }
+                ) {
+                    Text(
+                        text = "确认退出",
+                        color = Color(0xFFFBBF24),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showLogoutConfirm = false }
+                ) {
+                    Text(
+                        text = "取消",
+                        color = TextMuted,
+                        fontSize = 14.sp
+                    )
+                }
+            },
+            containerColor = Color(0xFF1A1B26),
+            shape = RoundedCornerShape(18.dp)
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -1143,7 +1905,7 @@ private fun SettingsTab(
             .verticalScroll(scrollState)
             .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
-        // Header (Screenshot 3: 系统偏好设置)
+        // Header (设置)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1151,7 +1913,7 @@ private fun SettingsTab(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "系统偏好设置",
+                text = "设置",
                 color = TextPrimary,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
@@ -1160,7 +1922,7 @@ private fun SettingsTab(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // 账户概览卡
+        // 账户概览卡 (尊贵黑金镶金 S 标)
         val isProUser = userState is UserState.Pro || userState is UserState.UnlimitedData
         val planTitle = when (val st = userState) {
             is UserState.Pro -> "PRO 专业版"
@@ -1170,8 +1932,8 @@ private fun SettingsTab(
         }
         val planSubtitle = when (val st = userState) {
             is UserState.Free -> "剩余流量 " + st.dataLeft
-            is UserState.Pro -> "订阅有效"
-            is UserState.UnlimitedData -> "订阅有效"
+            is UserState.Pro -> "尊贵黑金订阅有效 · 专属高速通道"
+            is UserState.UnlimitedData -> "尊贵黑金订阅有效 · 专属高速通道"
             else -> "点击查看账户详情"
         }
 
@@ -1179,74 +1941,80 @@ private fun SettingsTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(18.dp))
-                .background(Color(0xB30D1218))
-                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(18.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            Color(0x33594511),
+                            Color(0x221E190B),
+                            LocalGlassColors.current.surface
+                        )
+                    )
+                )
+                .border(1.dp, Color(0x66FFD700), RoundedCornerShape(18.dp))
                 .clickable { navController.navigate(Screen.Account.route) }
                 .padding(13.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(40.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0x4DA78BFA))
-                        .border(1.dp, Color(0x33A78BFA), RoundedCornerShape(12.dp)),
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFFFFE259), Color(0xFFFFA751))
+                            )
+                        )
+                        .border(1.dp, Color(0xFFFFF1A8), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "W",
-                        color = TextPrimary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
+                        text = "S",
+                        color = Color.Black,
+                        fontSize = 21.sp,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Black
                     )
                 }
-                Spacer(modifier = Modifier.width(11.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = planTitle,
-                        color = TextPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = planTitle,
+                            color = Color(0xFFFFDF7A),
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        CyberProBadge()
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = planSubtitle,
-                        color = TextMuted,
-                        fontSize = 10.sp
+                        color = TextSecondary,
+                        fontSize = 11.sp
                     )
                 }
-                if (isProUser) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Color(0x33A78BFA))
-                            .border(1.dp, Color(0x66A78BFA), RoundedCornerShape(20.dp))
-                            .padding(horizontal = 9.dp, vertical = 3.dp)
-                    ) {
-                        Text(
-                            text = "PRO",
-                            color = Color(0xFFB299FF),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
+                Icon(
+                    painter = painterResource(id = R.drawable.arrow_right_small),
+                    contentDescription = null,
+                    tint = Color(0xFFFFDF7A),
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 8 大分类：双列卡片网格
+        // 8 大分类：双列卡片网格 (无下方小字，极简图标+主标题)
         val settingEntries = listOf(
-            SettingEntry("常规", "排序 · 反馈 · 版本", R.drawable.ic_preferences_icon, NeonCyan, Screen.General.route),
-            SettingEntry("账户", "订阅 · 邮箱 · 礼券", R.drawable.ic_myaccount_icon, NeonGreen, Screen.Account.route),
-            SettingEntry("连接", "协议 · MTU · DNS", R.drawable.ic_connection_icon, Color(0xFF38BDF8), Screen.Connection.route),
-            SettingEntry("R.O.B.E.R.T.", "DNS 级威胁拦截", R.drawable.ic_robert, NeonYellow, Screen.Robert.route),
-            SettingEntry("拆分隧道", "按应用绕过 VPN", R.drawable.ic_split_routing, NeonPurple, Screen.SplitTunnel.route),
-            SettingEntry("反审查", "混淆 · 诱饵流量", R.drawable.ic_anti_censorship_enabled, Color(0xFFFB7185), Screen.AntiCensorship.route),
-            SettingEntry("界面外观", "主题 · 图标 · 壁纸", R.drawable.ic_feel, Color(0xFFFBBF24), Screen.LookAndFeel.route),
-            SettingEntry("运行日志", "诊断 · 导出 · 上报", R.drawable.ic_view_log, Color(0xFF2DD4BF), Screen.Debug.route),
+            SettingEntry("常规", R.drawable.ic_preferences_icon, NeonCyan, Screen.General.route),
+            SettingEntry("账户", R.drawable.ic_myaccount_icon, NeonGreen, Screen.Account.route),
+            SettingEntry("连接", R.drawable.ic_connection_icon, Color(0xFF38BDF8), Screen.Connection.route),
+            SettingEntry("R.O.B.E.R.T.", R.drawable.ic_robert, NeonYellow, Screen.Robert.route),
+            SettingEntry("拆分隧道", R.drawable.ic_split_routing, NeonPurple, Screen.SplitTunnel.route),
+            SettingEntry("反审查", R.drawable.ic_anti_censorship_enabled, Color(0xFFFB7185), Screen.AntiCensorship.route),
+            SettingEntry("界面外观", R.drawable.ic_feel, Color(0xFFFBBF24), Screen.LookAndFeel.route),
+            SettingEntry("运行日志", R.drawable.ic_view_log, Color(0xFF2DD4BF), Screen.Debug.route),
         )
         settingEntries.chunked(2).forEachIndexed { rowIndex, rowEntries ->
             Row(
@@ -1257,7 +2025,6 @@ private fun SettingsTab(
                     SettingsGridCard(
                         modifier = Modifier.weight(1f),
                         title = entry.title,
-                        subtitle = entry.subtitle,
                         iconRes = entry.icon,
                         accentColor = entry.accent,
                         onClick = { navController.navigate(entry.route) }
@@ -1278,7 +2045,7 @@ private fun SettingsTab(
         GlassSurface(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { mainMenuViewModel.logout() },
+                .clickable { showLogoutConfirm = true },
             cornerRadius = 16.dp,
             borderColor = Color(0x44F59E0B),
             backgroundColor = Color(0x33B45309)
@@ -1319,20 +2086,18 @@ private fun SettingsTab(
 
 private data class SettingEntry(
     val title: String,
-    val subtitle: String,
     val icon: Int,
     val accent: Color,
     val route: String,
 )
 
 /**
- * 偏好设置双列网格卡片：图标徽章 + 标题 + 一行副标题。
+ * 设置双列网格卡片：图标徽章 + 标题 (去下方辅助小字)。
  */
 @Composable
 private fun SettingsGridCard(
     modifier: Modifier = Modifier,
     title: String,
-    subtitle: String,
     iconRes: Int,
     accentColor: Color,
     onClick: () -> Unit,
@@ -1340,15 +2105,18 @@ private fun SettingsGridCard(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xB30D1218))
-            .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(16.dp))
+            .background(LocalGlassColors.current.surface)
+            .border(1.dp, LocalGlassColors.current.border, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
-            .padding(13.dp)
+            .padding(horizontal = 14.dp, vertical = 13.dp)
     ) {
-        Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
             Box(
                 modifier = Modifier
-                    .size(30.dp)
+                    .size(32.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(accentColor.copy(alpha = 0.13f))
                     .border(1.dp, accentColor.copy(alpha = 0.26f), RoundedCornerShape(10.dp)),
@@ -1361,91 +2129,14 @@ private fun SettingsGridCard(
                     modifier = Modifier.size(16.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(9.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             Text(
                 text = title,
                 color = TextPrimary,
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = subtitle,
-                color = TextMuted,
-                fontSize = 10.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-private fun CategoryCard(
-    title: String,
-    subtitle: String,
-    iconRes: Int,
-    accentColor: Color,
-    onClick: () -> Unit,
-) {
-    GlassSurface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        cornerRadius = 16.dp,
-        borderColor = accentColor.copy(alpha = 0.2f),
-        backgroundColor = GlassSurfaceColor
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(accentColor.copy(alpha = 0.12f))
-                        .border(1.dp, accentColor.copy(alpha = 0.3f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = iconRes),
-                        contentDescription = title,
-                        tint = accentColor,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = title,
-                        color = TextPrimary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = subtitle,
-                        color = TextMuted,
-                        fontSize = 10.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Icon(
-                painter = painterResource(id = R.drawable.arrow_right_small),
-                contentDescription = "Navigate",
-                tint = TextSecondary,
-                modifier = Modifier.size(16.dp)
             )
         }
     }
@@ -1476,5 +2167,55 @@ private fun MetricCell(
             color = TextMuted,
             fontSize = 9.sp
         )
+    }
+}
+
+private suspend fun getLocalIpAddress(): Pair<String, String> = withContext(Dispatchers.IO) {
+    try {
+        val interfaces = java.net.NetworkInterface.getNetworkInterfaces()?.toList() ?: return@withContext Pair("未连接", "无局域网连接")
+        val physicalFirst = interfaces.sortedByDescending { intf ->
+            val n = intf.name.lowercase()
+            when {
+                n.contains("wlan") -> 4
+                n.contains("eth") -> 3
+                n.contains("rmnet") || n.contains("ccmni") -> 2
+                else -> 0
+            }
+        }
+        for (intf in physicalFirst) {
+            if (intf.isLoopback || !intf.isUp) continue
+            val nameLower = intf.name.lowercase()
+            if (nameLower.startsWith("tun") || nameLower.startsWith("tap") || nameLower.startsWith("wgtun") ||
+                nameLower.startsWith("ppp") || nameLower.startsWith("p2p") || nameLower.startsWith("dummy")) continue
+            val isKnownPhysical = nameLower.contains("wlan") || nameLower.contains("eth") || nameLower.contains("rmnet") || nameLower.contains("ccmni")
+            if (!isKnownPhysical && intf.isPointToPoint) continue
+            val addrs = intf.inetAddresses ?: continue
+            for (addr in addrs) {
+                if (!addr.isLoopbackAddress && !addr.isLinkLocalAddress && addr is java.net.Inet4Address) {
+                    val hostAddress = addr.hostAddress ?: continue
+                    val name = when {
+                        nameLower.contains("wlan") -> "Wi-Fi (${intf.name})"
+                        nameLower.contains("rmnet") || nameLower.contains("ccmni") -> "移动蜂窝 (${intf.name})"
+                        nameLower.contains("eth") -> "以太网 (${intf.name})"
+                        else -> intf.displayName ?: intf.name
+                    }
+                    return@withContext Pair(hostAddress, name)
+                }
+            }
+        }
+    } catch (_: Exception) {}
+    Pair("未连接", "无局域网连接")
+}
+
+private fun formatTrafficBytes(bytes: Long): String {
+    if (bytes <= 0) return "0 B"
+    val kb = bytes / 1024.0
+    val mb = kb / 1024.0
+    val gb = mb / 1024.0
+    return when {
+        gb >= 1.0 -> "%.1f GB".format(gb)
+        mb >= 1.0 -> "%.1f MB".format(mb)
+        kb >= 1.0 -> "%.1f KB".format(kb)
+        else -> "$bytes B"
     }
 }

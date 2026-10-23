@@ -16,7 +16,6 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
-import android.os.Build
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
 import com.windscribe.vpn.wsnet.WSNetWrapper
@@ -396,14 +395,10 @@ class DeviceStateManager
          * Required for WiFi SSID access on Android O MR1+.
          */
         private fun hasLocationPermission(context: Context): Boolean =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                ) == PackageManager.PERMISSION_GRANTED
-            } else {
-                true
-            }
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED
 
         /**
          * Registers BroadcastReceiver for screen on/off events.
@@ -418,16 +413,11 @@ class DeviceStateManager
                     addAction(ACTION_SCREEN_ON)
                 }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    screenStateReceiver,
-                    intentFilter,
-                    Context.RECEIVER_NOT_EXPORTED,
-                )
-            } else {
-                @Suppress("UnspecifiedRegisterReceiverFlag")
-                context.registerReceiver(screenStateReceiver, intentFilter)
-            }
+            context.registerReceiver(
+                screenStateReceiver,
+                intentFilter,
+                Context.RECEIVER_NOT_EXPORTED,
+            )
         }
 
         /**

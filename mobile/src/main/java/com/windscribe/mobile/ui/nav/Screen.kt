@@ -75,8 +75,6 @@ sealed class Screen(
 
     object ExcludedIpDomains : Screen("excluded_ips_domains")
 
-    object ExtraDataUseWarning : Screen("extra_data_use_warning")
-
     object GpsSpoofing : Screen("gps_spoofing")
 
     object AddEmail : Screen("add_email")

@@ -1,4 +1,4 @@
-package com.windscribe.mobile.ui
+﻿package com.windscribe.mobile.ui
 
 import androidx.annotation.DrawableRes
 import androidx.lifecycle.ViewModel
@@ -55,8 +55,6 @@ abstract class AppStartActivityViewModel : ViewModel() {
     abstract fun clearPendingDeepLink()
 
     abstract fun acknowledgeEncryptionWarning()
-
-    abstract fun enableDecoyTraffic()
 
     abstract fun enableGpsSpoofing()
 
@@ -162,9 +160,7 @@ class AppStartActivityViewModelImpl
             this.dialogCallback = dialogCallback
         }
 
-        override fun enableDecoyTraffic() {
-            preferencesHelper.isDecoyTrafficOn = true
-        }
+
 
         override fun enableGpsSpoofing() {
             preferencesHelper.isGpsSpoofingOn = true
